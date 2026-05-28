@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <BuildInParallel>false</BuildInParallel>
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+  </PropertyGroup>
+</Project>

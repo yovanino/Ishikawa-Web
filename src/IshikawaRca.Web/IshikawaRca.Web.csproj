@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <ItemGroup>
+    <ProjectReference Include="..\IshikawaRca.Domain\IshikawaRca.Domain.csproj" />
+    <ProjectReference Include="..\IshikawaRca.Contracts\IshikawaRca.Contracts.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>

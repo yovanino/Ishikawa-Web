@@ -58,6 +58,22 @@ Y podra devolver:
 - HTML absoluto + CSS transforms para el canvas visual.
 - SignalR en fases posteriores.
 
+## Desarrollo Local
+
+Ruta recomendada del repo:
+
+```text
+C:\Users\jprivamonti\source\repos\IndustrialOpsPlatform\Ishikawa-Web
+```
+
+Compilar desde terminal:
+
+```powershell
+dotnet build IshikawaRca.sln /m:1
+```
+
+La opcion `/m:1` evita un fallo silencioso observado en esta instalacion local de MSBuild cuando el proyecto Web evalua referencias de proyecto en paralelo.
+
 ## Documentacion
 
 - [Contexto maestro](docs/MASTER_CONTEXT.md)
