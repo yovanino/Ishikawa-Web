@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+artifacts/
+
+# User and IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.rsuser
+
+# ASP.NET / local config
+appsettings.Local.json
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs and diagnostics
+*.log
+TestResults/
+coverage/
+
+# OS files
+Thumbs.db
+Desktop.ini
+

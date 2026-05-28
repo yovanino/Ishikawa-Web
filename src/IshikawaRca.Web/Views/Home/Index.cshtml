@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<section class="module-header">
+    <div>
+        <p class="module-kicker">Modulo independiente</p>
+        <h1>Ishikawa RCA</h1>
+        <p class="module-summary">
+            Analisis visual de causa raiz para eventos industriales, integrable por APIs con Gantt, SCADA,
+            Andon, TPM, OEE y la plataforma global futura.
+        </p>
+    </div>
+    <div class="module-status">
+        <span class="status-dot"></span>
+        Base MVC inicial
+    </div>
+</section>
+
+<section class="workflow-grid" aria-label="Flujo principal del modulo">
+    <article class="workflow-card">
+        <span class="step-number">01</span>
+        <h2>Incidente</h2>
+        <p>Registrar problema desde operador, Gantt, SCADA, Andon o API externa.</p>
+    </article>
+    <article class="workflow-card">
+        <span class="step-number">02</span>
+        <h2>Wizard</h2>
+        <p>Guiar severidad, impacto, contexto industrial y alcance del analisis.</p>
+    </article>
+    <article class="workflow-card">
+        <span class="step-number">03</span>
+        <h2>Canvas</h2>
+        <p>Construir ramas, causas, subcausas, evidencias y causa raiz probable.</p>
+    </article>
+    <article class="workflow-card">
+        <span class="step-number">04</span>
+        <h2>Acciones</h2>
+        <p>Generar acciones correctivas, responsables, fechas y cierre trazable.</p>
+    </article>
+</section>
+
+<section class="integration-band">
+    <div>
+        <h2>Contratos preparados</h2>
+        <p>El modulo nacera desacoplado: referencias externas, eventos publicados y consumo futuro de AI Gateway.</p>
+    </div>
+    <ul>
+        <li>REST API v1</li>
+        <li>Eventos RCA</li>
+        <li>ExternalTaskId</li>
+        <li>AI Gateway</li>
+    </ul>
+</section>
+
+<div class="next-panel">
+    <h2>Proximo paso tecnico</h2>
+    <p>Crear entidades de dominio, contratos DTO y primeros endpoints para incidentes RCA.</p>
+</div>
