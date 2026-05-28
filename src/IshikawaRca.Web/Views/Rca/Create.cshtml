@@ -1,0 +1,74 @@
+@model IshikawaRca.Web.Models.Rca.CreateRcaIncidentViewModel
+
+@{
+    ViewData["Title"] = "Nuevo RCA";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="module-kicker">Carga manual</p>
+        <h1>Nuevo incidente RCA</h1>
+        <p>Registra un problema operativo para iniciar el analisis Ishikawa sin depender de Gantt ni SCADA.</p>
+    </div>
+</section>
+
+<form class="form-panel" asp-controller="Rca" asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-grid">
+        <div class="form-field form-field-wide">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" placeholder="Ej: Parada de prensa durante produccion" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="Severity" class="form-label"></label>
+            <select asp-for="Severity" asp-items="ViewBag.Severities" class="form-select"></select>
+            <span asp-validation-for="Severity" class="text-danger"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="OccurredAt" class="form-label"></label>
+            <input asp-for="OccurredAt" class="form-control" />
+            <span asp-validation-for="OccurredAt" class="text-danger"></span>
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label asp-for="ProblemDescription" class="form-label"></label>
+            <textarea asp-for="ProblemDescription" class="form-control" rows="4" placeholder="Describe el problema observado, contexto y primer impacto."></textarea>
+            <span asp-validation-for="ProblemDescription" class="text-danger"></span>
+        </div>
+
+        <div class="form-field">
+            <label asp-for="MachineCode" class="form-label"></label>
+            <input asp-for="MachineCode" class="form-control" placeholder="PRENSA-04" />
+        </div>
+
+        <div class="form-field">
+            <label asp-for="LineCode" class="form-label"></label>
+            <input asp-for="LineCode" class="form-control" placeholder="LINEA-01" />
+        </div>
+
+        <div class="form-field">
+            <label asp-for="WorkOrderCode" class="form-label"></label>
+            <input asp-for="WorkOrderCode" class="form-control" placeholder="WO-2026-000123" />
+        </div>
+
+        <div class="form-field">
+            <label asp-for="ReportedBy" class="form-label"></label>
+            <input asp-for="ReportedBy" class="form-control" placeholder="supervisor.planta" />
+        </div>
+    </div>
+
+    <input asp-for="SourceSystem" type="hidden" />
+
+    <div class="form-actions">
+        <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Cancelar</a>
+        <button class="btn btn-primary" type="submit">Crear incidente</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

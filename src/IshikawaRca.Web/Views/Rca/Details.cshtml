@@ -1,0 +1,54 @@
+@model IshikawaRca.Contracts.Rca.RcaIncidentDto
+
+@{
+    ViewData["Title"] = "Detalle RCA";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="module-kicker">@Model.SourceSystem</p>
+        <h1>@Model.Title</h1>
+        <p>@(Model.ProblemDescription ?? "Sin descripcion cargada.")</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
+</section>
+
+@if (TempData["StatusMessage"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+
+<section class="detail-grid">
+    <article class="detail-panel">
+        <h2>Estado</h2>
+        <dl>
+            <dt>Severidad</dt>
+            <dd><span class="severity-pill severity-@Model.Severity.ToLowerInvariant()">@Model.Severity</span></dd>
+            <dt>Estado RCA</dt>
+            <dd>@Model.Status</dd>
+            <dt>Creado</dt>
+            <dd>@Model.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+            <dt>Evento</dt>
+            <dd>@Model.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+        </dl>
+    </article>
+
+    <article class="detail-panel">
+        <h2>Contexto industrial</h2>
+        <dl>
+            <dt>Maquina</dt>
+            <dd>@(Model.MachineCode ?? "-")</dd>
+            <dt>Linea</dt>
+            <dd>@(Model.LineCode ?? "-")</dd>
+            <dt>Orden</dt>
+            <dd>@(Model.WorkOrderCode ?? "-")</dd>
+            <dt>Escalado a 8D</dt>
+            <dd>@(Model.EscalatedTo8D ? "Si" : "No")</dd>
+        </dl>
+    </article>
+</section>
+
+<section class="next-panel">
+    <h2>Proximo paso del flujo</h2>
+    <p>Con este incidente creado, el siguiente hito sera construir el wizard inicial y el canvas Ishikawa para ramas, causas y acciones.</p>
+</section>
