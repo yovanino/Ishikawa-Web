@@ -74,6 +74,15 @@ dotnet build IshikawaRca.sln /m:1
 
 La opcion `/m:1` evita un fallo silencioso observado en esta instalacion local de MSBuild cuando el proyecto Web evalua referencias de proyecto en paralelo.
 
+Persistencia MySQL local:
+
+```powershell
+$env:ISHIKAWA_RCA_CONNECTION="Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;"
+dotnet ef database update --project src\IshikawaRca.Infrastructure\IshikawaRca.Infrastructure.csproj --startup-project src\IshikawaRca.Web\IshikawaRca.Web.csproj --context RcaDbContext
+```
+
+No subir credenciales reales al repo. Para desarrollo local se puede usar `appsettings.Local.json`, user secrets o variables de entorno.
+
 ## Documentacion
 
 - [Contexto maestro](docs/MASTER_CONTEXT.md)

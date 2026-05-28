@@ -1,6 +1,8 @@
-using IshikawaRca.Application.Rca;
+using IshikawaRca.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -8,7 +10,7 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<IRcaIncidentService, InMemoryRcaIncidentService>();
+builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 

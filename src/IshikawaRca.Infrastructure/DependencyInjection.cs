@@ -1,0 +1,30 @@
+using IshikawaRca.Application.Rca;
+using IshikawaRca.Infrastructure.Data;
+using IshikawaRca.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace IshikawaRca.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddIshikawaRcaInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("IshikawaRca");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("ConnectionStrings:IshikawaRca is required for MySQL persistence.");
+        }
+
+        services.AddDbContext<RcaDbContext>(options =>
+            options.UseMySql(
+                connectionString,
+                new MySqlServerVersion(new Version(8, 0, 36)),
+                mysqlOptions => mysqlOptions.EnableRetryOnFailure()));
+
+        services.AddScoped<IRcaIncidentService, EfRcaIncidentService>();
+
+        return services;
+    }
+}
