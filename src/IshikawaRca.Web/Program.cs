@@ -1,3 +1,5 @@
+using IshikawaRca.Application.Rca;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
@@ -6,6 +8,7 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IRcaIncidentService, InMemoryRcaIncidentService>();
 
 var app = builder.Build();
 
@@ -23,6 +26,7 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",

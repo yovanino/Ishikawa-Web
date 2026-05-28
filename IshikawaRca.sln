@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IshikawaRca.Domain", "src\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IshikawaRca.Contracts", "src\IshikawaRca.Contracts\IshikawaRca.Contracts.csproj", "{EB5CE97E-3D79-4395-B26E-B037313D54B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IshikawaRca.Application", "src\IshikawaRca.Application\IshikawaRca.Application.csproj", "{D971314E-785E-44AC-B4F7-3AD4F1F87047}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,18 @@ Global
 		{EB5CE97E-3D79-4395-B26E-B037313D54B4}.Release|x64.Build.0 = Release|Any CPU
 		{EB5CE97E-3D79-4395-B26E-B037313D54B4}.Release|x86.ActiveCfg = Release|Any CPU
 		{EB5CE97E-3D79-4395-B26E-B037313D54B4}.Release|x86.Build.0 = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|x64.Build.0 = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Debug|x86.Build.0 = Debug|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|x64.ActiveCfg = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|x64.Build.0 = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|x86.ActiveCfg = Release|Any CPU
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,5 +79,6 @@ Global
 		{A6E52DF0-02BA-479F-9365-35C75D211589} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{FC029F85-6FCD-4E47-BC94-3A03DC19E621} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{EB5CE97E-3D79-4395-B26E-B037313D54B4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{D971314E-785E-44AC-B4F7-3AD4F1F87047} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

@@ -1,15 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\IshikawaRca.Domain\IshikawaRca.Domain.csproj" />
     <ProjectReference Include="..\IshikawaRca.Contracts\IshikawaRca.Contracts.csproj" />
-    <ProjectReference Include="..\IshikawaRca.Application\IshikawaRca.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>
