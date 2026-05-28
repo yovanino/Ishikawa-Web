@@ -37,6 +37,41 @@ POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
 
+## APIs de Integracion entre Modulos
+
+Estas APIs son la superficie recomendada para Gantt, gateway industrial, OEE, Andon, TPM o la futura app global. Devuelven una vista estable y reducida del RCA sin exponer el modelo interno completo.
+
+```http
+GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
+GET /api/v1/integrations/rca/incidents/{id}/snapshot
+GET /api/v1/integrations/rca/events?incidentId=&since=
+```
+
+Snapshot de integracion:
+
+```json
+{
+  "incidentId": "2f5b0d57-53a4-4ac8-92fb-55d1b43753e0",
+  "sourceSystem": "GANTT",
+  "externalTaskId": "TASK-2026-0001",
+  "status": "Open",
+  "severity": "High",
+  "rootCauseTitle": "Falta de lubricacion en prensa",
+  "openCorrectiveActionsCount": 2,
+  "overdueCorrectiveActionsCount": 0,
+  "nextActionDueAt": "2026-05-30T12:00:00-03:00",
+  "openActions": [
+    {
+      "id": "b06d64d4-a921-475d-99cf-9ef6df669ae2",
+      "title": "Revisar plan de lubricacion",
+      "status": "Open",
+      "assignedToUserId": "mantenimiento",
+      "dueDate": "2026-05-30T12:00:00-03:00"
+    }
+  ]
+}
+```
+
 ## Crear Incidente desde Sistema Externo
 
 ```json
@@ -73,6 +108,8 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaSeverityChanged`
 - `RcaEscalatedTo8D`
 - `RcaClosed`
+
+En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
 
 ## Regla de Compatibilidad
 

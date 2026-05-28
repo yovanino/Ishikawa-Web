@@ -52,6 +52,12 @@ Ishikawa RCA puede devolver:
 - Fecha de cierre.
 - Escalamiento a 8D.
 
+La salida recomendada para Gantt es el snapshot de integracion:
+
+```http
+GET /api/v1/integrations/rca/snapshots?sourceSystem=GANTT&externalTaskId={taskId}
+```
+
 ## Integracion con SCADA y Gateway Industrial
 
 SCADA o el gateway pueden crear incidentes RCA a partir de eventos industriales:
@@ -64,4 +70,13 @@ SCADA o el gateway pueden crear incidentes RCA a partir de eventos industriales:
 - Recurrencia de falla.
 
 La primera integracion sera por REST API. SignalR, MQTT y Event Bus quedan para fases posteriores.
+
+La salida recomendada para el gateway o una app global es:
+
+```http
+GET /api/v1/integrations/rca/events?since={isoDate}
+GET /api/v1/integrations/rca/incidents/{id}/snapshot
+```
+
+El modulo no consume directamente PLC, SCADA, Gantt ni IA local. Esos sistemas se conectan por contratos HTTP versionados, y mas adelante por eventos o colas.
 

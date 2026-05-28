@@ -207,6 +207,57 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Accion correctiva agregada."));
     }
 
+    public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaIntegrationSnapshotDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        return Task.FromResult(ApiResult<RcaIntegrationSnapshotDto>.Ok(ToIntegrationSnapshot(incident)));
+    }
+
+    public Task<ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>> ListIntegrationSnapshotsAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default)
+    {
+        var query = _incidents.Values.Where(x => !x.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(sourceSystem))
+        {
+            query = query.Where(x => string.Equals(x.SourceSystem, sourceSystem.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(externalTaskId))
+        {
+            query = query.Where(x => string.Equals(x.ExternalTaskId, externalTaskId.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<RcaIncidentStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(x => x.Status == parsedStatus);
+        }
+
+        var snapshots = query
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
+            .Select(ToIntegrationSnapshot)
+            .ToList();
+
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>.Ok(snapshots));
+    }
+
+    public Task<ApiResult<IReadOnlyList<RcaDomainEventDto>>> ListIntegrationEventsAsync(Guid? incidentId = null, DateTimeOffset? since = null, CancellationToken cancellationToken = default)
+    {
+        var events = _incidents.Values
+            .Where(x => !x.IsDeleted && (!incidentId.HasValue || x.Id == incidentId.Value))
+            .SelectMany(ToIntegrationEvents)
+            .Where(x => !since.HasValue || x.OccurredAt >= since.Value)
+            .OrderBy(x => x.OccurredAt)
+            .ToList();
+
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaDomainEventDto>>.Ok(events));
+    }
+
     private static List<ApiError> ValidateCreateRequest(CreateRcaIncidentRequest request)
     {
         var errors = new List<ApiError>();
@@ -375,5 +426,149 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             DueDate = action.DueDate,
             CompletedAt = action.CompletedAt
         };
+    }
+
+    private static RcaIntegrationSnapshotDto ToIntegrationSnapshot(RcaIncident incident)
+    {
+        var causes = incident.Branches
+            .SelectMany(x => x.Causes)
+            .Where(x => !x.IsDeleted)
+            .ToList();
+
+        var rootCause = causes
+            .Where(x => x.IsRootCause)
+            .OrderByDescending(x => x.ImpactScore + x.ProbabilityScore + x.FrequencyScore)
+            .ThenByDescending(x => x.UpdatedAt ?? x.CreatedAt)
+            .FirstOrDefault();
+
+        var openActions = incident.CorrectiveActions
+            .Where(x => !x.IsDeleted && x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled)
+            .OrderBy(x => x.DueDate)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToList();
+
+        var now = DateTimeOffset.UtcNow;
+
+        return new RcaIntegrationSnapshotDto
+        {
+            IncidentId = incident.Id,
+            TenantId = incident.TenantId,
+            Title = incident.Title,
+            Status = incident.Status.ToString(),
+            Severity = incident.Severity.ToString(),
+            OccurredAt = incident.OccurredAt,
+            CreatedAt = incident.CreatedAt,
+            ClosedAt = incident.ClosedAt,
+            LastUpdatedAt = GetLastUpdatedAt(incident, causes, incident.CorrectiveActions),
+            SourceSystem = incident.SourceSystem,
+            ExternalTaskId = incident.ExternalTaskId,
+            ExternalEventId = incident.ExternalEventId,
+            ExternalWorkOrderId = incident.ExternalWorkOrderId,
+            MachineCode = incident.MachineCode,
+            LineCode = incident.LineCode,
+            WorkOrderCode = incident.WorkOrderCode,
+            EscalatedTo8D = incident.EscalatedTo8D,
+            RootCauseTitle = rootCause?.Title,
+            RootCauseEvidenceSummary = rootCause?.EvidenceSummary,
+            CauseCount = causes.Count,
+            OpenCorrectiveActionsCount = openActions.Count,
+            OverdueCorrectiveActionsCount = openActions.Count(x => x.DueDate.HasValue && x.DueDate.Value < now),
+            NextActionDueAt = openActions.FirstOrDefault(x => x.DueDate.HasValue)?.DueDate,
+            OpenActions = openActions.Select(ToIntegrationActionDto).ToList()
+        };
+    }
+
+    private static RcaIntegrationActionDto ToIntegrationActionDto(CorrectiveAction action)
+    {
+        return new RcaIntegrationActionDto
+        {
+            Id = action.Id,
+            CauseId = action.CauseId,
+            Title = action.Title,
+            Status = action.Status.ToString(),
+            AssignedToUserId = action.AssignedToUserId,
+            DueDate = action.DueDate
+        };
+    }
+
+    private static IReadOnlyList<RcaDomainEventDto> ToIntegrationEvents(RcaIncident incident)
+    {
+        var events = new List<RcaDomainEventDto>
+        {
+            CreateEvent(
+                $"rca-incident-created:{incident.Id}",
+                "RcaIncidentCreated",
+                incident.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["severity"] = incident.Severity.ToString(),
+                    ["status"] = incident.Status.ToString()
+                })
+        };
+
+        foreach (var cause in incident.Branches.SelectMany(x => x.Causes).Where(x => !x.IsDeleted))
+        {
+            events.Add(CreateEvent(
+                $"rca-cause-created:{cause.Id}",
+                cause.IsRootCause ? "RcaRootCauseSelected" : "RcaCauseCreated",
+                cause.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["causeId"] = cause.Id.ToString(),
+                    ["branchId"] = cause.BranchId.ToString(),
+                    ["title"] = cause.Title,
+                    ["isRootCause"] = cause.IsRootCause.ToString()
+                }));
+        }
+
+        foreach (var action in incident.CorrectiveActions.Where(x => !x.IsDeleted))
+        {
+            events.Add(CreateEvent(
+                $"rca-action-created:{action.Id}",
+                "RcaCorrectiveActionCreated",
+                action.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["actionId"] = action.Id.ToString(),
+                    ["causeId"] = action.CauseId?.ToString(),
+                    ["title"] = action.Title,
+                    ["status"] = action.Status.ToString(),
+                    ["dueDate"] = action.DueDate?.ToString("O")
+                }));
+        }
+
+        return events;
+    }
+
+    private static RcaDomainEventDto CreateEvent(string id, string type, DateTimeOffset occurredAt, RcaIncident incident, Dictionary<string, string?> data)
+    {
+        return new RcaDomainEventDto
+        {
+            Id = id,
+            Type = type,
+            OccurredAt = occurredAt,
+            IncidentId = incident.Id,
+            TenantId = incident.TenantId,
+            SourceSystem = incident.SourceSystem,
+            ExternalTaskId = incident.ExternalTaskId,
+            ExternalEventId = incident.ExternalEventId,
+            ExternalWorkOrderId = incident.ExternalWorkOrderId,
+            Data = data
+        };
+    }
+
+    private static DateTimeOffset GetLastUpdatedAt(RcaIncident incident, IReadOnlyList<IshikawaCause> causes, IEnumerable<CorrectiveAction> actions)
+    {
+        return new[]
+            {
+                incident.UpdatedAt ?? incident.CreatedAt,
+                causes.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max(),
+                actions.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max()
+            }
+            .Max();
     }
 }
