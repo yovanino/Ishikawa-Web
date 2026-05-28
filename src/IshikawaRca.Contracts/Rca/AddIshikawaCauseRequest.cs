@@ -13,4 +13,14 @@ public class AddIshikawaCauseRequest
     public decimal X { get; set; }
 
     public decimal Y { get; set; }
+
+    public int ProbabilityScore { get; set; }
+
+    public int ImpactScore { get; set; }
+
+    public int FrequencyScore { get; set; }
+
+    public bool IsRootCause { get; set; }
+
+    public string? EvidenceSummary { get; set; }
 }

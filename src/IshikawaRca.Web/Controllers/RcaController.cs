@@ -76,13 +76,85 @@ public class RcaController : Controller
     [HttpGet]
     public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _rcaIncidentService.GetByIdAsync(id, cancellationToken);
-        if (!result.Success || result.Data is null)
+        var model = await BuildDetailsViewModelAsync(id, cancellationToken);
+        if (model is null)
         {
             return NotFound();
         }
 
-        return View(result.Data);
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddCause(Guid id, [Bind(Prefix = "Cause")] AddIshikawaCauseViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return await DetailsWithCauseModel(id, model, cancellationToken);
+        }
+
+        var request = new AddIshikawaCauseRequest
+        {
+            BranchId = model.BranchId,
+            ParentCauseId = model.ParentCauseId,
+            Title = model.Title,
+            Description = model.Description,
+            ProbabilityScore = model.ProbabilityScore,
+            ImpactScore = model.ImpactScore,
+            FrequencyScore = model.FrequencyScore,
+            IsRootCause = model.IsRootCause,
+            EvidenceSummary = model.EvidenceSummary
+        };
+
+        var result = await _rcaIncidentService.AddCauseAsync(id, request, cancellationToken);
+        if (!result.Success)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError($"Cause.{error.Field}", error.Message);
+            }
+
+            return await DetailsWithCauseModel(id, model, cancellationToken);
+        }
+
+        TempData["StatusMessage"] = "Causa agregada al canvas Ishikawa.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddAction(Guid id, [Bind(Prefix = "Action")] AddCorrectiveActionViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return await DetailsWithActionModel(id, model, cancellationToken);
+        }
+
+        var request = new AddCorrectiveActionRequest
+        {
+            CauseId = model.CauseId,
+            Title = model.Title,
+            Description = model.Description,
+            AssignedToUserId = model.AssignedToUserId,
+            DueDate = model.DueDate
+        };
+
+        var result = await _rcaIncidentService.AddCorrectiveActionAsync(id, request, cancellationToken);
+        if (!result.Success)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError($"Action.{error.Field}", error.Message);
+            }
+
+            return await DetailsWithActionModel(id, model, cancellationToken);
+        }
+
+        TempData["StatusMessage"] = "Accion correctiva agregada.";
+
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
@@ -94,5 +166,55 @@ public class RcaController : Controller
             new SelectListItem("Alta", "High"),
             new SelectListItem("Critica", "Critical")
         ];
+    }
+
+    private async Task<IActionResult> DetailsWithCauseModel(Guid id, AddIshikawaCauseViewModel cause, CancellationToken cancellationToken)
+    {
+        var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+        if (details is null)
+        {
+            return NotFound();
+        }
+
+        details.Cause = cause;
+
+        return View(nameof(Details), details);
+    }
+
+    private async Task<IActionResult> DetailsWithActionModel(Guid id, AddCorrectiveActionViewModel action, CancellationToken cancellationToken)
+    {
+        var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+        if (details is null)
+        {
+            return NotFound();
+        }
+
+        details.Action = action;
+
+        return View(nameof(Details), details);
+    }
+
+    private async Task<RcaIncidentDetailsViewModel?> BuildDetailsViewModelAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var incidentResult = await _rcaIncidentService.GetByIdAsync(id, cancellationToken);
+        if (!incidentResult.Success || incidentResult.Data is null)
+        {
+            return null;
+        }
+
+        var canvasResult = await _rcaIncidentService.GetCanvasAsync(id, cancellationToken);
+        if (!canvasResult.Success || canvasResult.Data is null)
+        {
+            return null;
+        }
+
+        var actionsResult = await _rcaIncidentService.ListCorrectiveActionsAsync(id, cancellationToken);
+
+        return new RcaIncidentDetailsViewModel
+        {
+            Incident = incidentResult.Data,
+            Canvas = canvasResult.Data,
+            CorrectiveActions = actionsResult.Data ?? []
+        };
     }
 }

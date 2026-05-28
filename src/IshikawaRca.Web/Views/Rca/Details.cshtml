@@ -1,14 +1,18 @@
-@model IshikawaRca.Contracts.Rca.RcaIncidentDto
+@model IshikawaRca.Web.Models.Rca.RcaIncidentDetailsViewModel
 
 @{
     ViewData["Title"] = "Detalle RCA";
+    var incident = Model.Incident;
+    var causesByBranch = Model.Canvas.Causes
+        .GroupBy(x => x.BranchId)
+        .ToDictionary(x => x.Key, x => x.ToList());
 }
 
 <section class="page-heading">
     <div>
-        <p class="module-kicker">@Model.SourceSystem</p>
-        <h1>@Model.Title</h1>
-        <p>@(Model.ProblemDescription ?? "Sin descripcion cargada.")</p>
+        <p class="module-kicker">@incident.SourceSystem</p>
+        <h1>@incident.Title</h1>
+        <p>@(incident.ProblemDescription ?? "Sin descripcion cargada.")</p>
     </div>
     <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
 </section>
@@ -23,13 +27,13 @@
         <h2>Estado</h2>
         <dl>
             <dt>Severidad</dt>
-            <dd><span class="severity-pill severity-@Model.Severity.ToLowerInvariant()">@Model.Severity</span></dd>
+            <dd><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></dd>
             <dt>Estado RCA</dt>
-            <dd>@Model.Status</dd>
+            <dd>@incident.Status</dd>
             <dt>Creado</dt>
-            <dd>@Model.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+            <dd>@incident.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
             <dt>Evento</dt>
-            <dd>@Model.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+            <dd>@incident.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
         </dl>
     </article>
 
@@ -37,18 +41,191 @@
         <h2>Contexto industrial</h2>
         <dl>
             <dt>Maquina</dt>
-            <dd>@(Model.MachineCode ?? "-")</dd>
+            <dd>@(incident.MachineCode ?? "-")</dd>
             <dt>Linea</dt>
-            <dd>@(Model.LineCode ?? "-")</dd>
+            <dd>@(incident.LineCode ?? "-")</dd>
             <dt>Orden</dt>
-            <dd>@(Model.WorkOrderCode ?? "-")</dd>
+            <dd>@(incident.WorkOrderCode ?? "-")</dd>
             <dt>Escalado a 8D</dt>
-            <dd>@(Model.EscalatedTo8D ? "Si" : "No")</dd>
+            <dd>@(incident.EscalatedTo8D ? "Si" : "No")</dd>
         </dl>
     </article>
 </section>
 
-<section class="next-panel">
-    <h2>Proximo paso del flujo</h2>
-    <p>Con este incidente creado, el siguiente hito sera construir el wizard inicial y el canvas Ishikawa para ramas, causas y acciones.</p>
+<section class="analysis-grid">
+    <article class="analysis-panel ishikawa-panel">
+        <div class="panel-heading">
+            <h2>Canvas Ishikawa</h2>
+            <span>@Model.Canvas.Causes.Count causa(s)</span>
+        </div>
+
+        <div class="fishbone-board">
+            <div class="fishbone-spine">
+                <span>@Model.Canvas.ProblemTitle</span>
+            </div>
+            <div class="branch-grid">
+                @foreach (var branch in Model.Canvas.Branches)
+                {
+                    var causes = causesByBranch.TryGetValue(branch.Id, out var branchCauses)
+                        ? branchCauses
+                        : new List<IshikawaRca.Contracts.Rca.IshikawaCauseDto>();
+
+                    <section class="branch-lane">
+                        <h3>@branch.Name</h3>
+                        @if (causes.Count == 0)
+                        {
+                            <p class="muted-text">Sin causas</p>
+                        }
+                        else
+                        {
+                            <ul class="cause-list">
+                                @foreach (var cause in causes)
+                                {
+                                    <li class="@(cause.IsRootCause ? "root-cause" : "")">
+                                        <strong>@cause.Title</strong>
+                                        <span>P@cause.ProbabilityScore I@cause.ImpactScore F@cause.FrequencyScore</span>
+                                        @if (!string.IsNullOrWhiteSpace(cause.EvidenceSummary))
+                                        {
+                                            <small>@cause.EvidenceSummary</small>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+                }
+            </div>
+        </div>
+    </article>
+
+    <aside class="analysis-panel">
+        <h2>Nueva causa</h2>
+        <form asp-controller="Rca" asp-action="AddCause" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Cause.BranchId" class="form-label">Rama</label>
+                <select asp-for="Cause.BranchId" asp-items="Model.BranchOptions" class="form-select"></select>
+                <span asp-validation-for="Cause.BranchId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Cause.Title" class="form-label">Causa</label>
+                <input asp-for="Cause.Title" class="form-control" />
+                <span asp-validation-for="Cause.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Cause.Description" class="form-label">Descripcion</label>
+                <textarea asp-for="Cause.Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Cause.Description" class="text-danger"></span>
+            </div>
+
+            <div class="score-grid">
+                <div>
+                    <label asp-for="Cause.ProbabilityScore" class="form-label">Prob.</label>
+                    <input asp-for="Cause.ProbabilityScore" class="form-control" type="number" min="0" max="5" />
+                </div>
+                <div>
+                    <label asp-for="Cause.ImpactScore" class="form-label">Impacto</label>
+                    <input asp-for="Cause.ImpactScore" class="form-control" type="number" min="0" max="5" />
+                </div>
+                <div>
+                    <label asp-for="Cause.FrequencyScore" class="form-label">Frec.</label>
+                    <input asp-for="Cause.FrequencyScore" class="form-control" type="number" min="0" max="5" />
+                </div>
+            </div>
+
+            <div class="form-check mt-3">
+                <input asp-for="Cause.IsRootCause" class="form-check-input" />
+                <label asp-for="Cause.IsRootCause" class="form-check-label">Causa raiz</label>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <label asp-for="Cause.EvidenceSummary" class="form-label">Evidencia</label>
+                <textarea asp-for="Cause.EvidenceSummary" class="form-control" rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Agregar causa</button>
+        </form>
+    </aside>
 </section>
+
+<section class="analysis-grid actions-grid">
+    <article class="analysis-panel">
+        <div class="panel-heading">
+            <h2>Acciones correctivas</h2>
+            <span>@Model.CorrectiveActions.Count accion(es)</span>
+        </div>
+
+        @if (Model.CorrectiveActions.Count == 0)
+        {
+            <p class="muted-text">Sin acciones</p>
+        }
+        else
+        {
+            <div class="action-list">
+                @foreach (var action in Model.CorrectiveActions)
+                {
+                    var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == action.CauseId);
+
+                    <section class="action-row">
+                        <div>
+                            <strong>@action.Title</strong>
+                            <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                        </div>
+                        <div>
+                            <span class="status-chip">@action.Status</span>
+                            <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
+                        </div>
+                    </section>
+                }
+            </div>
+        }
+    </article>
+
+    <aside class="analysis-panel">
+        <h2>Nueva accion</h2>
+        <form asp-controller="Rca" asp-action="AddAction" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Action.CauseId" class="form-label">Causa</label>
+                <select asp-for="Action.CauseId" class="form-select">
+                    <option value="">Sin causa especifica</option>
+                    @foreach (var cause in Model.CauseOptions)
+                    {
+                        <option value="@cause.Value">@cause.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.Title" class="form-label">Accion</label>
+                <input asp-for="Action.Title" class="form-control" />
+                <span asp-validation-for="Action.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.Description" class="form-label">Descripcion</label>
+                <textarea asp-for="Action.Description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.AssignedToUserId" class="form-label">Responsable</label>
+                <input asp-for="Action.AssignedToUserId" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.DueDate" class="form-label">Vencimiento</label>
+                <input asp-for="Action.DueDate" class="form-control" type="date" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Agregar accion</button>
+        </form>
+    </aside>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
