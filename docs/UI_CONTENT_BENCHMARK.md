@@ -34,6 +34,67 @@ Our current UI redesign is a good first visual base. The next leap is content in
 | [iObeya Digital Visual Management](https://www.iobeya.com/) | Lean users expect a visual room experience, not only database screens. | Obeya-style board, sticky-note cause mapping, action boards, daily management view. |
 | [Microsoft Dynamics 365 Production Floor Execution](https://learn.microsoft.com/en-us/dynamics365/supply-chain/production-control/production-floor-execution-setup) | Production floor UI must support configured devices and shop-floor roles. | Tablet mode, station/device context, operator-safe interaction model. |
 
+## Fishbone Creator Benchmark
+
+Source: [Boardmix comparison of fishbone diagram creators](https://boardmix.com/reviews/fishbone-diagram-creator/).
+
+The fishbone-specific market focuses mostly on diagram creation, templates, collaboration and export. This is useful, but it is not enough for an industrial RCA module. Our differentiator should be turning the fishbone from a drawing into an operational investigation object with evidence, owners, actions, status, audit trail and integrations.
+
+### Selection Criteria Found In The Market
+
+The mainstream criteria for a fishbone creator are:
+
+- Accessibility across devices.
+- Real-time collaboration.
+- Integration with productivity or project tools.
+- Ease of use.
+- Ready-made templates.
+- Export/sharing.
+
+For Ishikawa RCA, these criteria are necessary but incomplete. We also need:
+
+- Plant, line, asset, station and shift context.
+- Evidence linked to causes.
+- Cause confidence and validation state.
+- Corrective/preventive action ownership.
+- RCA phase and closure gates.
+- Integration events for Gantt, OEE, Andon, TPM, SCADA/MES/MRP and AI Gateway.
+- Auditability for operational and quality review.
+
+### Tool Pros And Cons
+
+| Tool | Pros to learn from | Cons / limits for our target | Implication for Ishikawa RCA |
+| --- | --- | --- | --- |
+| [Boardmix](https://boardmix.com/) | Real-time collaboration, intuitive interface, fishbone templates, free tier, multi-device use, Google Workspace integration. | Free tier is limited; positioned as a collaborative whiteboard more than an industrial RCA system. | Borrow collaborative canvas, template flow and low-friction creation. Add industrial records, evidence, actions and governance. |
+| [SmartDraw](https://www.smartdraw.com/) | Professional templates, broad shapes/tools, integrations with Office, Atlassian and Google Workspace, multi-device use, support. | More expensive; customization can become complex. | Borrow template polish and enterprise diagram quality. Avoid heavy configuration for shop-floor users. |
+| [DesignCap](https://www.designcap.com/) | Beginner-friendly, simple interface, many templates/images, affordable/free entry. | Limited free version and fewer customization options than stronger diagramming tools. | Borrow fast onboarding and simple creation. Avoid making RCA feel like a generic graphic design tool. |
+| [Lucidchart](https://www.lucidchart.com/) | Strong collaboration, project tracking, many templates, automated data linking. | Subscription-gated features/storage; online-only. | Borrow data-linked diagrams and collaboration. Add offline/degraded industrial states and local deployment readiness. |
+| [Creately](https://creately.com/) | Industry templates, integrations, team collaboration, task assignment and exports. | Not fully free; subscription cancellation friction. | Borrow task-follow-up directly from diagram nodes. Go further by making actions first-class CAPA records. |
+| [Canva](https://www.canva.com/) | Huge visual/template library, easy customization, beginner-friendly collaboration. | Watermarks/free limits; possible slowdowns; design-first instead of investigation-first. | Borrow visual clarity and approachability. Avoid decorative graphics that reduce operational precision. |
+
+### Competitive Gap We Can Own
+
+Most creators help teams draw a fishbone. Our module should help teams close an industrial problem.
+
+The winning direction is:
+
+- Fishbone as a living RCA artifact, not a static diagram.
+- Cause cards with owner, evidence, confidence and validation state.
+- AI-assisted cause suggestions with human approval.
+- CAPA actions generated from validated causes.
+- Timeline and audit trail tied to every investigation change.
+- Cross-module context from OEE, Andon, TPM, Gantt and SCADA events.
+- Large-screen Obeya/team review mode plus dense supervisor cockpit.
+
+### UI Lessons From Fishbone Creators
+
+- Creation must be nearly instant: choose template, define problem, start adding causes.
+- Branch editing must feel direct: add, rename, reorder, collapse and expand without page reloads.
+- Collaboration cues matter: who edited, who owns, what changed, what is blocked.
+- Export still matters: PDF/image/report for meetings and audits.
+- The canvas needs zoom, fit-to-screen, print-friendly layout and tablet-friendly controls.
+- Templates should not be visual-only; they should encode RCA methods and required fields.
+
 ## Graphic Direction
 
 ### 1. Industrial Premium, Not Marketing Premium
