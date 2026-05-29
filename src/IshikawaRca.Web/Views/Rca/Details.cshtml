@@ -6,25 +6,53 @@
     var causesByBranch = Model.Canvas.Causes
         .GroupBy(x => x.BranchId)
         .ToDictionary(x => x.Key, x => x.ToList());
+    var rootCause = Model.Canvas.Causes.FirstOrDefault(x => x.IsRootCause);
+    var openActions = Model.CorrectiveActions.Count(x => !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
 }
 
-<section class="page-heading">
+<section class="rca-command-center">
     <div>
         <p class="module-kicker">@incident.SourceSystem</p>
         <h1>@incident.Title</h1>
         <p>@(incident.ProblemDescription ?? "Sin descripcion cargada.")</p>
     </div>
-    <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
+    <div class="command-actions">
+        <span class="status-chip">@incident.Status</span>
+        <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
+    </div>
 </section>
 
 @if (TempData["StatusMessage"] is string message)
 {
-    <div class="alert alert-success" role="status">@message</div>
+    <div class="alert alert-success premium-alert" role="status">@message</div>
 }
+
+<section class="metric-grid compact-metrics" aria-label="Resumen del RCA">
+    <article class="metric-tile">
+        <span class="metric-value">@incident.Severity</span>
+        <strong>Severidad</strong>
+        <p>Clasificacion inicial del evento.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@Model.Canvas.Causes.Count</span>
+        <strong>Causas</strong>
+        <p>Hipotesis cargadas en el canvas.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@openActions</span>
+        <strong>Acciones abiertas</strong>
+        <p>Trabajo correctivo pendiente.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@(rootCause is null ? "Pend." : "Raiz")</span>
+        <strong>Causa raiz</strong>
+        <p>@(rootCause?.Title ?? "Aun sin confirmar.")</p>
+    </article>
+</section>
 
 <section class="detail-grid">
     <article class="detail-panel">
-        <h2>Estado</h2>
+        <h2>Estado operativo</h2>
         <dl>
             <dt>Severidad</dt>
             <dd><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></dd>
@@ -55,8 +83,11 @@
 <section class="analysis-grid">
     <article class="analysis-panel ishikawa-panel">
         <div class="panel-heading">
-            <h2>Canvas Ishikawa</h2>
-            <span>@Model.Canvas.Causes.Count causa(s)</span>
+            <div>
+                <h2>Canvas Ishikawa</h2>
+                <span>Ramas 6M, causas, evidencia y causa raiz</span>
+            </div>
+            <span class="canvas-counter">@Model.Canvas.Causes.Count causa(s)</span>
         </div>
 
         <div class="fishbone-board">
@@ -71,10 +102,13 @@
                         : new List<IshikawaRca.Contracts.Rca.IshikawaCauseDto>();
 
                     <section class="branch-lane">
-                        <h3>@branch.Name</h3>
+                        <div class="branch-title-row">
+                            <h3>@branch.Name</h3>
+                            <span>@causes.Count</span>
+                        </div>
                         @if (causes.Count == 0)
                         {
-                            <p class="muted-text">Sin causas</p>
+                            <p class="muted-text">Sin causas cargadas</p>
                         }
                         else
                         {
@@ -98,7 +132,7 @@
         </div>
     </article>
 
-    <aside class="analysis-panel">
+    <aside class="analysis-panel capture-panel">
         <h2>Nueva causa</h2>
         <form asp-controller="Rca" asp-action="AddCause" asp-route-id="@incident.Id" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -154,13 +188,16 @@
 <section class="analysis-grid actions-grid">
     <article class="analysis-panel">
         <div class="panel-heading">
-            <h2>Acciones correctivas</h2>
-            <span>@Model.CorrectiveActions.Count accion(es)</span>
+            <div>
+                <h2>Acciones correctivas</h2>
+                <span>Responsables, vencimientos y trazabilidad</span>
+            </div>
+            <span class="canvas-counter">@Model.CorrectiveActions.Count accion(es)</span>
         </div>
 
         @if (Model.CorrectiveActions.Count == 0)
         {
-            <p class="muted-text">Sin acciones</p>
+            <p class="muted-text">Sin acciones cargadas</p>
         }
         else
         {
@@ -184,7 +221,7 @@
         }
     </article>
 
-    <aside class="analysis-panel">
+    <aside class="analysis-panel capture-panel">
         <h2>Nueva accion</h2>
         <form asp-controller="Rca" asp-action="AddAction" asp-route-id="@incident.Id" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>

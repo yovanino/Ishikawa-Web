@@ -4,70 +4,95 @@
     ViewData["Title"] = "Nuevo RCA";
 }
 
-<section class="page-heading">
+<section class="page-heading premium-heading">
     <div>
         <p class="module-kicker">Carga manual</p>
         <h1>Nuevo incidente RCA</h1>
-        <p>Registra un problema operativo para iniciar el analisis Ishikawa sin depender de Gantt ni SCADA.</p>
+        <p>Registra el problema con suficiente contexto para iniciar el analisis Ishikawa y las integraciones externas.</p>
     </div>
 </section>
 
-<form class="form-panel" asp-controller="Rca" asp-action="Create" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<section class="form-layout">
+    <aside class="context-panel">
+        <p class="module-kicker">Checklist</p>
+        <h2>Contexto minimo</h2>
+        <ul class="premium-list">
+            <li>Problema observable y especifico.</li>
+            <li>Severidad inicial acordada.</li>
+            <li>Maquina, linea u orden si aplica.</li>
+            <li>Responsable o quien reporta.</li>
+        </ul>
+        <div class="context-callout">
+            <strong>Modo standalone</strong>
+            <span>Este RCA puede nacer sin Gantt y luego ser consumido por API.</span>
+        </div>
+    </aside>
 
-    <div class="form-grid">
-        <div class="form-field form-field-wide">
-            <label asp-for="Title" class="form-label"></label>
-            <input asp-for="Title" class="form-control" placeholder="Ej: Parada de prensa durante produccion" />
-            <span asp-validation-for="Title" class="text-danger"></span>
+    <form class="form-panel premium-form" asp-controller="Rca" asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="form-section">
+            <h2>Problema</h2>
+            <div class="form-field form-field-wide">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control form-control-lg" placeholder="Ej: Parada de prensa durante produccion" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="Severity" class="form-label"></label>
+                    <select asp-for="Severity" asp-items="ViewBag.Severities" class="form-select"></select>
+                    <span asp-validation-for="Severity" class="text-danger"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="OccurredAt" class="form-label"></label>
+                    <input asp-for="OccurredAt" class="form-control" />
+                    <span asp-validation-for="OccurredAt" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-field form-field-wide">
+                <label asp-for="ProblemDescription" class="form-label"></label>
+                <textarea asp-for="ProblemDescription" class="form-control" rows="5" placeholder="Describe el problema observado, contexto, impacto y primera evidencia."></textarea>
+                <span asp-validation-for="ProblemDescription" class="text-danger"></span>
+            </div>
         </div>
 
-        <div class="form-field">
-            <label asp-for="Severity" class="form-label"></label>
-            <select asp-for="Severity" asp-items="ViewBag.Severities" class="form-select"></select>
-            <span asp-validation-for="Severity" class="text-danger"></span>
+        <div class="form-section">
+            <h2>Contexto industrial</h2>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="MachineCode" class="form-label"></label>
+                    <input asp-for="MachineCode" class="form-control" placeholder="PRENSA-04" />
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="LineCode" class="form-label"></label>
+                    <input asp-for="LineCode" class="form-control" placeholder="LINEA-01" />
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="WorkOrderCode" class="form-label"></label>
+                    <input asp-for="WorkOrderCode" class="form-control" placeholder="WO-2026-000123" />
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="ReportedBy" class="form-label"></label>
+                    <input asp-for="ReportedBy" class="form-control" placeholder="supervisor.planta" />
+                </div>
+            </div>
         </div>
 
-        <div class="form-field">
-            <label asp-for="OccurredAt" class="form-label"></label>
-            <input asp-for="OccurredAt" class="form-control" />
-            <span asp-validation-for="OccurredAt" class="text-danger"></span>
+        <input asp-for="SourceSystem" type="hidden" />
+
+        <div class="form-actions">
+            <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Cancelar</a>
+            <button class="btn btn-primary" type="submit">Crear RCA</button>
         </div>
-
-        <div class="form-field form-field-wide">
-            <label asp-for="ProblemDescription" class="form-label"></label>
-            <textarea asp-for="ProblemDescription" class="form-control" rows="4" placeholder="Describe el problema observado, contexto y primer impacto."></textarea>
-            <span asp-validation-for="ProblemDescription" class="text-danger"></span>
-        </div>
-
-        <div class="form-field">
-            <label asp-for="MachineCode" class="form-label"></label>
-            <input asp-for="MachineCode" class="form-control" placeholder="PRENSA-04" />
-        </div>
-
-        <div class="form-field">
-            <label asp-for="LineCode" class="form-label"></label>
-            <input asp-for="LineCode" class="form-control" placeholder="LINEA-01" />
-        </div>
-
-        <div class="form-field">
-            <label asp-for="WorkOrderCode" class="form-label"></label>
-            <input asp-for="WorkOrderCode" class="form-control" placeholder="WO-2026-000123" />
-        </div>
-
-        <div class="form-field">
-            <label asp-for="ReportedBy" class="form-label"></label>
-            <input asp-for="ReportedBy" class="form-control" placeholder="supervisor.planta" />
-        </div>
-    </div>
-
-    <input asp-for="SourceSystem" type="hidden" />
-
-    <div class="form-actions">
-        <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Cancelar</a>
-        <button class="btn btn-primary" type="submit">Crear incidente</button>
-    </div>
-</form>
+    </form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

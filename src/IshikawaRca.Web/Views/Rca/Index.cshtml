@@ -2,28 +2,62 @@
 
 @{
     ViewData["Title"] = "Incidentes RCA";
+    var openCount = Model.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase));
+    var highCount = Model.Count(x => string.Equals(x.Severity, "High", StringComparison.OrdinalIgnoreCase) || string.Equals(x.Severity, "Critical", StringComparison.OrdinalIgnoreCase));
+    var manualCount = Model.Count(x => string.Equals(x.SourceSystem, "MANUAL", StringComparison.OrdinalIgnoreCase));
 }
 
-<section class="page-heading">
+<section class="page-heading premium-heading">
     <div>
-        <p class="module-kicker">Standalone</p>
+        <p class="module-kicker">RCA Control Center</p>
         <h1>Incidentes RCA</h1>
-        <p>Alta y seguimiento inicial de analisis Ishikawa creados manualmente o por integraciones futuras.</p>
+        <p>Seguimiento operativo de analisis Ishikawa creados manualmente o por integraciones externas.</p>
     </div>
     <a class="btn btn-primary" asp-controller="Rca" asp-action="Create">Nuevo incidente</a>
 </section>
 
 @if (TempData["StatusMessage"] is string message)
 {
-    <div class="alert alert-success" role="status">@message</div>
+    <div class="alert alert-success premium-alert" role="status">@message</div>
 }
 
-<section class="table-panel">
+<section class="metric-grid compact-metrics" aria-label="Resumen de incidentes">
+    <article class="metric-tile">
+        <span class="metric-value">@Model.Count</span>
+        <strong>Total RCA</strong>
+        <p>Incidentes registrados.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@openCount</span>
+        <strong>Abiertos</strong>
+        <p>Analisis en curso.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@highCount</span>
+        <strong>Alta prioridad</strong>
+        <p>Severidad High o Critical.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@manualCount</span>
+        <strong>Manual</strong>
+        <p>Cargados desde UI local.</p>
+    </article>
+</section>
+
+<section class="table-panel premium-table-panel">
+    <div class="panel-heading table-heading">
+        <div>
+            <h2>Tablero de seguimiento</h2>
+            <span>Ultimos incidentes RCA registrados</span>
+        </div>
+    </div>
+
     @if (Model.Count == 0)
     {
-        <div class="empty-state">
-            <h2>No hay incidentes RCA cargados</h2>
-            <p>Empeza creando un incidente manual. Mas adelante tambien entraran eventos desde Gantt, SCADA, Andon, TPM u OEE.</p>
+        <div class="empty-state premium-empty">
+            <span class="empty-symbol">RCA</span>
+            <h2>No hay incidentes cargados</h2>
+            <p>Empeza con un RCA manual. Despues entraran eventos desde Gantt, SCADA, Andon, TPM u OEE.</p>
             <a class="btn btn-primary" asp-controller="Rca" asp-action="Create">Crear primer incidente</a>
         </div>
     }
@@ -37,7 +71,7 @@
                         <th>Origen</th>
                         <th>Severidad</th>
                         <th>Estado</th>
-                        <th>Maquina</th>
+                        <th>Activo</th>
                         <th>Creado</th>
                         <th></th>
                     </tr>
@@ -46,20 +80,23 @@
                 @foreach (var incident in Model)
                 {
                     <tr>
-                        <td>
+                        <td class="problem-cell">
                             <strong>@incident.Title</strong>
                             @if (!string.IsNullOrWhiteSpace(incident.ProblemDescription))
                             {
                                 <span>@incident.ProblemDescription</span>
                             }
                         </td>
-                        <td>@incident.SourceSystem</td>
+                        <td><span class="source-chip">@incident.SourceSystem</span></td>
                         <td><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></td>
-                        <td>@incident.Status</td>
-                        <td>@(incident.MachineCode ?? "-")</td>
+                        <td><span class="status-chip">@incident.Status</span></td>
+                        <td>
+                            <strong>@(incident.MachineCode ?? "-")</strong>
+                            <span>@(incident.LineCode ?? "Sin linea")</span>
+                        </td>
                         <td>@incident.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Rca" asp-action="Details" asp-route-id="@incident.Id">Ver</a>
+                            <a class="btn btn-sm btn-outline-secondary" asp-controller="Rca" asp-action="Details" asp-route-id="@incident.Id">Abrir</a>
                         </td>
                     </tr>
                 }

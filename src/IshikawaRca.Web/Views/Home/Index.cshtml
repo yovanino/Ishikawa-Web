@@ -1,49 +1,92 @@
 @{
-    ViewData["Title"] = "Inicio";
+    ViewData["Title"] = "Cockpit";
 }
 
-<section class="module-header">
-    <div>
+<section class="hero-command">
+    <div class="hero-copy">
         <p class="module-kicker">Modulo independiente</p>
-        <h1>Ishikawa RCA</h1>
+        <h1>Ishikawa RCA Cockpit</h1>
         <p class="module-summary">
-            Analisis visual de causa raiz para eventos industriales, integrable por APIs con Gantt, SCADA,
-            Andon, TPM, OEE y la plataforma global futura.
+            Analisis visual de causa raiz para eventos industriales, con API propia, MySQL, integracion externa e IA asistida en modo stub.
         </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" asp-controller="Rca" asp-action="Create">Nuevo incidente</a>
+            <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Ver tablero RCA</a>
+        </div>
     </div>
-    <div class="module-status">
-        <span class="status-dot"></span>
-        Base MVC inicial
+    <div class="hero-signal" aria-label="Estado del modulo">
+        <div>
+            <span class="signal-label">Runtime</span>
+            <strong>Standalone</strong>
+        </div>
+        <div>
+            <span class="signal-label">Persistencia</span>
+            <strong>MySQL</strong>
+        </div>
+        <div>
+            <span class="signal-label">AI Gateway</span>
+            <strong>Stub ready</strong>
+        </div>
     </div>
 </section>
 
-<section class="workflow-grid" aria-label="Flujo principal del modulo">
-    <article class="workflow-card">
-        <span class="step-number">01</span>
-        <h2>Incidente</h2>
-        <p>Registrar problema desde operador, Gantt, SCADA, Andon o API externa.</p>
+<section class="metric-grid" aria-label="Capacidades principales">
+    <article class="metric-tile">
+        <span class="metric-value">REST</span>
+        <strong>API v1</strong>
+        <p>Entrada manual o desde sistemas externos.</p>
     </article>
-    <article class="workflow-card">
-        <span class="step-number">02</span>
-        <h2>Wizard</h2>
-        <p>Guiar severidad, impacto, contexto industrial y alcance del analisis.</p>
+    <article class="metric-tile">
+        <span class="metric-value">6M</span>
+        <strong>Canvas Ishikawa</strong>
+        <p>Metodo, Maquina, Material, Mano de obra, Medicion y Medio ambiente.</p>
     </article>
-    <article class="workflow-card">
-        <span class="step-number">03</span>
-        <h2>Canvas</h2>
-        <p>Construir ramas, causas, subcausas, evidencias y causa raiz probable.</p>
+    <article class="metric-tile">
+        <span class="metric-value">AI</span>
+        <strong>Asistencia preparada</strong>
+        <p>Sugerencias y resumen sin acoplar el modelo al modulo.</p>
     </article>
-    <article class="workflow-card">
-        <span class="step-number">04</span>
-        <h2>Acciones</h2>
-        <p>Generar acciones correctivas, responsables, fechas y cierre trazable.</p>
+    <article class="metric-tile">
+        <span class="metric-value">SYNC</span>
+        <strong>Snapshots externos</strong>
+        <p>Salida limpia para Gantt, Gateway, OEE o app global.</p>
     </article>
+</section>
+
+<section class="flow-band" aria-label="Flujo principal del modulo">
+    <header class="section-title">
+        <p class="module-kicker">Operacion RCA</p>
+        <h2>Del evento al cierre trazable</h2>
+    </header>
+    <div class="workflow-grid">
+        <article class="workflow-card">
+            <span class="step-number">01</span>
+            <h3>Incidente</h3>
+            <p>Registrar problema desde operador, Gantt, SCADA, Andon o API externa.</p>
+        </article>
+        <article class="workflow-card">
+            <span class="step-number">02</span>
+            <h3>Analisis</h3>
+            <p>Organizar el problema en ramas, contexto industrial y primeras hipotesis.</p>
+        </article>
+        <article class="workflow-card">
+            <span class="step-number">03</span>
+            <h3>Causa raiz</h3>
+            <p>Priorizar probabilidad, impacto, frecuencia y evidencia disponible.</p>
+        </article>
+        <article class="workflow-card">
+            <span class="step-number">04</span>
+            <h3>Acciones</h3>
+            <p>Asignar responsables, fechas y seguimiento de acciones correctivas.</p>
+        </article>
+    </div>
 </section>
 
 <section class="integration-band">
     <div>
-        <h2>Contratos preparados</h2>
-        <p>El modulo nacera desacoplado: referencias externas, eventos publicados y consumo futuro de AI Gateway.</p>
+        <p class="module-kicker">Contratos preparados</p>
+        <h2>Listo para integrarse sin perder autonomia</h2>
+        <p>El modulo conserva UI, API y persistencia propias. La app global consumira snapshots, eventos y endpoints versionados.</p>
     </div>
     <ul>
         <li>REST API v1</li>
@@ -52,12 +95,3 @@
         <li>AI Gateway</li>
     </ul>
 </section>
-
-<div class="next-panel">
-    <h2>Proximo paso tecnico</h2>
-    <p>Crear incidentes manuales, revisar el detalle y preparar el wizard/canvas visual.</p>
-    <div class="panel-actions">
-        <a class="btn btn-primary" asp-controller="Rca" asp-action="Create">Nuevo incidente</a>
-        <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Ver incidentes</a>
-    </div>
-</div>
