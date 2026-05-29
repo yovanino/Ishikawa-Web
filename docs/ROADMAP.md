@@ -23,6 +23,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Acciones correctivas.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
+- [x] Contexto basico de reclamo interno/externo.
 
 ## Fase 2 - Experiencia Visual
 
@@ -42,6 +43,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Integracion SCADA/Gateway por API.
 - Timeline de RCA.
 - Estados y auditoria ampliada.
+- Actor de reclamo explicito: area interna, cliente o proveedor.
+- Intake link seguro para proveedor/cliente.
 
 ## Fase 4 - Inteligencia Asistida
 
@@ -56,6 +59,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 
 - Registro en app global.
 - Integracion con Identity/Tenant global.
+- Integracion con maestros globales de clientes y proveedores.
 - Integracion con Event Bus global.
 - Timeline operacional unificado.
 - Dashboard cross-module.

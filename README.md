@@ -111,6 +111,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 - [Integracion con IA](docs/AI_INTEGRATION.md)
 - [Operacion local](docs/LOCAL_OPERATIONS.md)
 - [Benchmark UI y contenido](docs/UI_CONTENT_BENCHMARK.md)
+- [Intake externo cliente/proveedor](docs/EXTERNAL_CLAIM_INTAKE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Estado y pendientes](docs/STATUS_AND_NEXT_STEPS.md)
 
