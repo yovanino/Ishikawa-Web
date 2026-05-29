@@ -86,16 +86,22 @@ No subir credenciales reales al repo. Para desarrollo local se puede usar `appse
 Levantar la app:
 
 ```powershell
-dotnet run --project src\IshikawaRca.Web\IshikawaRca.Web.csproj --urls http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-web.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20
 ```
 
 Validar APIs principales con la app corriendo y la DB migrada:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
 ```
 
 El smoke test crea un incidente demo, agrega causa raiz, agrega accion correctiva, consulta snapshot/eventos de integracion y prueba la IA en modo stub.
+
+Validacion local completa con arranque, smoke test y parada:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20 -RequestTimeoutSeconds 10 -ShutdownTimeoutSeconds 10
+```
 
 ## Documentacion
 

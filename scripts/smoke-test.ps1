@@ -1,6 +1,7 @@
 param(
     [string]$BaseUrl = "http://localhost:5025",
-    [string]$TenantId = "11111111-1111-1111-1111-111111111111"
+    [string]$TenantId = "11111111-1111-1111-1111-111111111111",
+    [int]$RequestTimeoutSeconds = 10
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,8 +15,20 @@ function Invoke-JsonPost {
     Invoke-RestMethod `
         -Method Post `
         -Uri $Uri `
+        -TimeoutSec $RequestTimeoutSeconds `
         -ContentType "application/json" `
         -Body ($Body | ConvertTo-Json -Depth 10)
+}
+
+function Invoke-JsonGet {
+    param(
+        [string]$Uri
+    )
+
+    Invoke-RestMethod `
+        -Method Get `
+        -Uri $Uri `
+        -TimeoutSec $RequestTimeoutSeconds
 }
 
 function Assert-Success {
@@ -34,6 +47,7 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 
 Write-Host "Ishikawa RCA smoke test"
 Write-Host "Base URL: $base"
+Write-Host "Request timeout: $RequestTimeoutSeconds seconds"
 
 $incidentBody = @{
     tenantId = $TenantId
@@ -54,7 +68,7 @@ Assert-Success $incident "Create incident"
 $incidentId = $incident.data.id
 Write-Host "Created incident: $incidentId"
 
-$canvas = Invoke-RestMethod -Method Get -Uri "$base/api/v1/rca/incidents/$incidentId/canvas"
+$canvas = Invoke-JsonGet "$base/api/v1/rca/incidents/$incidentId/canvas"
 Assert-Success $canvas "Get canvas"
 $branchId = $canvas.data.branches[0].id
 Write-Host "Using branch: $($canvas.data.branches[0].name)"
@@ -86,11 +100,11 @@ $action = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions" $acti
 Assert-Success $action "Add corrective action"
 Write-Host "Added action: $($action.data.id)"
 
-$snapshot = Invoke-RestMethod -Method Get -Uri "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
+$snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
 Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
 
-$events = Invoke-RestMethod -Method Get -Uri "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
+$events = Invoke-JsonGet "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
 Assert-Success $events "Get integration events"
 Write-Host "Events returned: $($events.data.Count)"
 

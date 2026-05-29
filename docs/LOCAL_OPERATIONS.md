@@ -53,7 +53,7 @@ Usar `/m:1` porque en esta instalacion local se observo un fallo silencioso con 
 ## Ejecucion
 
 ```powershell
-dotnet run --project src\IshikawaRca.Web\IshikawaRca.Web.csproj --urls http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-web.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20
 ```
 
 UI:
@@ -68,10 +68,27 @@ http://localhost:5025/Rca
 Con la app corriendo y la DB migrada:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
 ```
 
 El script crea un incidente demo, agrega una causa, agrega una accion, consulta snapshots de integracion y valida los endpoints de IA en modo stub.
+
+Validacion local completa:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20 -RequestTimeoutSeconds 10 -ShutdownTimeoutSeconds 10
+```
+
+Este comando normaliza el `Path` de la sesion, levanta la app, espera el puerto con timeout, ejecuta el smoke test y detiene el proceso aunque el test falle.
+
+## Timeouts Operativos
+
+- Startup de app local: 20 segundos.
+- Requests del smoke test: 10 segundos por request.
+- Shutdown de app local: 10 segundos.
+- Comandos de build desde Codex: 120 segundos como maximo.
+
+Evitar `dotnet run` interactivo para pruebas automatizadas. Usar los scripts de `scripts/` para no dejar procesos colgados.
 
 ## Cierre de Paso
 
