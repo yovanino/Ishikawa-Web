@@ -54,6 +54,34 @@ POST /ai/rca/detect-recurrence
 POST /ai/rca/generate-8d-draft
 ```
 
+## Endpoints del Modulo Ishikawa
+
+El modulo expone endpoints propios para que la UI o integraciones pidan asistencia. Internamente arma el contexto RCA y lo envia al cliente AI Gateway configurado.
+
+```http
+POST /api/v1/rca/incidents/{id}/ai/suggest-causes
+POST /api/v1/rca/incidents/{id}/ai/suggest-actions
+POST /api/v1/rca/incidents/{id}/ai/summarize
+```
+
+## Modo Stub
+
+La implementacion inicial usa `StubRcaAiGatewayClient`. Este modo no llama a ningun modelo externo: genera respuestas deterministicas por reglas simples para poder probar el flujo, validar contratos y continuar el desarrollo del modulo.
+
+Configuracion actual:
+
+```json
+{
+  "AiGateway": {
+    "Mode": "Stub",
+    "BaseUrl": "",
+    "TimeoutSeconds": 30
+  }
+}
+```
+
+Cuando exista el AI Gateway compartido, se reemplaza la implementacion de `IRcaAiGatewayClient` por un cliente HTTP. Los controladores, contratos publicos y servicio de aplicacion no necesitan cambiar.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.

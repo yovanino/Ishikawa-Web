@@ -47,6 +47,18 @@ GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 ```
 
+## APIs de Asistencia IA
+
+Estas APIs son opt-in. El RCA debe seguir funcionando aunque la IA este apagada o en modo stub.
+
+```http
+POST /api/v1/rca/incidents/{id}/ai/suggest-causes
+POST /api/v1/rca/incidents/{id}/ai/suggest-actions
+POST /api/v1/rca/incidents/{id}/ai/summarize
+```
+
+La respuesta incluye `metadata.provider`, `metadata.model` e `metadata.isFallback` para que la UI o la app global sepan si la recomendacion vino de IA real o de fallback.
+
 Snapshot de integracion:
 
 ```json

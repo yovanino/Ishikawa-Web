@@ -1,4 +1,6 @@
+using IshikawaRca.Application.Ai;
 using IshikawaRca.Application.Rca;
+using IshikawaRca.Infrastructure.Ai;
 using IshikawaRca.Infrastructure.Data;
 using IshikawaRca.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +26,8 @@ public static class DependencyInjection
                 mysqlOptions => mysqlOptions.EnableRetryOnFailure()));
 
         services.AddScoped<IRcaIncidentService, EfRcaIncidentService>();
+        services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
+        services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
 
         return services;
     }
