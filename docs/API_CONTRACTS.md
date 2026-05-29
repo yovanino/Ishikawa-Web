@@ -68,6 +68,8 @@ Snapshot de integracion:
   "externalTaskId": "TASK-2026-0001",
   "status": "Open",
   "severity": "High",
+  "claimScope": "Internal",
+  "claimOwnerName": "Produccion",
   "rootCauseTitle": "Falta de lubricacion en prensa",
   "openCorrectiveActionsCount": 2,
   "overdueCorrectiveActionsCount": 0,
@@ -92,8 +94,10 @@ Snapshot de integracion:
   "externalTaskId": "TASK-2026-0001",
   "externalEventId": null,
   "title": "Retraso por parada de maquina",
-  "description": "La tarea no pudo avanzar por parada de prensa.",
-  "severity": 3,
+  "problemDescription": "La tarea no pudo avanzar por parada de prensa.",
+  "severity": "High",
+  "claimScope": "Internal",
+  "claimOwnerName": "Produccion",
   "occurredAt": "2026-05-28T09:15:00-03:00",
   "machineCode": "PRENSA-04",
   "lineCode": "LINEA-01",
@@ -106,6 +110,11 @@ Snapshot de integracion:
   }
 }
 ```
+
+`claimScope` distingue el tipo de reclamo:
+
+- `Internal`: reclamo interno, donde `claimOwnerName` representa el area solicitante.
+- `External`: reclamo externo, donde `claimOwnerName` representa el cliente.
 
 ## Eventos de Dominio
 

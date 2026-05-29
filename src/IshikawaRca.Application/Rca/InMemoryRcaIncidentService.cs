@@ -25,6 +25,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             ProblemDescription = Normalize(request.ProblemDescription),
             Severity = ParseSeverity(request.Severity),
             Status = RcaIncidentStatus.Open,
+            ClaimScope = ParseClaimScope(request.ClaimScope),
+            ClaimOwnerName = Normalize(request.ClaimOwnerName),
             OccurredAt = request.OccurredAt,
             SourceSystem = Normalize(request.SourceSystem) ?? "MANUAL",
             ExternalTaskId = Normalize(request.ExternalTaskId),
@@ -277,6 +279,11 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = nameof(request.Severity), Code = "INVALID_SEVERITY", Message = "Severity debe ser Low, Medium, High o Critical." });
         }
 
+        if (!Enum.TryParse<RcaClaimScope>(request.ClaimScope, true, out _))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ClaimScope), Code = "INVALID_CLAIM_SCOPE", Message = "ClaimScope debe ser Internal o External." });
+        }
+
         return errors;
     }
 
@@ -328,6 +335,13 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             : RcaSeverity.Medium;
     }
 
+    private static RcaClaimScope ParseClaimScope(string claimScope)
+    {
+        return Enum.TryParse<RcaClaimScope>(claimScope, true, out var parsed)
+            ? parsed
+            : RcaClaimScope.Internal;
+    }
+
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -367,6 +381,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             ProblemDescription = incident.ProblemDescription,
             Severity = incident.Severity.ToString(),
             Status = incident.Status.ToString(),
+            ClaimScope = incident.ClaimScope.ToString(),
+            ClaimOwnerName = incident.ClaimOwnerName,
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
             ClosedAt = incident.ClosedAt,
@@ -456,6 +472,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Title = incident.Title,
             Status = incident.Status.ToString(),
             Severity = incident.Severity.ToString(),
+            ClaimScope = incident.ClaimScope.ToString(),
+            ClaimOwnerName = incident.ClaimOwnerName,
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
             ClosedAt = incident.ClosedAt,
@@ -504,7 +522,9 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                 {
                     ["title"] = incident.Title,
                     ["severity"] = incident.Severity.ToString(),
-                    ["status"] = incident.Status.ToString()
+                    ["status"] = incident.Status.ToString(),
+                    ["claimScope"] = incident.ClaimScope.ToString(),
+                    ["claimOwnerName"] = incident.ClaimOwnerName
                 })
         };
 

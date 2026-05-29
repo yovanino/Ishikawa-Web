@@ -12,6 +12,10 @@ public class RcaIntegrationSnapshotDto
 
     public string Severity { get; set; } = string.Empty;
 
+    public string ClaimScope { get; set; } = string.Empty;
+
+    public string? ClaimOwnerName { get; set; }
+
     public DateTimeOffset OccurredAt { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }

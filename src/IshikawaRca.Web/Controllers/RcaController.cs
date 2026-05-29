@@ -28,6 +28,7 @@ public class RcaController : Controller
     public IActionResult Create()
     {
         ViewBag.Severities = GetSeverityOptions();
+        ViewBag.ClaimScopes = GetClaimScopeOptions();
 
         return View(new CreateRcaIncidentViewModel());
     }
@@ -39,6 +40,7 @@ public class RcaController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.Severities = GetSeverityOptions();
+            ViewBag.ClaimScopes = GetClaimScopeOptions();
             return View(model);
         }
 
@@ -48,6 +50,8 @@ public class RcaController : Controller
             Title = model.Title,
             ProblemDescription = model.ProblemDescription,
             Severity = model.Severity,
+            ClaimScope = model.ClaimScope,
+            ClaimOwnerName = model.ClaimOwnerName,
             SourceSystem = model.SourceSystem,
             OccurredAt = model.OccurredAt,
             MachineCode = model.MachineCode,
@@ -65,6 +69,7 @@ public class RcaController : Controller
             }
 
             ViewBag.Severities = GetSeverityOptions();
+            ViewBag.ClaimScopes = GetClaimScopeOptions();
             return View(model);
         }
 
@@ -165,6 +170,15 @@ public class RcaController : Controller
             new SelectListItem("Media", "Medium"),
             new SelectListItem("Alta", "High"),
             new SelectListItem("Critica", "Critical")
+        ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetClaimScopeOptions()
+    {
+        return
+        [
+            new SelectListItem("Interno - area", "Internal"),
+            new SelectListItem("Externo - cliente", "External")
         ];
     }
 

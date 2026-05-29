@@ -12,7 +12,7 @@
 
 <section class="rca-command-center">
     <div>
-        <p class="module-kicker">@incident.SourceSystem</p>
+        <p class="module-kicker">@incident.SourceSystem | @incident.ClaimScope</p>
         <h1>@incident.Title</h1>
         <p>@(incident.ProblemDescription ?? "Sin descripcion cargada.")</p>
     </div>
@@ -32,6 +32,11 @@
         <span class="metric-value">@incident.Severity</span>
         <strong>Severidad</strong>
         <p>Clasificacion inicial del evento.</p>
+    </article>
+    <article class="metric-tile">
+        <span class="metric-value">@(string.Equals(incident.ClaimScope, "External", StringComparison.OrdinalIgnoreCase) ? "Cliente" : "Area")</span>
+        <strong>Reclamo</strong>
+        <p>@(incident.ClaimOwnerName ?? "Sin origen de reclamo.")</p>
     </article>
     <article class="metric-tile">
         <span class="metric-value">@Model.Canvas.Causes.Count</span>
@@ -58,6 +63,10 @@
             <dd><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></dd>
             <dt>Estado RCA</dt>
             <dd>@incident.Status</dd>
+            <dt>Tipo de reclamo</dt>
+            <dd>@incident.ClaimScope</dd>
+            <dt>Area / cliente</dt>
+            <dd>@(incident.ClaimOwnerName ?? "-")</dd>
             <dt>Creado</dt>
             <dd>@incident.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
             <dt>Evento</dt>

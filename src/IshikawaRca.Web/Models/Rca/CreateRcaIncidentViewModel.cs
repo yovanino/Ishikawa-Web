@@ -15,6 +15,14 @@ public class CreateRcaIncidentViewModel
     [Display(Name = "Severidad")]
     public string Severity { get; set; } = "Medium";
 
+    [Required]
+    [Display(Name = "Tipo de reclamo")]
+    public string ClaimScope { get; set; } = "Internal";
+
+    [Display(Name = "Area / cliente")]
+    [StringLength(160, ErrorMessage = "El area o cliente no puede superar 160 caracteres.")]
+    public string? ClaimOwnerName { get; set; }
+
     [Display(Name = "Origen")]
     public string SourceSystem { get; set; } = "MANUAL";
 

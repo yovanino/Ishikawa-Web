@@ -40,6 +40,8 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.ProblemDescription).HasMaxLength(4000);
         entity.Property(x => x.Severity).HasConversion<string>().HasMaxLength(32).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ClaimScope).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ClaimOwnerName).HasMaxLength(160);
         entity.Property(x => x.ClosureSummary).HasMaxLength(4000);
         entity.Property(x => x.SourceSystem).HasMaxLength(64).IsRequired();
         entity.Property(x => x.ExternalTaskId).HasMaxLength(120);
@@ -53,6 +55,7 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.ContextSnapshotJson).HasColumnType("json");
 
         entity.HasIndex(x => new { x.TenantId, x.Status, x.Severity });
+        entity.HasIndex(x => new { x.TenantId, x.ClaimScope, x.ClaimOwnerName });
         entity.HasIndex(x => new { x.TenantId, x.SourceSystem, x.ExternalTaskId });
         entity.HasIndex(x => new { x.TenantId, x.MachineCode, x.OccurredAt });
 

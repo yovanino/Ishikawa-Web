@@ -13,6 +13,10 @@ public class RcaIncident : TenantEntity
 
     public RcaIncidentStatus Status { get; set; } = RcaIncidentStatus.Open;
 
+    public RcaClaimScope ClaimScope { get; set; } = RcaClaimScope.Internal;
+
+    public string? ClaimOwnerName { get; set; }
+
     public DateTimeOffset OccurredAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset? ClosedAt { get; set; }

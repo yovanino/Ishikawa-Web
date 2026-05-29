@@ -18,6 +18,10 @@ public class CreateRcaIncidentRequest
 
     public string Severity { get; set; } = "Medium";
 
+    public string ClaimScope { get; set; } = "Internal";
+
+    public string? ClaimOwnerName { get; set; }
+
     public DateTimeOffset OccurredAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string? MachineCode { get; set; }
