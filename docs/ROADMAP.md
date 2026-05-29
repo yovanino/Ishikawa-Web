@@ -1,23 +1,28 @@
 # Roadmap del Modulo Ishikawa RCA
 
+## Estado Actual
+
+El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, contratos de integracion y stub de AI Gateway. El siguiente objetivo es aplicar la migracion en un MySQL real y validar el smoke test end-to-end.
+
 ## Fase 0 - Base del Repositorio
 
-- Documentar alcance modular.
-- Definir contratos API iniciales.
-- Definir eventos de dominio.
-- Definir preparacion para AI Gateway.
-- Crear solucion ASP.NET Core MVC.
+- [x] Documentar alcance modular.
+- [x] Definir contratos API iniciales.
+- [x] Definir eventos de dominio.
+- [x] Definir preparacion para AI Gateway.
+- [x] Crear solucion ASP.NET Core MVC.
 
 ## Fase 1 - MVP Operacional
 
-- CRUD de incidentes RCA.
-- Wizard basico.
-- Canvas Ishikawa visual inicial.
-- Categorias dinamicas.
-- Causas y subcausas.
-- Acciones correctivas.
-- Persistencia en MySQL.
-- API para crear incidentes desde sistemas externos.
+- [x] CRUD de incidentes RCA.
+- [ ] Wizard basico.
+- [x] Canvas Ishikawa visual inicial.
+- [x] Categorias dinamicas base.
+- [x] Causas.
+- [ ] Subcausas.
+- [x] Acciones correctivas.
+- [x] Persistencia en MySQL.
+- [x] API para crear incidentes desde sistemas externos.
 
 ## Fase 2 - Experiencia Visual
 

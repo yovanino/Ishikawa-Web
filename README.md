@@ -83,11 +83,27 @@ dotnet ef database update --project src\IshikawaRca.Infrastructure\IshikawaRca.I
 
 No subir credenciales reales al repo. Para desarrollo local se puede usar `appsettings.Local.json`, user secrets o variables de entorno.
 
+Levantar la app:
+
+```powershell
+dotnet run --project src\IshikawaRca.Web\IshikawaRca.Web.csproj --urls http://localhost:5025
+```
+
+Validar APIs principales con la app corriendo y la DB migrada:
+
+```powershell
+.\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
+```
+
+El smoke test crea un incidente demo, agrega causa raiz, agrega accion correctiva, consulta snapshot/eventos de integracion y prueba la IA en modo stub.
+
 ## Documentacion
 
 - [Contexto maestro](docs/MASTER_CONTEXT.md)
 - [Limites del modulo](docs/MODULE_BOUNDARIES.md)
 - [Contratos API y eventos](docs/API_CONTRACTS.md)
 - [Integracion con IA](docs/AI_INTEGRATION.md)
+- [Operacion local](docs/LOCAL_OPERATIONS.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Estado y pendientes](docs/STATUS_AND_NEXT_STEPS.md)
 

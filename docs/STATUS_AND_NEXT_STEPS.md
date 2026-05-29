@@ -1,0 +1,51 @@
+# Estado y Pendientes
+
+Fecha de corte: 2026-05-29.
+
+## Cerrado
+
+1. Base modular del repo
+   - Solucion ASP.NET Core MVC.
+   - Proyectos separados: Web, Domain, Contracts, Application, Infrastructure.
+   - Documentacion de alcance, limites, contratos, AI y roadmap.
+
+2. Persistencia
+   - EF Core + MySQL.
+   - `RcaDbContext`.
+   - Migracion inicial.
+   - Servicio EF para incidentes, ramas, causas y acciones.
+
+3. Flujo RCA funcional
+   - Alta/listado/detalle de incidentes.
+   - Canvas Ishikawa inicial.
+   - Carga de causas con puntajes.
+   - Marcado de causa raiz.
+   - Acciones correctivas.
+
+4. Integracion externa
+   - Endpoints versionados `/api/v1`.
+   - Snapshots para Gantt, Gateway, OEE, Andon o app global.
+   - Feed derivado de eventos RCA.
+
+5. Preparacion IA
+   - Contratos de asistencia IA.
+   - Servicio de aplicacion para armar contexto RCA.
+   - Cliente AI Gateway abstracto.
+   - Implementacion stub local para probar sin IA real.
+
+## Pendientes Tecnicos Inmediatos
+
+- Aplicar migracion en MySQL con credenciales reales.
+- Ejecutar smoke test contra la app levantada.
+- Agregar autenticacion/autorizacion cuando se defina Identity global.
+- Agregar tenant real en lugar del tenant demo usado por la UI.
+- Agregar tests automatizados cuando el flujo se estabilice.
+- Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
+- Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
+
+## Siguiente Corte Recomendado
+
+El proximo paso natural es elegir uno de estos dos caminos:
+
+- Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
+- Experiencia visual: canvas con interacciones, layout mejorado, subcausas y evidencias.
