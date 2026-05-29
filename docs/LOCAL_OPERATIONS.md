@@ -68,7 +68,7 @@ http://localhost:5025/Rca
 Con la app corriendo y la DB migrada:
 
 ```powershell
-.\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
 ```
 
 El script crea un incidente demo, agrega una causa, agrega una accion, consulta snapshots de integracion y valida los endpoints de IA en modo stub.

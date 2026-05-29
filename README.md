@@ -92,7 +92,7 @@ dotnet run --project src\IshikawaRca.Web\IshikawaRca.Web.csproj --urls http://lo
 Validar APIs principales con la app corriendo y la DB migrada:
 
 ```powershell
-.\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025
 ```
 
 El smoke test crea un incidente demo, agrega causa raiz, agrega accion correctiva, consulta snapshot/eventos de integracion y prueba la IA en modo stub.
