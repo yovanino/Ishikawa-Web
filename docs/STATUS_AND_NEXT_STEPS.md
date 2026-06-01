@@ -18,6 +18,7 @@ Fecha de corte: 2026-06-01.
 3. Flujo RCA funcional
    - Alta/listado/detalle de incidentes.
    - Canvas Ishikawa inicial.
+   - Timeline visual inicial en detalle RCA.
    - Carga de causas con puntajes.
    - Marcado de causa raiz.
    - Acciones correctivas.
@@ -54,4 +55,4 @@ Fecha de corte: 2026-06-01.
 El proximo paso natural es elegir uno de estos dos caminos:
 
 - Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
-- Workflow RCA: timeline visual, rechazo formal de intake externo, evidencias adjuntas y CAPA.
+- Workflow RCA: rechazo formal de intake externo, evidencias adjuntas, CAPA y auditoria ampliada.

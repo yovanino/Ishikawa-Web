@@ -13,6 +13,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaExternalIntakeDto> ExternalIntakes { get; set; } = [];
 
+    public IReadOnlyList<RcaDomainEventDto> TimelineEvents { get; set; } = [];
+
     public AddIshikawaCauseViewModel Cause { get; set; } = new();
 
     public AddCorrectiveActionViewModel Action { get; set; } = new();

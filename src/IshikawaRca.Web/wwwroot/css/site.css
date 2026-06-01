@@ -945,6 +945,88 @@ textarea.form-control {
   padding: 14px;
 }
 
+.timeline-panel {
+  margin-bottom: 18px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-list li {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  padding: 0 0 18px;
+  position: relative;
+}
+
+.timeline-list li::before {
+  background: var(--line);
+  bottom: 0;
+  content: "";
+  left: 8px;
+  position: absolute;
+  top: 18px;
+  width: 2px;
+}
+
+.timeline-list li:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-list li:last-child::before {
+  display: none;
+}
+
+.timeline-dot {
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  height: 18px;
+  position: relative;
+  width: 18px;
+  z-index: 1;
+}
+
+.timeline-dot-incident {
+  background: #1b2b34;
+}
+
+.timeline-dot-cause {
+  background: var(--accent);
+}
+
+.timeline-dot-action {
+  background: var(--success);
+}
+
+.timeline-dot-external {
+  background: var(--brand);
+}
+
+.timeline-list strong,
+.timeline-list span,
+.timeline-list small {
+  display: block;
+}
+
+.timeline-list strong {
+  color: var(--ink);
+  font-size: 0.96rem;
+  font-weight: 830;
+}
+
+.timeline-list span,
+.timeline-list small {
+  color: #657586;
+  font-size: 0.88rem;
+}
+
 .external-review-form {
   align-items: end;
   background: #ffffff;

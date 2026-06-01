@@ -99,6 +99,37 @@
     </article>
 </section>
 
+<section class="analysis-panel timeline-panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Timeline RCA</h2>
+            <span>Eventos operativos e integraciones del analisis</span>
+        </div>
+        <span class="canvas-counter">@Model.TimelineEvents.Count evento(s)</span>
+    </div>
+
+    @if (Model.TimelineEvents.Count == 0)
+    {
+        <p class="muted-text">Sin eventos registrados.</p>
+    }
+    else
+    {
+        <ol class="timeline-list">
+            @foreach (var timelineEvent in Model.TimelineEvents)
+            {
+                <li>
+                    <span class="timeline-dot timeline-dot-@GetTimelineKind(timelineEvent.Type)"></span>
+                    <div>
+                        <strong>@GetTimelineLabel(timelineEvent.Type)</strong>
+                        <span>@timelineEvent.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</span>
+                        <small>@GetTimelineDetail(timelineEvent)</small>
+                    </div>
+                </li>
+            }
+        </ol>
+    }
+</section>
+
 <section class="analysis-grid actions-grid">
     <article class="analysis-panel">
         <div class="panel-heading">
@@ -393,4 +424,67 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+}
+
+@functions {
+    private static string GetTimelineKind(string eventType)
+    {
+        if (eventType.Contains("ExternalIntake", StringComparison.OrdinalIgnoreCase))
+        {
+            return "external";
+        }
+
+        if (eventType.Contains("Action", StringComparison.OrdinalIgnoreCase))
+        {
+            return "action";
+        }
+
+        if (eventType.Contains("RootCause", StringComparison.OrdinalIgnoreCase) ||
+            eventType.Contains("Cause", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cause";
+        }
+
+        return "incident";
+    }
+
+    private static string GetTimelineLabel(string eventType)
+    {
+        return eventType switch
+        {
+            "RcaIncidentCreated" => "Incidente creado",
+            "RcaCauseCreated" => "Causa agregada",
+            "RcaRootCauseSelected" => "Causa raiz seleccionada",
+            "RcaCorrectiveActionCreated" => "Accion correctiva creada",
+            "RcaExternalIntakeCreated" => "Link externo creado",
+            "RcaExternalIntakeOpened" => "Link externo abierto",
+            "RcaExternalIntakeSubmitted" => "Respuesta externa enviada",
+            "RcaExternalIntakeReviewed" => "Respuesta externa revisada",
+            "RcaExternalIntakeRevoked" => "Link externo revocado",
+            "RcaExternalIntakeExpired" => "Link externo expirado",
+            _ => eventType
+        };
+    }
+
+    private static string GetTimelineDetail(IshikawaRca.Contracts.Rca.RcaDomainEventDto timelineEvent)
+    {
+        var data = timelineEvent.Data;
+
+        if (data.TryGetValue("title", out var title) && !string.IsNullOrWhiteSpace(title))
+        {
+            return title;
+        }
+
+        if (data.TryGetValue("actorName", out var actorName) && !string.IsNullOrWhiteSpace(actorName))
+        {
+            return actorName;
+        }
+
+        if (data.TryGetValue("actorType", out var actorType) && !string.IsNullOrWhiteSpace(actorType))
+        {
+            return actorType;
+        }
+
+        return timelineEvent.SourceSystem;
+    }
 }

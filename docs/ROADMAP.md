@@ -44,7 +44,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Webhooks/eventos salientes.
 - Integracion Gantt por API.
 - Integracion SCADA/Gateway por API.
-- Timeline de RCA.
+- [x] Timeline visual de RCA alimentada por eventos de integracion.
 - Estados y auditoria ampliada.
 - Eventos de integracion para intake externo.
 - Rechazo formal y auditoria ampliada de intake externo.

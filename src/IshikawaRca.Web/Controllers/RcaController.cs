@@ -316,13 +316,18 @@ public class RcaController : Controller
 
         var actionsResult = await _rcaIncidentService.ListCorrectiveActionsAsync(id, cancellationToken);
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
+        var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
 
         return new RcaIncidentDetailsViewModel
         {
             Incident = incidentResult.Data,
             Canvas = canvasResult.Data,
             CorrectiveActions = actionsResult.Data ?? [],
-            ExternalIntakes = externalIntakesResult.Data ?? []
+            ExternalIntakes = externalIntakesResult.Data ?? [],
+            TimelineEvents = timelineResult.Data?
+                .OrderByDescending(x => x.OccurredAt)
+                .Take(20)
+                .ToList() ?? []
         };
     }
 }

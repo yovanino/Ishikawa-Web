@@ -156,6 +156,10 @@ try {
         -UseBasicParsing `
         -TimeoutSec $RequestTimeoutSeconds
 
+    if ($detailsAfterSubmit.Content -notmatch "Timeline RCA") {
+        throw "RCA timeline panel not found in details page."
+    }
+
     $reviewToken = Get-AntiForgeryToken $detailsAfterSubmit.Content
     $intakeMatch = [regex]::Match($detailsAfterSubmit.Content, 'name="intakeId" value="([^"]+)"')
     if (-not $intakeMatch.Success) {
