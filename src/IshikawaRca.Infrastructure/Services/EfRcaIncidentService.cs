@@ -268,6 +268,96 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Accion correctiva agregada.");
     }
 
+    public async Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var incidentExists = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (!incidentExists)
+        {
+            return ApiResult<IReadOnlyList<RcaEvidenceDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        var evidence = await _dbContext.RcaEvidence
+            .AsNoTracking()
+            .Where(x => x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .OrderByDescending(x => x.CapturedAt)
+            .ThenByDescending(x => x.CreatedAt)
+            .Select(x => ToEvidenceDto(x))
+            .ToListAsync(cancellationToken);
+
+        return ApiResult<IReadOnlyList<RcaEvidenceDto>>.Ok(evidence);
+    }
+
+    public async Task<ApiResult<RcaEvidenceDto>> AddEvidenceAsync(Guid incidentId, AddRcaEvidenceRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateAddEvidenceRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return ApiResult<RcaEvidenceDto>.Fail("No se pudo agregar la evidencia.", validationErrors.ToArray());
+        }
+
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        if (request.CauseId.HasValue)
+        {
+            var causeExists = await _dbContext.IshikawaCauses
+                .AnyAsync(x => x.Id == request.CauseId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!causeExists)
+            {
+                return ApiResult<RcaEvidenceDto>.Fail(
+                    "No se pudo agregar la evidencia.",
+                    new ApiError { Field = nameof(request.CauseId), Code = "CAUSE_NOT_FOUND", Message = "La causa seleccionada no corresponde al incidente RCA." });
+            }
+        }
+
+        if (request.ExternalIntakeId.HasValue)
+        {
+            var intakeExists = await _dbContext.RcaExternalIntakeRequests
+                .AnyAsync(x => x.Id == request.ExternalIntakeId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!intakeExists)
+            {
+                return ApiResult<RcaEvidenceDto>.Fail(
+                    "No se pudo agregar la evidencia.",
+                    new ApiError { Field = nameof(request.ExternalIntakeId), Code = "INTAKE_NOT_FOUND", Message = "El intake externo no corresponde al incidente RCA." });
+            }
+        }
+
+        var evidence = new RcaEvidence
+        {
+            TenantId = incident.TenantId,
+            RcaIncidentId = incident.Id,
+            CauseId = request.CauseId,
+            ExternalIntakeId = request.ExternalIntakeId,
+            Title = request.Title.Trim(),
+            EvidenceType = Normalize(request.EvidenceType) ?? "Observation",
+            Source = Normalize(request.Source) ?? "Manual",
+            Summary = Normalize(request.Summary),
+            ReferenceUri = Normalize(request.ReferenceUri),
+            CapturedAt = request.CapturedAt ?? DateTimeOffset.UtcNow,
+            CapturedByUserId = Normalize(request.CapturedByUserId)
+        };
+
+        _dbContext.RcaEvidence.Add(evidence);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia agregada.");
+    }
+
     public async Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         var incident = await _dbContext.RcaIncidents
@@ -398,6 +488,30 @@ public class EfRcaIncidentService : IRcaIncidentService
                     }));
             }
 
+            var evidence = await _dbContext.RcaEvidence
+                .AsNoTracking()
+                .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var evidenceItem in evidence)
+            {
+                events.Add(CreateEvent(
+                    $"rca-evidence-attached:{evidenceItem.Id}",
+                    "RcaEvidenceAttached",
+                    evidenceItem.CreatedAt,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["evidenceId"] = evidenceItem.Id.ToString(),
+                        ["causeId"] = evidenceItem.CauseId?.ToString(),
+                        ["externalIntakeId"] = evidenceItem.ExternalIntakeId?.ToString(),
+                        ["title"] = evidenceItem.Title,
+                        ["evidenceType"] = evidenceItem.EvidenceType,
+                        ["source"] = evidenceItem.Source,
+                        ["referenceUri"] = evidenceItem.ReferenceUri
+                    }));
+            }
+
             var externalIntakes = await _dbContext.RcaExternalIntakeRequests
                 .AsNoTracking()
                 .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
@@ -477,6 +591,28 @@ public class EfRcaIncidentService : IRcaIncidentService
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             errors.Add(new ApiError { Field = nameof(request.Title), Code = "ACTION_TITLE_REQUIRED", Message = "El titulo de la accion es obligatorio." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateAddEvidenceRequest(AddRcaEvidenceRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Title), Code = "EVIDENCE_TITLE_REQUIRED", Message = "El titulo de la evidencia es obligatorio." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.EvidenceType))
+        {
+            errors.Add(new ApiError { Field = nameof(request.EvidenceType), Code = "EVIDENCE_TYPE_REQUIRED", Message = "El tipo de evidencia es obligatorio." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Source))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Source), Code = "EVIDENCE_SOURCE_REQUIRED", Message = "El origen de la evidencia es obligatorio." });
         }
 
         return errors;
@@ -623,6 +759,25 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
     }
 
+    private static RcaEvidenceDto ToEvidenceDto(RcaEvidence evidence)
+    {
+        return new RcaEvidenceDto
+        {
+            Id = evidence.Id,
+            RcaIncidentId = evidence.RcaIncidentId,
+            CauseId = evidence.CauseId,
+            ExternalIntakeId = evidence.ExternalIntakeId,
+            Title = evidence.Title,
+            EvidenceType = evidence.EvidenceType,
+            Source = evidence.Source,
+            Summary = evidence.Summary,
+            ReferenceUri = evidence.ReferenceUri,
+            CapturedAt = evidence.CapturedAt,
+            CapturedByUserId = evidence.CapturedByUserId,
+            CreatedAt = evidence.CreatedAt
+        };
+    }
+
     private async Task<RcaIntegrationSnapshotDto> BuildIntegrationSnapshotAsync(RcaIncident incident, CancellationToken cancellationToken)
     {
         var causes = await _dbContext.IshikawaCauses
@@ -631,6 +786,11 @@ public class EfRcaIncidentService : IRcaIncidentService
             .ToListAsync(cancellationToken);
 
         var actions = await _dbContext.CorrectiveActions
+            .AsNoTracking()
+            .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        var evidence = await _dbContext.RcaEvidence
             .AsNoTracking()
             .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
             .ToListAsync(cancellationToken);
@@ -662,7 +822,7 @@ public class EfRcaIncidentService : IRcaIncidentService
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
             ClosedAt = incident.ClosedAt,
-            LastUpdatedAt = GetLastUpdatedAt(incident, causes, actions),
+            LastUpdatedAt = GetLastUpdatedAt(incident, causes, actions, evidence),
             SourceSystem = incident.SourceSystem,
             ExternalTaskId = incident.ExternalTaskId,
             ExternalEventId = incident.ExternalEventId,
@@ -674,6 +834,7 @@ public class EfRcaIncidentService : IRcaIncidentService
             RootCauseTitle = rootCause?.Title,
             RootCauseEvidenceSummary = rootCause?.EvidenceSummary,
             CauseCount = causes.Count,
+            EvidenceCount = evidence.Count,
             OpenCorrectiveActionsCount = openActions.Count,
             OverdueCorrectiveActionsCount = openActions.Count(x => x.DueDate.HasValue && x.DueDate.Value < now),
             NextActionDueAt = openActions.FirstOrDefault(x => x.DueDate.HasValue)?.DueDate,
@@ -808,13 +969,14 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
     }
 
-    private static DateTimeOffset GetLastUpdatedAt(RcaIncident incident, IReadOnlyList<IshikawaCause> causes, IReadOnlyList<CorrectiveAction> actions)
+    private static DateTimeOffset GetLastUpdatedAt(RcaIncident incident, IReadOnlyList<IshikawaCause> causes, IReadOnlyList<CorrectiveAction> actions, IReadOnlyList<RcaEvidence> evidence)
     {
         return new[]
             {
                 incident.UpdatedAt ?? incident.CreatedAt,
                 causes.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max(),
-                actions.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max()
+                actions.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max(),
+                evidence.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max()
             }
             .Max();
     }

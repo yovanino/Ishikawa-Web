@@ -19,6 +19,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<CorrectiveAction> CorrectiveActions => Set<CorrectiveAction>();
 
+    public DbSet<RcaEvidence> RcaEvidence => Set<RcaEvidence>();
+
     public DbSet<RcaExternalIntakeRequest> RcaExternalIntakeRequests => Set<RcaExternalIntakeRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +31,7 @@ public class RcaDbContext : DbContext
         ConfigureIshikawaBranch(modelBuilder);
         ConfigureIshikawaCause(modelBuilder);
         ConfigureCorrectiveAction(modelBuilder);
+        ConfigureRcaEvidence(modelBuilder);
         ConfigureRcaExternalIntakeRequest(modelBuilder);
     }
 
@@ -72,6 +75,12 @@ public class RcaDbContext : DbContext
 
         entity
             .HasMany(x => x.CorrectiveActions)
+            .WithOne()
+            .HasForeignKey(x => x.RcaIncidentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity
+            .HasMany(x => x.Evidence)
             .WithOne()
             .HasForeignKey(x => x.RcaIncidentId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -132,6 +141,25 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.Status, x.DueDate });
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId });
         entity.HasIndex(x => new { x.TenantId, x.CauseId });
+    }
+
+    private static void ConfigureRcaEvidence(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaEvidence>();
+
+        entity.ToTable("rca_evidence");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.Title).HasMaxLength(220).IsRequired();
+        entity.Property(x => x.EvidenceType).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.Summary).HasMaxLength(4000);
+        entity.Property(x => x.ReferenceUri).HasMaxLength(1000);
+        entity.Property(x => x.CapturedByUserId).HasMaxLength(160);
+
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.CapturedAt });
+        entity.HasIndex(x => new { x.TenantId, x.CauseId });
+        entity.HasIndex(x => new { x.TenantId, x.ExternalIntakeId });
     }
 
     private static void ConfigureRcaExternalIntakeRequest(ModelBuilder modelBuilder)

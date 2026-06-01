@@ -1005,6 +1005,10 @@ textarea.form-control {
   background: var(--success);
 }
 
+.timeline-dot-evidence {
+  background: #6d5bd0;
+}
+
 .timeline-dot-external {
   background: var(--brand);
 }
@@ -1062,6 +1066,41 @@ textarea.form-control {
 
 .external-review-form .form-check-input {
   margin: 0;
+}
+
+.evidence-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evidence-card {
+  background: #f8fafb;
+  border: 1px solid #dfe5eb;
+  border-left: 4px solid #6d5bd0;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.evidence-card > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.evidence-card strong,
+.evidence-card span,
+.evidence-card small,
+.evidence-card a {
+  display: block;
+}
+
+.evidence-card span,
+.evidence-card small {
+  color: #657586;
+  font-size: 0.88rem;
 }
 
 .severity-pill {
@@ -1145,7 +1184,8 @@ textarea.form-control {
   .metric-grid,
   .detail-grid,
   .form-grid,
-  .branch-grid {
+  .branch-grid,
+  .evidence-grid {
     grid-template-columns: 1fr;
   }
 

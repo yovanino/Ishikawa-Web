@@ -52,6 +52,11 @@
         <p>Hipotesis cargadas en el canvas.</p>
     </article>
     <article class="metric-tile">
+        <span class="metric-value">@Model.Evidence.Count</span>
+        <strong>Evidencias</strong>
+        <p>Registros anexados al analisis.</p>
+    </article>
+    <article class="metric-tile">
         <span class="metric-value">@openActions</span>
         <strong>Acciones abiertas</strong>
         <p>Trabajo correctivo pendiente.</p>
@@ -128,6 +133,114 @@
             }
         </ol>
     }
+</section>
+
+<section class="analysis-grid actions-grid">
+    <article class="analysis-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Evidencias</h2>
+                <span>Observaciones, documentos, sensores o referencias externas</span>
+            </div>
+            <span class="canvas-counter">@Model.Evidence.Count evidencia(s)</span>
+        </div>
+
+        @if (Model.Evidence.Count == 0)
+        {
+            <p class="muted-text">Sin evidencias cargadas.</p>
+        }
+        else
+        {
+            <div class="evidence-grid">
+                @foreach (var evidence in Model.Evidence)
+                {
+                    var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == evidence.CauseId);
+
+                    <section class="evidence-card">
+                        <div>
+                            <span class="source-chip">@evidence.EvidenceType</span>
+                            <span class="source-chip">@evidence.Source</span>
+                        </div>
+                        <strong>@evidence.Title</strong>
+                        <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                        @if (!string.IsNullOrWhiteSpace(evidence.Summary))
+                        {
+                            <small>@evidence.Summary</small>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(evidence.ReferenceUri))
+                        {
+                            <a href="@evidence.ReferenceUri" target="_blank" rel="noopener">Abrir referencia</a>
+                        }
+                        <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                    </section>
+                }
+            </div>
+        }
+    </article>
+
+    <aside class="analysis-panel capture-panel">
+        <h2>Nueva evidencia</h2>
+        <form asp-controller="Rca" asp-action="AddEvidence" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.Title" class="form-label">Titulo</label>
+                <input asp-for="EvidenceForm.Title" class="form-control" />
+                <span asp-validation-for="EvidenceForm.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.CauseId" class="form-label">Causa relacionada</label>
+                <select asp-for="EvidenceForm.CauseId" class="form-select">
+                    <option value="">Sin causa especifica</option>
+                    @foreach (var cause in Model.CauseOptions)
+                    {
+                        <option value="@cause.Value">@cause.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="score-grid">
+                <div>
+                    <label asp-for="EvidenceForm.EvidenceType" class="form-label">Tipo</label>
+                    <select asp-for="EvidenceForm.EvidenceType" class="form-select">
+                        <option value="Observation">Observacion</option>
+                        <option value="Document">Documento</option>
+                        <option value="Photo">Foto</option>
+                        <option value="Sensor">Sensor</option>
+                        <option value="Customer">Cliente</option>
+                        <option value="Supplier">Proveedor</option>
+                    </select>
+                </div>
+                <div>
+                    <label asp-for="EvidenceForm.Source" class="form-label">Origen</label>
+                    <select asp-for="EvidenceForm.Source" class="form-select">
+                        <option value="Manual">Manual</option>
+                        <option value="ExternalIntake">Intake externo</option>
+                        <option value="SCADA">SCADA</option>
+                        <option value="OEE">OEE</option>
+                        <option value="GANTT">Gantt</option>
+                    </select>
+                </div>
+                <div>
+                    <label asp-for="EvidenceForm.CapturedByUserId" class="form-label">Usuario</label>
+                    <input asp-for="EvidenceForm.CapturedByUserId" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <label asp-for="EvidenceForm.Summary" class="form-label">Resumen</label>
+                <textarea asp-for="EvidenceForm.Summary" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.ReferenceUri" class="form-label">Referencia / URL</label>
+                <input asp-for="EvidenceForm.ReferenceUri" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Agregar evidencia</button>
+        </form>
+    </aside>
 </section>
 
 <section class="analysis-grid actions-grid">
@@ -444,6 +557,11 @@
             return "external";
         }
 
+        if (eventType.Contains("Evidence", StringComparison.OrdinalIgnoreCase))
+        {
+            return "evidence";
+        }
+
         if (eventType.Contains("Action", StringComparison.OrdinalIgnoreCase))
         {
             return "action";
@@ -466,6 +584,7 @@
             "RcaCauseCreated" => "Causa agregada",
             "RcaRootCauseSelected" => "Causa raiz seleccionada",
             "RcaCorrectiveActionCreated" => "Accion correctiva creada",
+            "RcaEvidenceAttached" => "Evidencia agregada",
             "RcaExternalIntakeCreated" => "Link externo creado",
             "RcaExternalIntakeOpened" => "Link externo abierto",
             "RcaExternalIntakeSubmitted" => "Respuesta externa enviada",

@@ -48,6 +48,8 @@ public class RcaIntegrationSnapshotDto
 
     public int CauseCount { get; set; }
 
+    public int EvidenceCount { get; set; }
+
     public int OpenCorrectiveActionsCount { get; set; }
 
     public int OverdueCorrectiveActionsCount { get; set; }

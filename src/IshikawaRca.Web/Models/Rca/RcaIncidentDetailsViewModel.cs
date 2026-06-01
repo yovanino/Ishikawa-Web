@@ -13,6 +13,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaExternalIntakeDto> ExternalIntakes { get; set; } = [];
 
+    public IReadOnlyList<RcaEvidenceDto> Evidence { get; set; } = [];
+
     public IReadOnlyList<RcaDomainEventDto> TimelineEvents { get; set; } = [];
 
     public AddIshikawaCauseViewModel Cause { get; set; } = new();
@@ -20,6 +22,8 @@ public class RcaIncidentDetailsViewModel
     public AddCorrectiveActionViewModel Action { get; set; } = new();
 
     public CreateExternalIntakeViewModel ExternalIntake { get; set; } = new();
+
+    public AddRcaEvidenceViewModel EvidenceForm { get; set; } = new();
 
     public IReadOnlyList<SelectListItem> BranchOptions =>
         Canvas.Branches

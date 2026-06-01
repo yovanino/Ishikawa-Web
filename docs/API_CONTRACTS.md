@@ -33,9 +33,29 @@ GET  /api/v1/rca/incidents/{id}/canvas
 PUT  /api/v1/rca/incidents/{id}/canvas
 POST /api/v1/rca/incidents/{id}/causes
 POST /api/v1/rca/incidents/{id}/actions
+GET  /api/v1/rca/incidents/{id}/evidence
+POST /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
+
+Evidencia RCA inicial:
+
+```json
+{
+  "causeId": "2a70bcb5-2423-4b2a-95b0-9a7140a8ca6f",
+  "externalIntakeId": null,
+  "title": "Foto de defecto en pieza",
+  "evidenceType": "Photo",
+  "source": "Manual",
+  "summary": "Defecto visible luego de inspeccion final.",
+  "referenceUri": "https://documentos.example/rca/evidencia-001",
+  "capturedAt": "2026-06-01T10:30:00-03:00",
+  "capturedByUserId": "calidad"
+}
+```
+
+En esta fase se registran metadatos, resumen y URI/referencia de evidencia. El almacenamiento binario de archivos queda separado para la politica documental global.
 
 ## Intake Externo Cliente/Proveedor
 
@@ -133,6 +153,7 @@ Snapshot de integracion:
   "claimActorType": "InternalArea",
   "claimOwnerName": "Produccion",
   "rootCauseTitle": "Falta de lubricacion en prensa",
+  "evidenceCount": 1,
   "openCorrectiveActionsCount": 2,
   "overdueCorrectiveActionsCount": 0,
   "nextActionDueAt": "2026-05-30T12:00:00-03:00",
@@ -208,7 +229,7 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaEscalatedTo8D`
 - `RcaClosed`
 
-En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, causas, acciones e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
+En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, causas, acciones, evidencia e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
 
 ## Regla de Compatibilidad
 

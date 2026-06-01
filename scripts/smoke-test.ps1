@@ -88,6 +88,26 @@ $cause = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/causes" $causeB
 Assert-Success $cause "Add cause"
 Write-Host "Added cause: $($cause.data.id)"
 
+$evidenceBody = @{
+    causeId = $cause.data.id
+    title = "Smoke evidence"
+    evidenceType = "Observation"
+    source = "Manual"
+    summary = "Registro de evidencia creado por smoke test."
+    referenceUri = "https://example.com/evidence/smoke"
+    capturedByUserId = "quality"
+}
+
+$evidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/evidence" $evidenceBody
+Assert-Success $evidence "Add evidence"
+Write-Host "Added evidence: $($evidence.data.id)"
+
+$evidenceList = Invoke-JsonGet "$base/api/v1/rca/incidents/$incidentId/evidence"
+Assert-Success $evidenceList "List evidence"
+if ($evidenceList.data.Count -lt 1) {
+    throw "List evidence failed: expected at least one evidence record"
+}
+
 $actionBody = @{
     causeId = $cause.data.id
     title = "Smoke corrective action"
@@ -103,10 +123,16 @@ Write-Host "Added action: $($action.data.id)"
 $snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
 Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
+if ($snapshot.data.evidenceCount -lt 1) {
+    throw "Get integration snapshot failed: expected evidenceCount >= 1"
+}
 
 $events = Invoke-JsonGet "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
 Assert-Success $events "Get integration events"
 Write-Host "Events returned: $($events.data.Count)"
+if (-not ($events.data | Where-Object { $_.type -eq "RcaEvidenceAttached" })) {
+    throw "Get integration events failed: expected RcaEvidenceAttached event"
+}
 
 $aiSummary = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/ai/summarize" @{}
 Assert-Success $aiSummary "AI summarize"

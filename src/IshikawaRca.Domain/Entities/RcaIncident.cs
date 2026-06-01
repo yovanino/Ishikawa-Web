@@ -52,4 +52,6 @@ public class RcaIncident : TenantEntity
     public ICollection<IshikawaBranch> Branches { get; set; } = new List<IshikawaBranch>();
 
     public ICollection<CorrectiveAction> CorrectiveActions { get; set; } = new List<CorrectiveAction>();
+
+    public ICollection<RcaEvidence> Evidence { get; set; } = new List<RcaEvidence>();
 }

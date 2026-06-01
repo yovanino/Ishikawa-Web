@@ -166,6 +166,57 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddEvidence(Guid id, [Bind(Prefix = "EvidenceForm")] AddRcaEvidenceViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.EvidenceForm = model;
+            return View(nameof(Details), details);
+        }
+
+        var request = new AddRcaEvidenceRequest
+        {
+            CauseId = model.CauseId,
+            Title = model.Title,
+            EvidenceType = model.EvidenceType,
+            Source = model.Source,
+            Summary = model.Summary,
+            ReferenceUri = model.ReferenceUri,
+            CapturedAt = model.CapturedAt,
+            CapturedByUserId = model.CapturedByUserId
+        };
+
+        var result = await _rcaIncidentService.AddEvidenceAsync(id, request, cancellationToken);
+        if (!result.Success)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError($"EvidenceForm.{error.Field}", error.Message);
+            }
+
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.EvidenceForm = model;
+            return View(nameof(Details), details);
+        }
+
+        TempData["StatusMessage"] = "Evidencia agregada.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -338,6 +389,7 @@ public class RcaController : Controller
         }
 
         var actionsResult = await _rcaIncidentService.ListCorrectiveActionsAsync(id, cancellationToken);
+        var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
 
@@ -346,6 +398,7 @@ public class RcaController : Controller
             Incident = incidentResult.Data,
             Canvas = canvasResult.Data,
             CorrectiveActions = actionsResult.Data ?? [],
+            Evidence = evidenceResult.Data ?? [],
             ExternalIntakes = externalIntakesResult.Data ?? [],
             TimelineEvents = timelineResult.Data?
                 .OrderByDescending(x => x.OccurredAt)

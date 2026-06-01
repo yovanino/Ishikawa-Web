@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, contratos de integracion y stub de AI Gateway. El siguiente objetivo es aplicar la migracion en un MySQL real y validar el smoke test end-to-end.
+El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, evidencias RCA por metadatos/referencia, contratos de integracion y stub de AI Gateway. El siguiente objetivo es seguir endureciendo workflow, permisos, auditoria y almacenamiento documental real.
 
 ## Fase 0 - Base del Repositorio
 
@@ -21,6 +21,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Causas.
 - [ ] Subcausas.
 - [x] Acciones correctivas.
+- [x] Evidencias RCA iniciales por metadatos y referencia.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
 - [x] Contexto basico de reclamo interno/externo.
@@ -35,7 +36,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Panel lateral de edicion.
 - Context menu industrial.
 - Auto-layout inicial.
-- Evidencias y adjuntos.
+- [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
+- Adjuntos binarios/documentales.
 - Comentarios.
 
 ## Fase 3 - Integracion Operacional
@@ -49,7 +51,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Eventos de integracion para intake externo.
 - [x] Rechazo formal de intake externo con motivo.
 - Auditoria ampliada de intake externo.
-- Adjuntos/evidencia en intake externo.
+- [x] Evidencia RCA inicial vinculable a causa o intake externo.
+- Adjuntos binarios/documentales en intake externo.
 
 ## Fase 4 - Inteligencia Asistida
 

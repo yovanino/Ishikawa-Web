@@ -57,6 +57,7 @@ MVP implemented:
 - Internal reviewer can reject a submitted response with a mandatory reason, preserving the external answer for audit without importing it.
 - Integration event feed exposes created, opened, submitted, reviewed, rejected, revoked and expired intake states for the future global platform.
 - Links can be revoked before submission/review.
+- RCA evidence records can reference an external intake response through metadata and URI/reference fields. Binary attachment storage remains a later platform/document policy decision.
 
 ## Security Rules
 
@@ -80,7 +81,7 @@ The RCA module should own:
 
 - Intake request state.
 - RCA-specific supplier/customer responses.
-- Mapping supplier/customer response into causes, evidence and actions.
+- Mapping supplier/customer response into causes, evidence records and actions.
 - Audit trail of imported external input.
 
 The future global platform should own:
@@ -131,13 +132,14 @@ Internal RCA screen:
 - Add button: generate external link.
 - Show link status: draft, sent, opened, submitted, reviewed, expired, revoked.
 - Show external response as pending evidence until accepted.
+- Show accepted evidence records linked to causes or external intake.
 
 External supplier/customer screen:
 
 - No full navigation.
 - Branded minimal intake page.
 - Clear incident reference and requested input.
-- Attachment/evidence upload.
+- Evidence summary in MVP; attachment upload later.
 - Submit and confirmation.
 - No visibility into internal investigation unless shared.
 
@@ -157,6 +159,6 @@ AI must not auto-accept external responses into the official RCA. A human review
 
 Next data-model step: harden formal review/import:
 
-- approved response can become a dedicated evidence record;
+- approved response can become or link to a dedicated evidence record;
 - proposed corrective action can become CAPA draft with owner, due date and validation gate;
 - attachments can be added with storage policy from the global platform.

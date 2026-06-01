@@ -112,4 +112,32 @@ public class RcaIncidentsController : ControllerBase
 
         return CreatedAtAction(nameof(ListCorrectiveActions), new { id }, result);
     }
+
+    [HttpGet("{id:guid}/evidence")]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaEvidenceDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaEvidenceDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<RcaEvidenceDto>>>> ListEvidence(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
+        if (!result.Success)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/evidence")]
+    [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResult<RcaEvidenceDto>>> AddEvidence(Guid id, AddRcaEvidenceRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.AddEvidenceAsync(id, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return BadRequest(result);
+        }
+
+        return CreatedAtAction(nameof(ListEvidence), new { id }, result);
+    }
 }
