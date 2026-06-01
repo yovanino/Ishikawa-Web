@@ -272,6 +272,36 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EscalateTo8D(Guid id, [Bind(Prefix = "EscalateForm")] EscalateRcaIncidentTo8DViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.EscalateForm = model;
+            return View(nameof(Details), details);
+        }
+
+        var request = new EscalateRcaIncidentTo8DRequest
+        {
+            EscalatedByUserId = model.EscalatedByUserId,
+            EscalationReason = model.EscalationReason
+        };
+
+        var result = await _rcaIncidentService.EscalateTo8DAsync(id, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Incidente RCA escalado a 8D."
+            : result.Message ?? "No se pudo escalar el incidente RCA a 8D.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)

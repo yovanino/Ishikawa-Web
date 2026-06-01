@@ -463,6 +463,45 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA cerrado.");
     }
 
+    public async Task<ApiResult<RcaIncidentDto>> EscalateTo8DAsync(Guid incidentId, EscalateRcaIncidentTo8DRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateEscalateTo8DRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return ApiResult<RcaIncidentDto>.Fail("No se pudo escalar el incidente RCA a 8D.", validationErrors.ToArray());
+        }
+
+        var incident = await _dbContext.RcaIncidents
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        if (incident.Status == RcaIncidentStatus.Closed)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo escalar el incidente RCA a 8D.",
+                new ApiError { Field = nameof(incident.Status), Code = "RCA_ALREADY_CLOSED", Message = "Un RCA cerrado no puede escalarse a 8D." });
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        incident.EscalatedTo8D = true;
+        incident.EscalatedTo8DAt ??= now;
+        incident.EscalatedTo8DByUserId = Normalize(request.EscalatedByUserId);
+        incident.EscalationReason = request.EscalationReason.Trim();
+        incident.Status = RcaIncidentStatus.EscalatedTo8D;
+        incident.UpdatedAt = now;
+        incident.UpdatedByUserId = Normalize(request.EscalatedByUserId);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA escalado a 8D.");
+    }
+
     public async Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         var incident = await _dbContext.RcaIncidents
@@ -563,6 +602,22 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["status"] = incident.Status.ToString(),
                         ["closedByUserId"] = incident.ClosedByUserId,
                         ["closureSummary"] = incident.ClosureSummary
+                    }));
+            }
+
+            if (incident.EscalatedTo8D && incident.EscalatedTo8DAt.HasValue)
+            {
+                events.Add(CreateEvent(
+                    $"rca-incident-escalated-8d:{incident.Id}",
+                    "RcaEscalatedTo8D",
+                    incident.EscalatedTo8DAt.Value,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["title"] = incident.Title,
+                        ["status"] = incident.Status.ToString(),
+                        ["escalatedByUserId"] = incident.EscalatedTo8DByUserId,
+                        ["escalationReason"] = incident.EscalationReason
                     }));
             }
 
@@ -787,6 +842,18 @@ public class EfRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateEscalateTo8DRequest(EscalateRcaIncidentTo8DRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.EscalationReason))
+        {
+            errors.Add(new ApiError { Field = nameof(request.EscalationReason), Code = "ESCALATION_REASON_REQUIRED", Message = "El motivo de escalamiento a 8D es obligatorio." });
+        }
+
+        return errors;
+    }
+
     private static void ValidateScore(int value, string field, string label, List<ApiError> errors)
     {
         if (value is < 0 or > 5)
@@ -886,7 +953,10 @@ public class EfRcaIncidentService : IRcaIncidentService
             MachineCode = incident.MachineCode,
             LineCode = incident.LineCode,
             WorkOrderCode = incident.WorkOrderCode,
-            EscalatedTo8D = incident.EscalatedTo8D
+            EscalatedTo8D = incident.EscalatedTo8D,
+            EscalatedTo8DAt = incident.EscalatedTo8DAt,
+            EscalatedTo8DByUserId = incident.EscalatedTo8DByUserId,
+            EscalationReason = incident.EscalationReason
         };
     }
 

@@ -27,6 +27,8 @@ public class RcaIncidentDetailsViewModel
 
     public CloseRcaIncidentViewModel CloseForm { get; set; } = new();
 
+    public EscalateRcaIncidentTo8DViewModel EscalateForm { get; set; } = new();
+
     public IReadOnlyList<SelectListItem> BranchOptions =>
         Canvas.Branches
             .OrderBy(x => x.Order)

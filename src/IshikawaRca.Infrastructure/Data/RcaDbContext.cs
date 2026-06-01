@@ -50,6 +50,8 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.ClaimActorType).HasConversion<string>().HasMaxLength(32).IsRequired();
         entity.Property(x => x.ClaimOwnerName).HasMaxLength(160);
         entity.Property(x => x.ClosureSummary).HasMaxLength(4000);
+        entity.Property(x => x.EscalatedTo8DByUserId).HasMaxLength(160);
+        entity.Property(x => x.EscalationReason).HasMaxLength(4000);
         entity.Property(x => x.SourceSystem).HasMaxLength(64).IsRequired();
         entity.Property(x => x.ExternalTaskId).HasMaxLength(120);
         entity.Property(x => x.ExternalEventId).HasMaxLength(120);

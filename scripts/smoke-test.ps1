@@ -152,6 +152,18 @@ if ($actionStatus.data.status -ne "Completed") {
 }
 Write-Host "Completed action: $($actionStatus.data.id)"
 
+$escalationBody = @{
+    escalatedByUserId = "quality"
+    escalationReason = "Smoke escalation: RCA requiere seguimiento 8D formal."
+}
+
+$escalatedIncident = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/escalate-8d" $escalationBody
+Assert-Success $escalatedIncident "Escalate incident to 8D"
+if (-not $escalatedIncident.data.escalatedTo8D) {
+    throw "Escalate incident to 8D failed: expected escalatedTo8D true"
+}
+Write-Host "Escalated incident to 8D: $($escalatedIncident.data.id)"
+
 $closeBody = @{
     closedByUserId = "quality"
     closureSummary = "Smoke RCA cerrado con causa raiz, subcausa, evidencia y accion completada."
@@ -169,6 +181,9 @@ Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
 if ($snapshot.data.status -ne "Closed") {
     throw "Get integration snapshot failed: expected Closed status"
+}
+if (-not $snapshot.data.escalatedTo8D) {
+    throw "Get integration snapshot failed: expected escalatedTo8D true"
 }
 if ($snapshot.data.evidenceCount -lt 1) {
     throw "Get integration snapshot failed: expected evidenceCount >= 1"
@@ -188,6 +203,9 @@ if (-not ($events.data | Where-Object { $_.type -eq "RcaEvidenceAttached" })) {
 }
 if (-not ($events.data | Where-Object { $_.type -eq "RcaCorrectiveActionCompleted" })) {
     throw "Get integration events failed: expected RcaCorrectiveActionCompleted event"
+}
+if (-not ($events.data | Where-Object { $_.type -eq "RcaEscalatedTo8D" })) {
+    throw "Get integration events failed: expected RcaEscalatedTo8D event"
 }
 if (-not ($events.data | Where-Object { $_.type -eq "RcaClosed" })) {
     throw "Get integration events failed: expected RcaClosed event"

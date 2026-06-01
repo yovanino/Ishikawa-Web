@@ -25,6 +25,7 @@ Fecha de corte: 2026-06-01.
    - Acciones correctivas.
    - Validacion/cierre de acciones correctivas con nota obligatoria y validador opcional.
    - Cierre formal de RCA con causa raiz, acciones cerradas y resumen obligatorio.
+   - Escalamiento formal a 8D con fecha, usuario y motivo.
    - Registro inicial de evidencias RCA con tipo, fuente, resumen, URI/referencia y relacion opcional a causa o intake externo.
 
 4. Integracion externa
@@ -33,6 +34,7 @@ Fecha de corte: 2026-06-01.
    - Feed derivado de eventos RCA.
    - Conteo de evidencia en snapshots de integracion.
    - Eventos de accion correctiva creada y completada para integracion.
+   - Evento de RCA escalado a 8D para integracion.
    - Evento de RCA cerrado para integracion.
    - Actor de reclamo: area interna, cliente o proveedor.
    - Intake link seguro MVP para cliente/proveedor con token hasheado.

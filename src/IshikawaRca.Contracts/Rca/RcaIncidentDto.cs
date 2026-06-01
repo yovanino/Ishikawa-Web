@@ -45,4 +45,10 @@ public class RcaIncidentDto
     public string? WorkOrderCode { get; set; }
 
     public bool EscalatedTo8D { get; set; }
+
+    public DateTimeOffset? EscalatedTo8DAt { get; set; }
+
+    public string? EscalatedTo8DByUserId { get; set; }
+
+    public string? EscalationReason { get; set; }
 }

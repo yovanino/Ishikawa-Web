@@ -40,6 +40,17 @@ POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
 
+Escalamiento a 8D:
+
+```json
+{
+  "escalatedByUserId": "calidad",
+  "escalationReason": "Impacto critico o recurrencia que requiere disciplina 8D formal."
+}
+```
+
+El escalamiento a 8D marca `escalatedTo8D = true`, registra fecha/usuario/motivo, cambia el estado a `EscalatedTo8D` y publica `RcaEscalatedTo8D`. El RCA puede luego cerrarse formalmente cuando cumpla las condiciones de cierre.
+
 Cierre formal RCA:
 
 ```json

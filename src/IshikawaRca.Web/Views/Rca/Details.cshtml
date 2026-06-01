@@ -108,9 +108,46 @@
             <dd>@(incident.WorkOrderCode ?? "-")</dd>
             <dt>Escalado a 8D</dt>
             <dd>@(incident.EscalatedTo8D ? "Si" : "No")</dd>
+            @if (incident.EscalatedTo8D)
+            {
+                <dt>Fecha 8D</dt>
+                <dd>@(incident.EscalatedTo8DAt?.LocalDateTime.ToString("dd/MM/yyyy HH:mm") ?? "-")</dd>
+                <dt>Motivo 8D</dt>
+                <dd>@(incident.EscalationReason ?? "Sin motivo.")</dd>
+            }
         </dl>
     </article>
 </section>
+
+@if (!incident.EscalatedTo8D && incident.Status != "Closed")
+{
+    <section class="analysis-panel close-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Escalar a 8D</h2>
+                <span>Elevar el RCA a disciplina 8D sin perder trazabilidad modular</span>
+            </div>
+            <span class="canvas-counter">8D</span>
+        </div>
+        <form asp-controller="Rca" asp-action="EscalateTo8D" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-grid">
+                <div>
+                    <label asp-for="EscalateForm.EscalatedByUserId" class="form-label">Escalado por</label>
+                    <input asp-for="EscalateForm.EscalatedByUserId" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="EscalateForm.EscalationReason" class="form-label">Motivo 8D</label>
+                    <input asp-for="EscalateForm.EscalationReason" class="form-control" />
+                    <span asp-validation-for="EscalateForm.EscalationReason" class="text-danger"></span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-outline-secondary">Escalar a 8D</button>
+                </div>
+            </div>
+        </form>
+    </section>
+}
 
 @if (incident.Status != "Closed")
 {
@@ -665,6 +702,7 @@
             "RcaRootCauseSelected" => "Causa raiz seleccionada",
             "RcaCorrectiveActionCreated" => "Accion correctiva creada",
             "RcaCorrectiveActionCompleted" => "Accion correctiva completada",
+            "RcaEscalatedTo8D" => "RCA escalado a 8D",
             "RcaEvidenceAttached" => "Evidencia agregada",
             "RcaExternalIntakeCreated" => "Link externo creado",
             "RcaExternalIntakeOpened" => "Link externo abierto",

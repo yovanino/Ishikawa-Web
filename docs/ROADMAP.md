@@ -22,6 +22,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Subcausas.
 - [x] Acciones correctivas.
 - [x] Cierre/validacion basica de acciones correctivas.
+- [x] Escalamiento a 8D.
 - [x] Cierre formal de RCA.
 - [x] Evidencias RCA iniciales por metadatos y referencia.
 - [x] Persistencia en MySQL.
@@ -50,6 +51,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Integracion SCADA/Gateway por API.
 - [x] Timeline visual de RCA alimentada por eventos de integracion.
 - Estados y auditoria ampliada.
+- [x] Evento de RCA escalado a 8D.
 - [x] Evento de RCA cerrado.
 - [x] Evento de accion correctiva completada.
 - Eventos de integracion para intake externo.

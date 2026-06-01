@@ -49,6 +49,12 @@ public class RcaIncident : TenantEntity
 
     public bool EscalatedTo8D { get; set; }
 
+    public DateTimeOffset? EscalatedTo8DAt { get; set; }
+
+    public string? EscalatedTo8DByUserId { get; set; }
+
+    public string? EscalationReason { get; set; }
+
     public ICollection<IshikawaBranch> Branches { get; set; } = new List<IshikawaBranch>();
 
     public ICollection<CorrectiveAction> CorrectiveActions { get; set; } = new List<CorrectiveAction>();
