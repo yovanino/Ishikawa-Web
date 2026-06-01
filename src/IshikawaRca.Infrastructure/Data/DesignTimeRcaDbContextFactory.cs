@@ -31,25 +31,13 @@ public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbCo
             return fromEnvironment;
         }
 
-        var localSettingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "src",
-            "IshikawaRca.Web",
-            "appsettings.Local.json");
-
-        var localConnectionString = TryReadConnectionString(localSettingsPath);
+        var localConnectionString = TryReadConnectionString("appsettings.Local.json");
         if (!string.IsNullOrWhiteSpace(localConnectionString))
         {
             return localConnectionString;
         }
 
-        var defaultSettingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "src",
-            "IshikawaRca.Web",
-            "appsettings.json");
-
-        var defaultConnectionString = TryReadConnectionString(defaultSettingsPath);
+        var defaultConnectionString = TryReadConnectionString("appsettings.json");
         if (!string.IsNullOrWhiteSpace(defaultConnectionString))
         {
             return defaultConnectionString;
@@ -58,8 +46,9 @@ public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbCo
         return "Server=localhost;Port=3306;Database=ishikawa_rca;User=ishikawa_user;Password=change_me;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;";
     }
 
-    private static string? TryReadConnectionString(string path)
+    private static string? TryReadConnectionString(string fileName)
     {
+        var path = FindSettingsPath(fileName);
         if (!File.Exists(path))
         {
             return null;
@@ -74,5 +63,28 @@ public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbCo
         return connectionStrings.TryGetProperty("IshikawaRca", out var connectionString)
             ? connectionString.GetString()
             : null;
+    }
+
+    private static string FindSettingsPath(string fileName)
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (current is not null)
+        {
+            var directPath = Path.Combine(current.FullName, fileName);
+            if (File.Exists(directPath))
+            {
+                return directPath;
+            }
+
+            var webProjectPath = Path.Combine(current.FullName, "src", "IshikawaRca.Web", fileName);
+            if (File.Exists(webProjectPath))
+            {
+                return webProjectPath;
+            }
+
+            current = current.Parent;
+        }
+
+        return Path.Combine(Directory.GetCurrentDirectory(), fileName);
     }
 }
