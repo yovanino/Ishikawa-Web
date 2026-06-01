@@ -1040,6 +1040,18 @@ textarea.form-control {
   padding: 12px;
 }
 
+.external-reject-form {
+  align-items: end;
+  background: var(--danger-soft);
+  border: 1px solid #efc7bf;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(220px, 1fr) minmax(130px, 0.45fr) auto;
+  padding: 12px;
+}
+
 .external-review-form .form-check {
   align-items: center;
   display: inline-flex;
@@ -1180,6 +1192,10 @@ textarea.form-control {
   }
 
   .external-review-form {
+    grid-template-columns: 1fr;
+  }
+
+  .external-reject-form {
     grid-template-columns: 1fr;
   }
 

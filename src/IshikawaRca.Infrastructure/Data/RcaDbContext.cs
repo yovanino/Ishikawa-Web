@@ -148,6 +148,8 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         entity.Property(x => x.ReviewedByUserId).HasMaxLength(160);
+        entity.Property(x => x.RejectedByUserId).HasMaxLength(160);
+        entity.Property(x => x.RejectionReason).HasMaxLength(1000);
         entity.Property(x => x.ClaimReference).HasMaxLength(160);
         entity.Property(x => x.MaterialCode).HasMaxLength(120);
         entity.Property(x => x.BatchOrLot).HasMaxLength(120);

@@ -8,5 +8,6 @@ public enum RcaExternalIntakeStatus
     Submitted = 3,
     Reviewed = 4,
     Expired = 5,
-    Revoked = 6
+    Revoked = 6,
+    Rejected = 7
 }

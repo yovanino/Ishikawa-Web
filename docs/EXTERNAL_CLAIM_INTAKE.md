@@ -54,7 +54,8 @@ MVP implemented:
 - External actor can submit reference, material, lot, description, containment, proposed root cause, proposed action and evidence summary.
 - Internal screen shows intake status and submitted response.
 - Internal reviewer can accept a submitted response, import the proposed root cause into an Ishikawa branch, optionally mark it as root cause and import the proposed corrective action.
-- Integration event feed exposes created, opened, submitted, reviewed, revoked and expired intake states for the future global platform.
+- Internal reviewer can reject a submitted response with a mandatory reason, preserving the external answer for audit without importing it.
+- Integration event feed exposes created, opened, submitted, reviewed, rejected, revoked and expired intake states for the future global platform.
 - Links can be revoked before submission/review.
 
 ## Security Rules
@@ -156,7 +157,6 @@ AI must not auto-accept external responses into the official RCA. A human review
 
 Next data-model step: harden formal review/import:
 
-- reviewer can reject external response with reason;
 - approved response can become a dedicated evidence record;
 - proposed corrective action can become CAPA draft with owner, due date and validation gate;
 - attachments can be added with storage policy from the global platform.

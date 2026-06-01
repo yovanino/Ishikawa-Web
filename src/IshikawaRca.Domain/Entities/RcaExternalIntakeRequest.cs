@@ -29,6 +29,12 @@ public class RcaExternalIntakeRequest : TenantEntity
 
     public string? ReviewedByUserId { get; set; }
 
+    public DateTimeOffset? RejectedAt { get; set; }
+
+    public string? RejectedByUserId { get; set; }
+
+    public string? RejectionReason { get; set; }
+
     public string? ClaimReference { get; set; }
 
     public string? MaterialCode { get; set; }

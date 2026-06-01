@@ -97,7 +97,7 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
             return ApiResult<RcaExternalIntakeDto>.Fail("Link externo invalido.", result.Error);
         }
 
-        if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow && result.Intake.Status is not RcaExternalIntakeStatus.Submitted and not RcaExternalIntakeStatus.Reviewed)
+        if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow && result.Intake.Status is not RcaExternalIntakeStatus.Submitted and not RcaExternalIntakeStatus.Reviewed and not RcaExternalIntakeStatus.Rejected)
         {
             result.Intake.Status = RcaExternalIntakeStatus.Expired;
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -111,6 +111,13 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
             return ApiResult<RcaExternalIntakeDto>.Fail(
                 "El link externo fue revocado.",
                 new ApiError { Field = nameof(token), Code = "INTAKE_REVOKED", Message = "El link ya no esta habilitado." });
+        }
+
+        if (result.Intake.Status == RcaExternalIntakeStatus.Rejected)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo fue rechazado internamente.",
+                new ApiError { Field = nameof(token), Code = "INTAKE_REJECTED", Message = "La respuesta fue cerrada por el equipo interno." });
         }
 
         if (result.Intake.Status == RcaExternalIntakeStatus.Sent)
@@ -140,7 +147,7 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 new ApiError { Field = nameof(token), Code = "INTAKE_EXPIRED", Message = "Solicita un nuevo link al equipo interno." });
         }
 
-        if (result.Intake.Status is RcaExternalIntakeStatus.Revoked or RcaExternalIntakeStatus.Submitted or RcaExternalIntakeStatus.Reviewed)
+        if (result.Intake.Status is RcaExternalIntakeStatus.Revoked or RcaExternalIntakeStatus.Submitted or RcaExternalIntakeStatus.Reviewed or RcaExternalIntakeStatus.Rejected)
         {
             return ApiResult<RcaExternalIntakeDto>.Fail(
                 "El link externo no acepta nuevas respuestas.",
@@ -264,6 +271,55 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incident.Title), "Respuesta externa revisada.");
     }
 
+    public async Task<ApiResult<RcaExternalIntakeDto>> RejectAsync(Guid intakeId, RejectExternalIntakeRequest request, CancellationToken cancellationToken = default)
+    {
+        var intake = await _dbContext.RcaExternalIntakeRequests
+            .FirstOrDefaultAsync(x => x.Id == intakeId && !x.IsDeleted, cancellationToken);
+
+        if (intake is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "No se encontro la respuesta externa.",
+                new ApiError { Field = nameof(intakeId), Code = "INTAKE_NOT_FOUND", Message = "El identificador no corresponde a una solicitud activa." });
+        }
+
+        var incidentTitle = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .Where(x => x.Id == intake.RcaIncidentId && !x.IsDeleted)
+            .Select(x => x.Title)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (incidentTitle is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(intakeId), Code = "RCA_NOT_FOUND", Message = "El RCA asociado ya no esta disponible." });
+        }
+
+        if (intake.Status != RcaExternalIntakeStatus.Submitted)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "La respuesta externa no esta pendiente de revision.",
+                new ApiError { Field = nameof(intake.Status), Code = "INTAKE_NOT_SUBMITTED", Message = "Solo se pueden rechazar respuestas enviadas." });
+        }
+
+        var errors = ValidateReject(request);
+        if (errors.Count > 0)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail("No se pudo rechazar la respuesta externa.", errors.ToArray());
+        }
+
+        intake.Status = RcaExternalIntakeStatus.Rejected;
+        intake.RejectedAt = DateTimeOffset.UtcNow;
+        intake.RejectedByUserId = Normalize(request.RejectedByUserId);
+        intake.RejectionReason = TrimToMax(request.RejectionReason.Trim(), 1000);
+        intake.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Respuesta externa rechazada.");
+    }
+
     public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, CancellationToken cancellationToken = default)
     {
         var intake = await _dbContext.RcaExternalIntakeRequests
@@ -281,6 +337,13 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
             .Where(x => x.Id == intake.RcaIncidentId)
             .Select(x => x.Title)
             .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        if (intake.Status is RcaExternalIntakeStatus.Submitted or RcaExternalIntakeStatus.Reviewed or RcaExternalIntakeStatus.Rejected)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo ya tiene una respuesta cerrada.",
+                new ApiError { Field = nameof(intake.Status), Code = "INTAKE_CLOSED", Message = "Usa revision o rechazo formal para respuestas enviadas." });
+        }
 
         intake.Status = RcaExternalIntakeStatus.Revoked;
         intake.UpdatedAt = DateTimeOffset.UtcNow;
@@ -379,6 +442,18 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         return errors;
     }
 
+    private static List<ApiError> ValidateReject(RejectExternalIntakeRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.RejectionReason))
+        {
+            errors.Add(new ApiError { Field = nameof(request.RejectionReason), Code = "REJECTION_REASON_REQUIRED", Message = "El motivo de rechazo es obligatorio." });
+        }
+
+        return errors;
+    }
+
     private static RcaClaimActorType ParseActorType(string actorType)
     {
         return Enum.TryParse<RcaClaimActorType>(actorType, true, out var parsed)
@@ -403,6 +478,8 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
             OpenedAt = intake.OpenedAt,
             SubmittedAt = intake.SubmittedAt,
             ReviewedAt = intake.ReviewedAt,
+            RejectedAt = intake.RejectedAt,
+            RejectionReason = intake.RejectionReason,
             ClaimReference = intake.ClaimReference,
             MaterialCode = intake.MaterialCode,
             BatchOrLot = intake.BatchOrLot,

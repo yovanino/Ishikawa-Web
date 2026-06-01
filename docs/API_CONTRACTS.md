@@ -45,6 +45,7 @@ El MVP de intake externo se expone como flujo MVC controlado, no como API public
 POST /Rca/CreateExternalIntake/{incidentId}
 POST /Rca/RevokeExternalIntake/{incidentId}?intakeId={intakeId}
 POST /Rca/ReviewExternalIntake/{incidentId}
+POST /Rca/RejectExternalIntake/{incidentId}
 GET  /external-intake/{token}
 POST /external-intake/{token}
 ```
@@ -68,7 +69,7 @@ Respuesta externa esperada:
 }
 ```
 
-Estados del intake: `Sent`, `Opened`, `Submitted`, `Reviewed`, `Expired`, `Revoked`.
+Estados del intake: `Sent`, `Opened`, `Submitted`, `Reviewed`, `Rejected`, `Expired`, `Revoked`.
 
 Revision interna esperada:
 
@@ -84,6 +85,18 @@ Revision interna esperada:
 ```
 
 Cuando se aprueba, el modulo puede crear una causa Ishikawa desde `proposedRootCause`, una accion correctiva desde `proposedCorrectiveAction` y marca el intake como `Reviewed`.
+
+Rechazo interno esperado:
+
+```json
+{
+  "intakeId": "8b30e5b6-dadb-4886-8d3e-4e39ce189bb4",
+  "rejectionReason": "Informacion insuficiente para incorporarla al RCA.",
+  "rejectedByUserId": "calidad"
+}
+```
+
+Cuando se rechaza, el modulo no importa causa ni accion, conserva la respuesta externa para auditoria y marca el intake como `Rejected`.
 
 ## APIs de Integracion entre Modulos
 
@@ -187,6 +200,7 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaExternalIntakeOpened`
 - `RcaExternalIntakeSubmitted`
 - `RcaExternalIntakeReviewed`
+- `RcaExternalIntakeRejected`
 - `RcaExternalIntakeRevoked`
 - `RcaExternalIntakeExpired`
 - `RcaEvidenceAttached`

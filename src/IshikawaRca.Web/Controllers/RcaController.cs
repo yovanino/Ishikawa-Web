@@ -253,6 +253,29 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectExternalIntake(
+        Guid id,
+        Guid intakeId,
+        string rejectionReason,
+        string? rejectedByUserId,
+        CancellationToken cancellationToken)
+    {
+        var request = new RejectExternalIntakeRequest
+        {
+            RejectionReason = rejectionReason,
+            RejectedByUserId = rejectedByUserId
+        };
+
+        var result = await _externalIntakeService.RejectAsync(intakeId, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Respuesta externa rechazada."
+            : result.Message ?? "No se pudo rechazar la respuesta externa.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
     {
         return

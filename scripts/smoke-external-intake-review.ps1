@@ -207,7 +207,93 @@ try {
         }
     }
 
-    Write-Host "External review smoke completed. Incident=$incidentId Intake=$intakeId"
+    $detailsAfterReview = Invoke-WebRequest `
+        -Uri "$base/Rca/Details/$incidentId" `
+        -WebSession $internalSession `
+        -UseBasicParsing `
+        -TimeoutSec $RequestTimeoutSeconds
+
+    $secondInternalToken = Get-AntiForgeryToken $detailsAfterReview.Content
+    $secondCreated = Invoke-WebRequest `
+        -Method Post `
+        -Uri "$base/Rca/CreateExternalIntake/$incidentId" `
+        -WebSession $internalSession `
+        -UseBasicParsing `
+        -Body @{
+            "__RequestVerificationToken" = $secondInternalToken
+            "ExternalIntake.ActorType" = "Customer"
+            "ExternalIntake.ActorName" = "Cliente smoke"
+            "ExternalIntake.ContactName" = "Calidad cliente"
+            "ExternalIntake.ContactEmail" = "cliente@example.com"
+        } `
+        -ContentType "application/x-www-form-urlencoded" `
+        -TimeoutSec $RequestTimeoutSeconds
+
+    $secondLinkMatch = [regex]::Match($secondCreated.Content, '/external-intake/([^"<]+)')
+    if (-not $secondLinkMatch.Success) {
+        throw "Second external intake link not found."
+    }
+
+    $secondToken = $secondLinkMatch.Groups[1].Value
+    $secondPortal = Invoke-WebRequest `
+        -Uri "$base/external-intake/$secondToken" `
+        -SessionVariable secondExternalSession `
+        -UseBasicParsing `
+        -TimeoutSec $RequestTimeoutSeconds
+
+    $secondExternalToken = Get-AntiForgeryToken $secondPortal.Content
+    Invoke-WebRequest `
+        -Method Post `
+        -Uri "$base/external-intake/$secondToken" `
+        -WebSession $secondExternalSession `
+        -UseBasicParsing `
+        -Body @{
+            "__RequestVerificationToken" = $secondExternalToken
+            ContactName = "Calidad cliente"
+            ContactEmail = "cliente@example.com"
+            ClaimReference = "CUS-REJECT-001"
+            Description = "Respuesta externa incompleta para validar rechazo."
+            ProposedRootCause = "Hipotesis insuficiente."
+            ProposedCorrectiveAction = "Accion sin evidencia."
+        } `
+        -ContentType "application/x-www-form-urlencoded" `
+        -TimeoutSec $RequestTimeoutSeconds | Out-Null
+
+    $detailsBeforeReject = Invoke-WebRequest `
+        -Uri "$base/Rca/Details/$incidentId" `
+        -WebSession $internalSession `
+        -UseBasicParsing `
+        -TimeoutSec $RequestTimeoutSeconds
+
+    $rejectToken = Get-AntiForgeryToken $detailsBeforeReject.Content
+    $rejectIntakeMatch = [regex]::Match($detailsBeforeReject.Content, 'name="intakeId" value="([^"]+)"')
+    if (-not $rejectIntakeMatch.Success) {
+        throw "Reject intake id not found."
+    }
+
+    $rejectIntakeId = $rejectIntakeMatch.Groups[1].Value
+    Invoke-WebRequest `
+        -Method Post `
+        -Uri "$base/Rca/RejectExternalIntake/$incidentId" `
+        -WebSession $internalSession `
+        -UseBasicParsing `
+        -Body @{
+            "__RequestVerificationToken" = $rejectToken
+            intakeId = $rejectIntakeId
+            rejectionReason = "Informacion insuficiente para incorporarla al RCA."
+            rejectedByUserId = "review-smoke"
+        } `
+        -ContentType "application/x-www-form-urlencoded" `
+        -TimeoutSec $RequestTimeoutSeconds | Out-Null
+
+    $eventsAfterReject = Invoke-JsonGet "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
+    Assert-Success $eventsAfterReject "Get integration events after reject"
+
+    if (-not ($eventsAfterReject.data | Where-Object { $_.type -eq "RcaExternalIntakeRejected" })) {
+        throw "Expected integration event not found: RcaExternalIntakeRejected"
+    }
+
+    Write-Host "External review smoke completed. Incident=$incidentId Intake=$intakeId RejectedIntake=$rejectIntakeId"
 }
 finally {
     & (Join-Path $PSScriptRoot "stop-web.ps1") `

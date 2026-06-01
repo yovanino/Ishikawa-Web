@@ -752,6 +752,16 @@ public class EfRcaIncidentService : IRcaIncidentService
                 data));
         }
 
+        if (intake.RejectedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-rejected:{intake.Id}",
+                "RcaExternalIntakeRejected",
+                intake.RejectedAt.Value,
+                incident,
+                data));
+        }
+
         if (intake.Status == RcaExternalIntakeStatus.Revoked)
         {
             events.Add(CreateEvent(
@@ -786,6 +796,9 @@ public class EfRcaIncidentService : IRcaIncidentService
             ["submittedAt"] = intake.SubmittedAt?.ToString("O"),
             ["reviewedAt"] = intake.ReviewedAt?.ToString("O"),
             ["reviewedByUserId"] = intake.ReviewedByUserId,
+            ["rejectedAt"] = intake.RejectedAt?.ToString("O"),
+            ["rejectedByUserId"] = intake.RejectedByUserId,
+            ["rejectionReason"] = intake.RejectionReason,
             ["claimReference"] = intake.ClaimReference,
             ["materialCode"] = intake.MaterialCode,
             ["batchOrLot"] = intake.BatchOrLot,

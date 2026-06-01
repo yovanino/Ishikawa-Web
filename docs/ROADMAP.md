@@ -47,7 +47,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Timeline visual de RCA alimentada por eventos de integracion.
 - Estados y auditoria ampliada.
 - Eventos de integracion para intake externo.
-- Rechazo formal y auditoria ampliada de intake externo.
+- [x] Rechazo formal de intake externo con motivo.
+- Auditoria ampliada de intake externo.
 - Adjuntos/evidencia en intake externo.
 
 ## Fase 4 - Inteligencia Asistida

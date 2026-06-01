@@ -157,11 +157,15 @@
                             {
                                 <small>@intake.Description</small>
                             }
+                            @if (!string.IsNullOrWhiteSpace(intake.RejectionReason))
+                            {
+                                <small>Rechazo: @intake.RejectionReason</small>
+                            }
                         </div>
                         <div>
                             <span class="status-chip">@intake.Status</span>
                             <small>Expira @intake.ExpiresAt.LocalDateTime.ToString("dd/MM/yyyy")</small>
-                            @if (intake.Status is not "Revoked" and not "Submitted" and not "Reviewed")
+                            @if (intake.Status is not "Revoked" and not "Submitted" and not "Reviewed" and not "Rejected")
                             {
                                 <form asp-controller="Rca" asp-action="RevokeExternalIntake" asp-route-id="@incident.Id" method="post">
                                     <input type="hidden" name="intakeId" value="@intake.Id" />
@@ -196,6 +200,12 @@
                                 </label>
                                 <input class="form-control form-control-sm" name="reviewedByUserId" placeholder="Revisor" />
                                 <button type="submit" class="btn btn-sm btn-primary">Aceptar respuesta</button>
+                            </form>
+                            <form class="external-reject-form" asp-controller="Rca" asp-action="RejectExternalIntake" asp-route-id="@incident.Id" method="post">
+                                <input type="hidden" name="intakeId" value="@intake.Id" />
+                                <input class="form-control form-control-sm" name="rejectionReason" placeholder="Motivo de rechazo" required />
+                                <input class="form-control form-control-sm" name="rejectedByUserId" placeholder="Revisor" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>
                             </form>
                         }
                     </section>
@@ -460,6 +470,7 @@
             "RcaExternalIntakeOpened" => "Link externo abierto",
             "RcaExternalIntakeSubmitted" => "Respuesta externa enviada",
             "RcaExternalIntakeReviewed" => "Respuesta externa revisada",
+            "RcaExternalIntakeRejected" => "Respuesta externa rechazada",
             "RcaExternalIntakeRevoked" => "Link externo revocado",
             "RcaExternalIntakeExpired" => "Link externo expirado",
             _ => eventType

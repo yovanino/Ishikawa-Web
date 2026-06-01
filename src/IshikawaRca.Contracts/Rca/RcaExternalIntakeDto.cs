@@ -28,6 +28,10 @@ public class RcaExternalIntakeDto
 
     public DateTimeOffset? ReviewedAt { get; set; }
 
+    public DateTimeOffset? RejectedAt { get; set; }
+
+    public string? RejectionReason { get; set; }
+
     public string? ClaimReference { get; set; }
 
     public string? MaterialCode { get; set; }
