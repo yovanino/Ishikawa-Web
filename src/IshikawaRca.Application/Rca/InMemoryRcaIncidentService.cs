@@ -210,6 +210,51 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Accion correctiva agregada."));
     }
 
+    public Task<ApiResult<CorrectiveActionDto>> UpdateCorrectiveActionStatusAsync(Guid incidentId, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateUpdateCorrectiveActionStatusRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<CorrectiveActionDto>.Fail("No se pudo actualizar la accion correctiva.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<CorrectiveActionDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var action = incident.CorrectiveActions.FirstOrDefault(x => x.Id == actionId && !x.IsDeleted);
+        if (action is null)
+        {
+            return Task.FromResult(ApiResult<CorrectiveActionDto>.Fail(
+                "No se encontro la accion correctiva.",
+                new ApiError { Field = nameof(actionId), Code = "ACTION_NOT_FOUND", Message = "La accion seleccionada no corresponde al incidente RCA." }));
+        }
+
+        var status = ParseCorrectiveActionStatus(request.Status);
+        var now = DateTimeOffset.UtcNow;
+
+        action.Status = status;
+        action.ValidationNotes = Normalize(request.ValidationNotes);
+        action.UpdatedAt = now;
+        action.UpdatedByUserId = Normalize(request.CompletedByUserId);
+
+        if (status == CorrectiveActionStatus.Completed)
+        {
+            action.CompletedAt ??= now;
+            action.CompletedByUserId = Normalize(request.CompletedByUserId);
+        }
+        else
+        {
+            action.CompletedAt = null;
+            action.CompletedByUserId = null;
+        }
+
+        return Task.FromResult(ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Estado de accion actualizado."));
+    }
+
     public Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
@@ -380,6 +425,23 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateUpdateCorrectiveActionStatusRequest(UpdateCorrectiveActionStatusRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (!Enum.TryParse<CorrectiveActionStatus>(request.Status, true, out var status))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Status), Code = "INVALID_ACTION_STATUS", Message = "Status debe ser Open, InProgress, WaitingValidation, Completed o Cancelled." });
+        }
+
+        if (status == CorrectiveActionStatus.Completed && string.IsNullOrWhiteSpace(request.ValidationNotes))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ValidationNotes), Code = "VALIDATION_NOTES_REQUIRED", Message = "Para completar una accion se requiere evidencia o nota de validacion." });
+        }
+
+        return errors;
+    }
+
     private static List<ApiError> ValidateAddEvidenceRequest(AddRcaEvidenceRequest request)
     {
         var errors = new List<ApiError>();
@@ -415,6 +477,13 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Enum.TryParse<RcaSeverity>(severity, true, out var parsed)
             ? parsed
             : RcaSeverity.Medium;
+    }
+
+    private static CorrectiveActionStatus ParseCorrectiveActionStatus(string status)
+    {
+        return Enum.TryParse<CorrectiveActionStatus>(status, true, out var parsed)
+            ? parsed
+            : CorrectiveActionStatus.Open;
     }
 
     private static RcaClaimScope ResolveClaimScope(CreateRcaIncidentRequest request)
@@ -539,7 +608,9 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Status = action.Status.ToString(),
             AssignedToUserId = action.AssignedToUserId,
             DueDate = action.DueDate,
-            CompletedAt = action.CompletedAt
+            CompletedAt = action.CompletedAt,
+            CompletedByUserId = action.CompletedByUserId,
+            ValidationNotes = action.ValidationNotes
         };
     }
 
@@ -680,6 +751,24 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["status"] = action.Status.ToString(),
                     ["dueDate"] = action.DueDate?.ToString("O")
                 }));
+
+            if (action.CompletedAt.HasValue)
+            {
+                events.Add(CreateEvent(
+                    $"rca-action-completed:{action.Id}",
+                    "RcaCorrectiveActionCompleted",
+                    action.CompletedAt.Value,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["actionId"] = action.Id.ToString(),
+                        ["causeId"] = action.CauseId?.ToString(),
+                        ["title"] = action.Title,
+                        ["status"] = action.Status.ToString(),
+                        ["completedByUserId"] = action.CompletedByUserId,
+                        ["validationNotes"] = action.ValidationNotes
+                    }));
+            }
         }
 
         foreach (var evidence in incident.Evidence.Where(x => !x.IsDeleted))

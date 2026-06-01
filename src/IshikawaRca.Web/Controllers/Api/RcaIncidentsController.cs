@@ -113,6 +113,23 @@ public class RcaIncidentsController : ControllerBase
         return CreatedAtAction(nameof(ListCorrectiveActions), new { id }, result);
     }
 
+    [HttpPost("{id:guid}/actions/{actionId:guid}/status")]
+    [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<CorrectiveActionDto>>> UpdateCorrectiveActionStatus(Guid id, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.UpdateCorrectiveActionStatusAsync(id, actionId, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return result.Errors.Any(x => x.Code == "ACTION_NOT_FOUND")
+                ? NotFound(result)
+                : BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
     [HttpGet("{id:guid}/evidence")]
     [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaEvidenceDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaEvidenceDto>>), StatusCodes.Status404NotFound)]

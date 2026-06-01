@@ -945,6 +945,14 @@ textarea.form-control {
   padding: 14px;
 }
 
+.action-status-form {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(130px, 1fr) minmax(120px, 1fr) minmax(180px, 2fr) auto;
+  width: 100%;
+}
+
 .timeline-panel {
   margin-bottom: 18px;
 }
@@ -1185,6 +1193,7 @@ textarea.form-control {
   .detail-grid,
   .form-grid,
   .branch-grid,
+  .action-status-form,
   .evidence-grid {
     grid-template-columns: 1fr;
   }

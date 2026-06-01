@@ -492,11 +492,34 @@
                         <div>
                             <strong>@action.Title</strong>
                             <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                            @if (!string.IsNullOrWhiteSpace(action.ValidationNotes))
+                            {
+                                <small>@action.ValidationNotes</small>
+                            }
                         </div>
                         <div>
                             <span class="status-chip">@action.Status</span>
                             <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
+                            @if (action.CompletedAt.HasValue)
+                            {
+                                <small>Validada @action.CompletedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                            }
                         </div>
+                        @if (action.Status is not "Completed" and not "Cancelled")
+                        {
+                            <form class="action-status-form" asp-controller="Rca" asp-action="UpdateActionStatus" asp-route-id="@incident.Id" method="post">
+                                <input type="hidden" name="ActionId" value="@action.Id" />
+                                <select name="Status" class="form-select form-select-sm">
+                                    <option value="InProgress">En progreso</option>
+                                    <option value="WaitingValidation">Esperando validacion</option>
+                                    <option value="Completed">Completada</option>
+                                    <option value="Cancelled">Cancelada</option>
+                                </select>
+                                <input class="form-control form-control-sm" name="CompletedByUserId" placeholder="Validador" />
+                                <input class="form-control form-control-sm" name="ValidationNotes" placeholder="Evidencia o nota de validacion" />
+                                <button type="submit" class="btn btn-sm btn-primary">Actualizar</button>
+                            </form>
+                        }
                     </section>
                 }
             </div>
@@ -584,6 +607,7 @@
             "RcaCauseCreated" => "Causa agregada",
             "RcaRootCauseSelected" => "Causa raiz seleccionada",
             "RcaCorrectiveActionCreated" => "Accion correctiva creada",
+            "RcaCorrectiveActionCompleted" => "Accion correctiva completada",
             "RcaEvidenceAttached" => "Evidencia agregada",
             "RcaExternalIntakeCreated" => "Link externo creado",
             "RcaExternalIntakeOpened" => "Link externo abierto",

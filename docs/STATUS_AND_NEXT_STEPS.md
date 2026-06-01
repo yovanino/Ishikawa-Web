@@ -22,6 +22,7 @@ Fecha de corte: 2026-06-01.
    - Carga de causas con puntajes.
    - Marcado de causa raiz.
    - Acciones correctivas.
+   - Validacion/cierre de acciones correctivas con nota obligatoria y validador opcional.
    - Registro inicial de evidencias RCA con tipo, fuente, resumen, URI/referencia y relacion opcional a causa o intake externo.
 
 4. Integracion externa
@@ -29,6 +30,7 @@ Fecha de corte: 2026-06-01.
    - Snapshots para Gantt, Gateway, OEE, Andon o app global.
    - Feed derivado de eventos RCA.
    - Conteo de evidencia en snapshots de integracion.
+   - Eventos de accion correctiva creada y completada para integracion.
    - Actor de reclamo: area interna, cliente o proveedor.
    - Intake link seguro MVP para cliente/proveedor con token hasheado.
    - Revision interna de intake externo con importacion a causa Ishikawa y accion correctiva.
@@ -51,7 +53,7 @@ Fecha de corte: 2026-06-01.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Agregar almacenamiento binario/documental real para adjuntos de evidencia e intake externo.
-- Separar auditoria fina de aprobacion/rechazo y adjuntos reales.
+- Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
 
 ## Siguiente Corte Recomendado
 

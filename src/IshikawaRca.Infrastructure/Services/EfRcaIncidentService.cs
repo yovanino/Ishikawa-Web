@@ -268,6 +268,48 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Accion correctiva agregada.");
     }
 
+    public async Task<ApiResult<CorrectiveActionDto>> UpdateCorrectiveActionStatusAsync(Guid incidentId, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateUpdateCorrectiveActionStatusRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return ApiResult<CorrectiveActionDto>.Fail("No se pudo actualizar la accion correctiva.", validationErrors.ToArray());
+        }
+
+        var action = await _dbContext.CorrectiveActions
+            .FirstOrDefaultAsync(x => x.Id == actionId && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (action is null)
+        {
+            return ApiResult<CorrectiveActionDto>.Fail(
+                "No se encontro la accion correctiva.",
+                new ApiError { Field = nameof(actionId), Code = "ACTION_NOT_FOUND", Message = "La accion seleccionada no corresponde al incidente RCA." });
+        }
+
+        var status = ParseCorrectiveActionStatus(request.Status);
+        var now = DateTimeOffset.UtcNow;
+
+        action.Status = status;
+        action.ValidationNotes = Normalize(request.ValidationNotes);
+        action.UpdatedAt = now;
+        action.UpdatedByUserId = Normalize(request.CompletedByUserId);
+
+        if (status == CorrectiveActionStatus.Completed)
+        {
+            action.CompletedAt ??= now;
+            action.CompletedByUserId = Normalize(request.CompletedByUserId);
+        }
+        else
+        {
+            action.CompletedAt = null;
+            action.CompletedByUserId = null;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Estado de accion actualizado.");
+    }
+
     public async Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         var incidentExists = await _dbContext.RcaIncidents
@@ -486,6 +528,24 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["status"] = action.Status.ToString(),
                         ["dueDate"] = action.DueDate?.ToString("O")
                     }));
+
+                if (action.CompletedAt.HasValue)
+                {
+                    events.Add(CreateEvent(
+                        $"rca-action-completed:{action.Id}",
+                        "RcaCorrectiveActionCompleted",
+                        action.CompletedAt.Value,
+                        incident,
+                        new Dictionary<string, string?>
+                        {
+                            ["actionId"] = action.Id.ToString(),
+                            ["causeId"] = action.CauseId?.ToString(),
+                            ["title"] = action.Title,
+                            ["status"] = action.Status.ToString(),
+                            ["completedByUserId"] = action.CompletedByUserId,
+                            ["validationNotes"] = action.ValidationNotes
+                        }));
+                }
             }
 
             var evidence = await _dbContext.RcaEvidence
@@ -596,6 +656,23 @@ public class EfRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateUpdateCorrectiveActionStatusRequest(UpdateCorrectiveActionStatusRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (!Enum.TryParse<CorrectiveActionStatus>(request.Status, true, out var status))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Status), Code = "INVALID_ACTION_STATUS", Message = "Status debe ser Open, InProgress, WaitingValidation, Completed o Cancelled." });
+        }
+
+        if (status == CorrectiveActionStatus.Completed && string.IsNullOrWhiteSpace(request.ValidationNotes))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ValidationNotes), Code = "VALIDATION_NOTES_REQUIRED", Message = "Para completar una accion se requiere evidencia o nota de validacion." });
+        }
+
+        return errors;
+    }
+
     private static List<ApiError> ValidateAddEvidenceRequest(AddRcaEvidenceRequest request)
     {
         var errors = new List<ApiError>();
@@ -631,6 +708,13 @@ public class EfRcaIncidentService : IRcaIncidentService
         return Enum.TryParse<RcaSeverity>(severity, true, out var parsed)
             ? parsed
             : RcaSeverity.Medium;
+    }
+
+    private static CorrectiveActionStatus ParseCorrectiveActionStatus(string status)
+    {
+        return Enum.TryParse<CorrectiveActionStatus>(status, true, out var parsed)
+            ? parsed
+            : CorrectiveActionStatus.Open;
     }
 
     private static RcaClaimScope ResolveClaimScope(CreateRcaIncidentRequest request)
@@ -755,7 +839,9 @@ public class EfRcaIncidentService : IRcaIncidentService
             Status = action.Status.ToString(),
             AssignedToUserId = action.AssignedToUserId,
             DueDate = action.DueDate,
-            CompletedAt = action.CompletedAt
+            CompletedAt = action.CompletedAt,
+            CompletedByUserId = action.CompletedByUserId,
+            ValidationNotes = action.ValidationNotes
         };
     }
 

@@ -21,6 +21,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Causas.
 - [ ] Subcausas.
 - [x] Acciones correctivas.
+- [x] Cierre/validacion basica de acciones correctivas.
 - [x] Evidencias RCA iniciales por metadatos y referencia.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
@@ -48,6 +49,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Integracion SCADA/Gateway por API.
 - [x] Timeline visual de RCA alimentada por eventos de integracion.
 - Estados y auditoria ampliada.
+- [x] Evento de accion correctiva completada.
 - Eventos de integracion para intake externo.
 - [x] Rechazo formal de intake externo con motivo.
 - Auditoria ampliada de intake externo.

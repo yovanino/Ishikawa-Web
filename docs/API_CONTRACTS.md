@@ -33,11 +33,24 @@ GET  /api/v1/rca/incidents/{id}/canvas
 PUT  /api/v1/rca/incidents/{id}/canvas
 POST /api/v1/rca/incidents/{id}/causes
 POST /api/v1/rca/incidents/{id}/actions
+POST /api/v1/rca/incidents/{id}/actions/{actionId}/status
 GET  /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
+
+Validacion/cierre de accion correctiva:
+
+```json
+{
+  "status": "Completed",
+  "completedByUserId": "calidad",
+  "validationNotes": "Accion verificada en piso y evidencia asociada al RCA."
+}
+```
+
+Para completar una accion, `validationNotes` es obligatorio. Esto mantiene el modulo standalone, pero deja trazabilidad suficiente para CAPA, auditoria y consumo desde Gantt/OEE/TPM.
 
 Evidencia RCA inicial:
 
@@ -217,6 +230,7 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaCauseCreated`
 - `RcaRootCauseSelected`
 - `RcaCorrectiveActionCreated`
+- `RcaCorrectiveActionCompleted`
 - `RcaExternalIntakeCreated`
 - `RcaExternalIntakeOpened`
 - `RcaExternalIntakeSubmitted`

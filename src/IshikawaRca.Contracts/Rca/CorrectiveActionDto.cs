@@ -19,4 +19,8 @@ public class CorrectiveActionDto
     public DateTimeOffset? DueDate { get; set; }
 
     public DateTimeOffset? CompletedAt { get; set; }
+
+    public string? CompletedByUserId { get; set; }
+
+    public string? ValidationNotes { get; set; }
 }

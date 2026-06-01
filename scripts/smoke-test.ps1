@@ -120,11 +120,27 @@ $action = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions" $acti
 Assert-Success $action "Add corrective action"
 Write-Host "Added action: $($action.data.id)"
 
+$actionStatusBody = @{
+    status = "Completed"
+    completedByUserId = "quality"
+    validationNotes = "Validacion smoke: accion completada con evidencia registrada."
+}
+
+$actionStatus = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions/$($action.data.id)/status" $actionStatusBody
+Assert-Success $actionStatus "Complete corrective action"
+if ($actionStatus.data.status -ne "Completed") {
+    throw "Complete corrective action failed: expected Completed status"
+}
+Write-Host "Completed action: $($actionStatus.data.id)"
+
 $snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
 Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
 if ($snapshot.data.evidenceCount -lt 1) {
     throw "Get integration snapshot failed: expected evidenceCount >= 1"
+}
+if ($snapshot.data.openCorrectiveActionsCount -ne 0) {
+    throw "Get integration snapshot failed: expected openCorrectiveActionsCount = 0"
 }
 
 $events = Invoke-JsonGet "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
@@ -132,6 +148,9 @@ Assert-Success $events "Get integration events"
 Write-Host "Events returned: $($events.data.Count)"
 if (-not ($events.data | Where-Object { $_.type -eq "RcaEvidenceAttached" })) {
     throw "Get integration events failed: expected RcaEvidenceAttached event"
+}
+if (-not ($events.data | Where-Object { $_.type -eq "RcaCorrectiveActionCompleted" })) {
+    throw "Get integration events failed: expected RcaCorrectiveActionCompleted event"
 }
 
 $aiSummary = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/ai/summarize" @{}

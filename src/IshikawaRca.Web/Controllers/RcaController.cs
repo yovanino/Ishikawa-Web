@@ -166,6 +166,31 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateActionStatus(Guid id, UpdateCorrectiveActionStatusViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["StatusMessage"] = "No se pudo actualizar la accion: revise estado y validacion.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var request = new UpdateCorrectiveActionStatusRequest
+        {
+            Status = model.Status,
+            CompletedByUserId = model.CompletedByUserId,
+            ValidationNotes = model.ValidationNotes
+        };
+
+        var result = await _rcaIncidentService.UpdateCorrectiveActionStatusAsync(id, model.ActionId, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Estado de accion actualizado."
+            : result.Message ?? "No se pudo actualizar la accion.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddEvidence(Guid id, [Bind(Prefix = "EvidenceForm")] AddRcaEvidenceViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
