@@ -70,6 +70,24 @@ Evidencia RCA inicial:
 
 En esta fase se registran metadatos, resumen y URI/referencia de evidencia. El almacenamiento binario de archivos queda separado para la politica documental global.
 
+Causas y subcausas:
+
+```json
+{
+  "branchId": "2a70bcb5-2423-4b2a-95b0-9a7140a8ca6f",
+  "parentCauseId": "9d9ff5be-7977-4276-a06f-aad82d15505f",
+  "title": "Falta de inspeccion previa",
+  "description": "Segundo nivel de analisis dentro de la rama Metodo.",
+  "probabilityScore": 3,
+  "impactScore": 4,
+  "frequencyScore": 2,
+  "isRootCause": false,
+  "evidenceSummary": "Registro de turno y foto adjunta como evidencia RCA."
+}
+```
+
+Si `parentCauseId` viene informado, la causa queda registrada como subcausa de una causa existente del mismo incidente.
+
 ## Intake Externo Cliente/Proveedor
 
 El MVP de intake externo se expone como flujo MVC controlado, no como API publica completa:

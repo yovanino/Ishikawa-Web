@@ -6,6 +6,7 @@
     var causesByBranch = Model.Canvas.Causes
         .GroupBy(x => x.BranchId)
         .ToDictionary(x => x.Key, x => x.ToList());
+    var causesById = Model.Canvas.Causes.ToDictionary(x => x.Id);
     var rootCause = Model.Canvas.Causes.FirstOrDefault(x => x.IsRootCause);
     var openActions = Model.CorrectiveActions.Count(x => !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
 }
@@ -397,9 +398,16 @@
                             <ul class="cause-list">
                                 @foreach (var cause in causes)
                                 {
+                                    causesById.TryGetValue(cause.ParentCauseId ?? Guid.Empty, out var parentCause);
                                     <li class="@(cause.IsRootCause ? "root-cause" : "")">
                                         <strong>@cause.Title</strong>
-                                        <span>P@cause.ProbabilityScore I@cause.ImpactScore F@cause.FrequencyScore</span>
+                                        <span>
+                                            P@cause.ProbabilityScore I@cause.ImpactScore F@cause.FrequencyScore
+                                            @if (parentCause is not null)
+                                            {
+                                                <text> | Subcausa de @parentCause.Title</text>
+                                            }
+                                        </span>
                                         @if (!string.IsNullOrWhiteSpace(cause.EvidenceSummary))
                                         {
                                             <small>@cause.EvidenceSummary</small>
@@ -423,6 +431,18 @@
                 <label asp-for="Cause.BranchId" class="form-label">Rama</label>
                 <select asp-for="Cause.BranchId" asp-items="Model.BranchOptions" class="form-select"></select>
                 <span asp-validation-for="Cause.BranchId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Cause.ParentCauseId" class="form-label">Causa padre</label>
+                <select asp-for="Cause.ParentCauseId" class="form-select">
+                    <option value="">Causa primaria</option>
+                    @foreach (var cause in Model.CauseOptions)
+                    {
+                        <option value="@cause.Value">@cause.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="Cause.ParentCauseId" class="text-danger"></span>
             </div>
 
             <div class="mb-3">

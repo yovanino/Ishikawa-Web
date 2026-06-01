@@ -503,6 +503,7 @@ public class EfRcaIncidentService : IRcaIncidentService
                     {
                         ["causeId"] = cause.Id.ToString(),
                         ["branchId"] = cause.BranchId.ToString(),
+                        ["parentCauseId"] = cause.ParentCauseId?.ToString(),
                         ["title"] = cause.Title,
                         ["isRootCause"] = cause.IsRootCause.ToString()
                     }));

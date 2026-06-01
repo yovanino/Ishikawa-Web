@@ -19,7 +19,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Canvas Ishikawa visual inicial.
 - [x] Categorias dinamicas base.
 - [x] Causas.
-- [ ] Subcausas.
+- [x] Subcausas.
 - [x] Acciones correctivas.
 - [x] Cierre/validacion basica de acciones correctivas.
 - [x] Evidencias RCA iniciales por metadatos y referencia.

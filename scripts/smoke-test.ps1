@@ -88,6 +88,25 @@ $cause = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/causes" $causeB
 Assert-Success $cause "Add cause"
 Write-Host "Added cause: $($cause.data.id)"
 
+$subCauseBody = @{
+    branchId = $branchId
+    parentCauseId = $cause.data.id
+    title = "Smoke subcause"
+    description = "Subcausa creada por smoke test."
+    probabilityScore = 2
+    impactScore = 3
+    frequencyScore = 2
+    isRootCause = $false
+    evidenceSummary = "Subcausa asociada a la causa principal."
+}
+
+$subCause = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/causes" $subCauseBody
+Assert-Success $subCause "Add subcause"
+if ($subCause.data.parentCauseId -ne $cause.data.id) {
+    throw "Add subcause failed: expected parentCauseId to match parent cause"
+}
+Write-Host "Added subcause: $($subCause.data.id)"
+
 $evidenceBody = @{
     causeId = $cause.data.id
     title = "Smoke evidence"
@@ -138,6 +157,9 @@ Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
 if ($snapshot.data.evidenceCount -lt 1) {
     throw "Get integration snapshot failed: expected evidenceCount >= 1"
+}
+if ($snapshot.data.causeCount -lt 2) {
+    throw "Get integration snapshot failed: expected causeCount >= 2"
 }
 if ($snapshot.data.openCorrectiveActionsCount -ne 0) {
     throw "Get integration snapshot failed: expected openCorrectiveActionsCount = 0"

@@ -20,6 +20,7 @@ Fecha de corte: 2026-06-01.
    - Canvas Ishikawa inicial.
    - Timeline visual inicial en detalle RCA.
    - Carga de causas con puntajes.
+   - Carga de subcausas vinculadas a una causa padre.
    - Marcado de causa raiz.
    - Acciones correctivas.
    - Validacion/cierre de acciones correctivas con nota obligatoria y validador opcional.
