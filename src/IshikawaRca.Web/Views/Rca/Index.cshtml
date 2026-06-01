@@ -4,7 +4,7 @@
     ViewData["Title"] = "Incidentes RCA";
     var openCount = Model.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase));
     var highCount = Model.Count(x => string.Equals(x.Severity, "High", StringComparison.OrdinalIgnoreCase) || string.Equals(x.Severity, "Critical", StringComparison.OrdinalIgnoreCase));
-    var externalClaimCount = Model.Count(x => string.Equals(x.ClaimScope, "External", StringComparison.OrdinalIgnoreCase));
+    var supplierClaimCount = Model.Count(x => string.Equals(x.ClaimActorType, "Supplier", StringComparison.OrdinalIgnoreCase));
 }
 
 <section class="page-heading premium-heading">
@@ -38,9 +38,9 @@
         <p>Severidad High o Critical.</p>
     </article>
     <article class="metric-tile">
-        <span class="metric-value">@externalClaimCount</span>
-        <strong>Externos</strong>
-        <p>Reclamos asociados a cliente.</p>
+        <span class="metric-value">@supplierClaimCount</span>
+        <strong>Proveedores</strong>
+        <p>Reclamos asociados a proveedor.</p>
     </article>
 </section>
 
@@ -89,8 +89,8 @@
                             }
                         </td>
                         <td>
-                            <span class="source-chip">@incident.ClaimScope</span>
-                            <span>@(incident.ClaimOwnerName ?? "Sin area/cliente")</span>
+                            <span class="source-chip">@incident.ClaimActorType</span>
+                            <span>@(incident.ClaimOwnerName ?? "Sin actor")</span>
                         </td>
                         <td><span class="source-chip">@incident.SourceSystem</span></td>
                         <td><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></td>

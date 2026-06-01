@@ -16,13 +16,11 @@ The current MVP separates:
 
 - `ClaimScope = Internal`: the claim comes from an internal area.
 - `ClaimScope = External`: the claim comes from outside the plant organization.
+- `ClaimActorType = InternalArea | Customer | Supplier`: the actor that originated or owns the claim.
 - `ClaimOwnerName`: area, customer or supplier name depending on context.
 
-For the larger platform, this should evolve into a more expressive model:
+For the larger platform, this should evolve into a master-data-linked model:
 
-- `ClaimActorType = InternalArea`
-- `ClaimActorType = Customer`
-- `ClaimActorType = Supplier`
 - `ClaimActorId`: optional reference to the global master data record.
 - `ClaimActorName`: denormalized display name captured at the time of RCA creation.
 
@@ -145,10 +143,9 @@ AI must not auto-accept external responses into the official RCA. A human review
 
 ## Immediate Recommendation
 
-Next data-model step: replace the simple external meaning with an explicit actor model:
+Next data-model step: keep extending the explicit actor model:
 
 - keep `ClaimScope` for internal/external grouping;
-- add `ClaimActorType` with `InternalArea`, `Customer`, `Supplier`;
+- use `ClaimActorType` with `InternalArea`, `Customer`, `Supplier`;
 - keep `ClaimOwnerName` as the display name;
 - add external intake request/token model only when we start the supplier/customer portal.
-

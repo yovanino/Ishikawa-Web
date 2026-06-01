@@ -69,6 +69,7 @@ Snapshot de integracion:
   "status": "Open",
   "severity": "High",
   "claimScope": "Internal",
+  "claimActorType": "InternalArea",
   "claimOwnerName": "Produccion",
   "rootCauseTitle": "Falta de lubricacion en prensa",
   "openCorrectiveActionsCount": 2,
@@ -97,6 +98,7 @@ Snapshot de integracion:
   "problemDescription": "La tarea no pudo avanzar por parada de prensa.",
   "severity": "High",
   "claimScope": "Internal",
+  "claimActorType": "InternalArea",
   "claimOwnerName": "Produccion",
   "occurredAt": "2026-05-28T09:15:00-03:00",
   "machineCode": "PRENSA-04",
@@ -111,10 +113,18 @@ Snapshot de integracion:
 }
 ```
 
-`claimScope` distingue el tipo de reclamo:
+`claimScope` agrupa el reclamo:
 
 - `Internal`: reclamo interno, donde `claimOwnerName` representa el area solicitante.
-- `External`: reclamo externo, donde `claimOwnerName` representa el cliente.
+- `External`: reclamo externo, donde `claimOwnerName` representa cliente o proveedor.
+
+`claimActorType` identifica el actor especifico:
+
+- `InternalArea`: area interna.
+- `Customer`: cliente.
+- `Supplier`: proveedor.
+
+Para compatibilidad, si un consumidor viejo envia `claimScope = External` sin `claimActorType`, el modulo lo interpreta como `Customer`.
 
 ## Eventos de Dominio
 

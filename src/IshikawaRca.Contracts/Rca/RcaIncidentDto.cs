@@ -16,6 +16,8 @@ public class RcaIncidentDto
 
     public string ClaimScope { get; set; } = string.Empty;
 
+    public string ClaimActorType { get; set; } = string.Empty;
+
     public string? ClaimOwnerName { get; set; }
 
     public DateTimeOffset OccurredAt { get; set; }

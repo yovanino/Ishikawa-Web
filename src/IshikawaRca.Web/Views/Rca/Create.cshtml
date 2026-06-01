@@ -47,9 +47,9 @@
                 </div>
 
                 <div class="form-field">
-                    <label asp-for="ClaimScope" class="form-label"></label>
-                    <select asp-for="ClaimScope" asp-items="ViewBag.ClaimScopes" class="form-select"></select>
-                    <span asp-validation-for="ClaimScope" class="text-danger"></span>
+                    <label asp-for="ClaimActorType" class="form-label"></label>
+                    <select asp-for="ClaimActorType" asp-items="ViewBag.ClaimActorTypes" class="form-select"></select>
+                    <span asp-validation-for="ClaimActorType" class="text-danger"></span>
                 </div>
 
                 <div class="form-field">
@@ -60,7 +60,7 @@
 
                 <div class="form-field">
                     <label asp-for="ClaimOwnerName" class="form-label"></label>
-                    <input asp-for="ClaimOwnerName" class="form-control" placeholder="Produccion / Cliente ACME" />
+                    <input asp-for="ClaimOwnerName" class="form-control" placeholder="Produccion / Cliente ACME / Proveedor XYZ" />
                     <span asp-validation-for="ClaimOwnerName" class="text-danger"></span>
                 </div>
             </div>

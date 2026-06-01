@@ -25,7 +25,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             ProblemDescription = Normalize(request.ProblemDescription),
             Severity = ParseSeverity(request.Severity),
             Status = RcaIncidentStatus.Open,
-            ClaimScope = ParseClaimScope(request.ClaimScope),
+            ClaimActorType = ResolveClaimActorType(request),
+            ClaimScope = ResolveClaimScope(request),
             ClaimOwnerName = Normalize(request.ClaimOwnerName),
             OccurredAt = request.OccurredAt,
             SourceSystem = Normalize(request.SourceSystem) ?? "MANUAL",
@@ -284,6 +285,11 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = nameof(request.ClaimScope), Code = "INVALID_CLAIM_SCOPE", Message = "ClaimScope debe ser Internal o External." });
         }
 
+        if (!string.IsNullOrWhiteSpace(request.ClaimActorType) && !Enum.TryParse<RcaClaimActorType>(request.ClaimActorType, true, out _))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ClaimActorType), Code = "INVALID_CLAIM_ACTOR_TYPE", Message = "ClaimActorType debe ser InternalArea, Customer o Supplier." });
+        }
+
         return errors;
     }
 
@@ -335,11 +341,27 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             : RcaSeverity.Medium;
     }
 
-    private static RcaClaimScope ParseClaimScope(string claimScope)
+    private static RcaClaimScope ResolveClaimScope(CreateRcaIncidentRequest request)
     {
-        return Enum.TryParse<RcaClaimScope>(claimScope, true, out var parsed)
-            ? parsed
-            : RcaClaimScope.Internal;
+        var actorType = ResolveClaimActorType(request);
+
+        return actorType == RcaClaimActorType.InternalArea
+            ? RcaClaimScope.Internal
+            : RcaClaimScope.External;
+    }
+
+    private static RcaClaimActorType ResolveClaimActorType(CreateRcaIncidentRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.ClaimActorType) &&
+            Enum.TryParse<RcaClaimActorType>(request.ClaimActorType, true, out var parsedActorType))
+        {
+            return parsedActorType;
+        }
+
+        return Enum.TryParse<RcaClaimScope>(request.ClaimScope, true, out var parsedScope) &&
+               parsedScope == RcaClaimScope.External
+            ? RcaClaimActorType.Customer
+            : RcaClaimActorType.InternalArea;
     }
 
     private static string? Normalize(string? value)
@@ -382,6 +404,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Severity = incident.Severity.ToString(),
             Status = incident.Status.ToString(),
             ClaimScope = incident.ClaimScope.ToString(),
+            ClaimActorType = incident.ClaimActorType.ToString(),
             ClaimOwnerName = incident.ClaimOwnerName,
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
@@ -473,6 +496,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Status = incident.Status.ToString(),
             Severity = incident.Severity.ToString(),
             ClaimScope = incident.ClaimScope.ToString(),
+            ClaimActorType = incident.ClaimActorType.ToString(),
             ClaimOwnerName = incident.ClaimOwnerName,
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
@@ -524,6 +548,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["severity"] = incident.Severity.ToString(),
                     ["status"] = incident.Status.ToString(),
                     ["claimScope"] = incident.ClaimScope.ToString(),
+                    ["claimActorType"] = incident.ClaimActorType.ToString(),
                     ["claimOwnerName"] = incident.ClaimOwnerName
                 })
         };

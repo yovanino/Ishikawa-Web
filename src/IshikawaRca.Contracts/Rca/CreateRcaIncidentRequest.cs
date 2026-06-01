@@ -20,6 +20,8 @@ public class CreateRcaIncidentRequest
 
     public string ClaimScope { get; set; } = "Internal";
 
+    public string? ClaimActorType { get; set; }
+
     public string? ClaimOwnerName { get; set; }
 
     public DateTimeOffset OccurredAt { get; set; } = DateTimeOffset.UtcNow;

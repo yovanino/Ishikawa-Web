@@ -15,6 +15,8 @@ public class RcaIncident : TenantEntity
 
     public RcaClaimScope ClaimScope { get; set; } = RcaClaimScope.Internal;
 
+    public RcaClaimActorType ClaimActorType { get; set; } = RcaClaimActorType.InternalArea;
+
     public string? ClaimOwnerName { get; set; }
 
     public DateTimeOffset OccurredAt { get; set; } = DateTimeOffset.UtcNow;

@@ -12,7 +12,7 @@
 
 <section class="rca-command-center">
     <div>
-        <p class="module-kicker">@incident.SourceSystem | @incident.ClaimScope</p>
+        <p class="module-kicker">@incident.SourceSystem | @incident.ClaimActorType</p>
         <h1>@incident.Title</h1>
         <p>@(incident.ProblemDescription ?? "Sin descripcion cargada.")</p>
     </div>
@@ -34,7 +34,7 @@
         <p>Clasificacion inicial del evento.</p>
     </article>
     <article class="metric-tile">
-        <span class="metric-value">@(string.Equals(incident.ClaimScope, "External", StringComparison.OrdinalIgnoreCase) ? "Cliente" : "Area")</span>
+        <span class="metric-value">@incident.ClaimActorType</span>
         <strong>Reclamo</strong>
         <p>@(incident.ClaimOwnerName ?? "Sin origen de reclamo.")</p>
     </article>
@@ -65,7 +65,9 @@
             <dd>@incident.Status</dd>
             <dt>Tipo de reclamo</dt>
             <dd>@incident.ClaimScope</dd>
-            <dt>Area / cliente</dt>
+            <dt>Actor</dt>
+            <dd>@incident.ClaimActorType</dd>
+            <dt>Area / cliente / proveedor</dt>
             <dd>@(incident.ClaimOwnerName ?? "-")</dd>
             <dt>Creado</dt>
             <dd>@incident.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>

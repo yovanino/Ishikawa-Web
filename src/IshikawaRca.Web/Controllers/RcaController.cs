@@ -28,7 +28,7 @@ public class RcaController : Controller
     public IActionResult Create()
     {
         ViewBag.Severities = GetSeverityOptions();
-        ViewBag.ClaimScopes = GetClaimScopeOptions();
+        ViewBag.ClaimActorTypes = GetClaimActorTypeOptions();
 
         return View(new CreateRcaIncidentViewModel());
     }
@@ -40,7 +40,7 @@ public class RcaController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.Severities = GetSeverityOptions();
-            ViewBag.ClaimScopes = GetClaimScopeOptions();
+            ViewBag.ClaimActorTypes = GetClaimActorTypeOptions();
             return View(model);
         }
 
@@ -50,7 +50,7 @@ public class RcaController : Controller
             Title = model.Title,
             ProblemDescription = model.ProblemDescription,
             Severity = model.Severity,
-            ClaimScope = model.ClaimScope,
+            ClaimActorType = model.ClaimActorType,
             ClaimOwnerName = model.ClaimOwnerName,
             SourceSystem = model.SourceSystem,
             OccurredAt = model.OccurredAt,
@@ -69,7 +69,7 @@ public class RcaController : Controller
             }
 
             ViewBag.Severities = GetSeverityOptions();
-            ViewBag.ClaimScopes = GetClaimScopeOptions();
+            ViewBag.ClaimActorTypes = GetClaimActorTypeOptions();
             return View(model);
         }
 
@@ -173,12 +173,13 @@ public class RcaController : Controller
         ];
     }
 
-    private static IReadOnlyList<SelectListItem> GetClaimScopeOptions()
+    private static IReadOnlyList<SelectListItem> GetClaimActorTypeOptions()
     {
         return
         [
-            new SelectListItem("Interno - area", "Internal"),
-            new SelectListItem("Externo - cliente", "External")
+            new SelectListItem("Area interna", "InternalArea"),
+            new SelectListItem("Cliente", "Customer"),
+            new SelectListItem("Proveedor", "Supplier")
         ];
     }
 
