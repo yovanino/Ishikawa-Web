@@ -16,7 +16,7 @@ Crear `src/IshikawaRca.Web/appsettings.Local.json` o usar variable de entorno. E
 ```json
 {
   "ConnectionStrings": {
-    "IshikawaRca": "Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;"
+    "IshikawaRca": "Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;"
   },
   "AiGateway": {
     "Mode": "Stub",
@@ -29,7 +29,7 @@ Crear `src/IshikawaRca.Web/appsettings.Local.json` o usar variable de entorno. E
 Alternativa por terminal:
 
 ```powershell
-$env:ISHIKAWA_RCA_CONNECTION="Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;"
+$env:ISHIKAWA_RCA_CONNECTION="Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;"
 ```
 
 ## Base de Datos
@@ -41,6 +41,8 @@ dotnet ef database update --project src\IshikawaRca.Infrastructure\IshikawaRca.I
 ```
 
 Si falla por credenciales, validar usuario, password, permisos sobre `ishikawa_rca` y conectividad a `localhost:3306`.
+
+Si Visual Studio corta una request mientras EF esta abriendo MySQL, puede verse `OperationCanceledException` en el depurador. Primero confirmar que MySQL este activo, que `appsettings.Local.json` tenga `AllowPublicKeyRetrieval=True`, y que la validacion completa pase con timeouts controlados.
 
 ## Compilacion
 

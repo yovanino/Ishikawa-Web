@@ -11,6 +11,8 @@ namespace IshikawaRca.Infrastructure;
 
 public static class DependencyInjection
 {
+    private static readonly TimeSpan MySqlMaxRetryDelay = TimeSpan.FromSeconds(2);
+
     public static IServiceCollection AddIshikawaRcaInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("IshikawaRca");
@@ -23,7 +25,9 @@ public static class DependencyInjection
             options.UseMySql(
                 connectionString,
                 new MySqlServerVersion(new Version(8, 0, 36)),
-                mysqlOptions => mysqlOptions.EnableRetryOnFailure()));
+                mysqlOptions => mysqlOptions
+                    .EnableRetryOnFailure(3, MySqlMaxRetryDelay, null)
+                    .CommandTimeout(15)));
 
         services.AddScoped<IRcaIncidentService, EfRcaIncidentService>();
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();

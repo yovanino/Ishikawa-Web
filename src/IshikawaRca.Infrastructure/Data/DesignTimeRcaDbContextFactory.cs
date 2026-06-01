@@ -6,6 +6,8 @@ namespace IshikawaRca.Infrastructure.Data;
 
 public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbContext>
 {
+    private static readonly TimeSpan MySqlMaxRetryDelay = TimeSpan.FromSeconds(2);
+
     public RcaDbContext CreateDbContext(string[] args)
     {
         var connectionString = ResolveConnectionString();
@@ -14,7 +16,9 @@ public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbCo
         optionsBuilder.UseMySql(
             connectionString,
             new MySqlServerVersion(new Version(8, 0, 36)),
-            mysqlOptions => mysqlOptions.EnableRetryOnFailure());
+            mysqlOptions => mysqlOptions
+                .EnableRetryOnFailure(3, MySqlMaxRetryDelay, null)
+                .CommandTimeout(15));
 
         return new RcaDbContext(optionsBuilder.Options);
     }
@@ -51,7 +55,7 @@ public class DesignTimeRcaDbContextFactory : IDesignTimeDbContextFactory<RcaDbCo
             return defaultConnectionString;
         }
 
-        return "Server=localhost;Port=3306;Database=ishikawa_rca;User=ishikawa_user;Password=change_me;TreatTinyAsBoolean=true;SslMode=None;";
+        return "Server=localhost;Port=3306;Database=ishikawa_rca;User=ishikawa_user;Password=change_me;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;";
     }
 
     private static string? TryReadConnectionString(string path)
