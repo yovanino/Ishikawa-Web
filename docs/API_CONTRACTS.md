@@ -37,6 +37,38 @@ POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
 
+## Intake Externo Cliente/Proveedor
+
+El MVP de intake externo se expone como flujo MVC controlado, no como API publica completa:
+
+```http
+POST /Rca/CreateExternalIntake/{incidentId}
+POST /Rca/RevokeExternalIntake/{incidentId}?intakeId={intakeId}
+GET  /external-intake/{token}
+POST /external-intake/{token}
+```
+
+El token se entrega una sola vez al usuario interno al generar el link. En base de datos se guarda solo `TokenHash`.
+
+Respuesta externa esperada:
+
+```json
+{
+  "contactName": "Contacto proveedor",
+  "contactEmail": "proveedor@example.com",
+  "claimReference": "SUP-2026-001",
+  "materialCode": "MAT-01",
+  "batchOrLot": "LOT-42",
+  "description": "Descripcion del desvio observado por el proveedor.",
+  "containmentResponse": "Lote bloqueado y segregado.",
+  "proposedRootCause": "Desvio en control de proceso.",
+  "proposedCorrectiveAction": "Ajustar control final y enviar certificado.",
+  "evidenceSummary": "Certificado y fotos pendientes de adjuntar en fase posterior."
+}
+```
+
+Estados del intake: `Sent`, `Opened`, `Submitted`, `Reviewed`, `Expired`, `Revoked`.
+
 ## APIs de Integracion entre Modulos
 
 Estas APIs son la superficie recomendada para Gantt, gateway industrial, OEE, Andon, TPM o la futura app global. Devuelven una vista estable y reducida del RCA sin exponer el modelo interno completo.

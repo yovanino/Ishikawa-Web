@@ -1,6 +1,6 @@
 # Estado y Pendientes
 
-Fecha de corte: 2026-05-29.
+Fecha de corte: 2026-06-01.
 
 ## Cerrado
 
@@ -26,6 +26,8 @@ Fecha de corte: 2026-05-29.
    - Endpoints versionados `/api/v1`.
    - Snapshots para Gantt, Gateway, OEE, Andon o app global.
    - Feed derivado de eventos RCA.
+   - Actor de reclamo: area interna, cliente o proveedor.
+   - Intake link seguro MVP para cliente/proveedor con token hasheado.
 
 5. Preparacion IA
    - Contratos de asistencia IA.
@@ -42,10 +44,12 @@ Fecha de corte: 2026-05-29.
 - Agregar tests automatizados cuando el flujo se estabilice.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
+- Agregar adjuntos reales al intake externo.
+- Agregar revision/aprobacion formal para convertir respuestas externas en evidencia/acciones.
 
 ## Siguiente Corte Recomendado
 
 El proximo paso natural es elegir uno de estos dos caminos:
 
 - Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
-- Experiencia visual: canvas con interacciones, layout mejorado, subcausas y evidencias.
+- Workflow RCA: timeline, auditoria, aprobacion de intake externo, evidencias y CAPA.

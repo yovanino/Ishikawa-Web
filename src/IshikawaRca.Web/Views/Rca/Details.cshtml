@@ -27,6 +27,14 @@
     <div class="alert alert-success premium-alert" role="status">@message</div>
 }
 
+@if (TempData["ExternalIntakeLink"] is string externalLink)
+{
+    <div class="alert alert-info premium-alert" role="status">
+        Link externo creado:
+        <a href="@externalLink" target="_blank" rel="noopener">@externalLink</a>
+    </div>
+}
+
 <section class="metric-grid compact-metrics" aria-label="Resumen del RCA">
     <article class="metric-tile">
         <span class="metric-value">@incident.Severity</span>
@@ -89,6 +97,86 @@
             <dd>@(incident.EscalatedTo8D ? "Si" : "No")</dd>
         </dl>
     </article>
+</section>
+
+<section class="analysis-grid actions-grid">
+    <article class="analysis-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Intake externo</h2>
+                <span>Links controlados para cliente o proveedor</span>
+            </div>
+            <span class="canvas-counter">@Model.ExternalIntakes.Count link(s)</span>
+        </div>
+
+        @if (Model.ExternalIntakes.Count == 0)
+        {
+            <p class="muted-text">Sin links externos creados.</p>
+        }
+        else
+        {
+            <div class="action-list">
+                @foreach (var intake in Model.ExternalIntakes)
+                {
+                    <section class="action-row">
+                        <div>
+                            <strong>@intake.ActorType - @(intake.ActorName ?? "Sin actor")</strong>
+                            <span>@(intake.ContactEmail ?? intake.ContactName ?? "Sin contacto")</span>
+                            @if (!string.IsNullOrWhiteSpace(intake.Description))
+                            {
+                                <small>@intake.Description</small>
+                            }
+                        </div>
+                        <div>
+                            <span class="status-chip">@intake.Status</span>
+                            <small>Expira @intake.ExpiresAt.LocalDateTime.ToString("dd/MM/yyyy")</small>
+                            @if (intake.Status is not "Revoked" and not "Submitted" and not "Reviewed")
+                            {
+                                <form asp-controller="Rca" asp-action="RevokeExternalIntake" asp-route-id="@incident.Id" method="post">
+                                    <input type="hidden" name="intakeId" value="@intake.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Revocar</button>
+                                </form>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+        }
+    </article>
+
+    <aside class="analysis-panel capture-panel">
+        <h2>Crear link</h2>
+        <form asp-controller="Rca" asp-action="CreateExternalIntake" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="ExternalIntake.ActorType" class="form-label"></label>
+                <select asp-for="ExternalIntake.ActorType" class="form-select">
+                    <option value="Supplier">Proveedor</option>
+                    <option value="Customer">Cliente</option>
+                </select>
+                <span asp-validation-for="ExternalIntake.ActorType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ExternalIntake.ActorName" class="form-label"></label>
+                <input asp-for="ExternalIntake.ActorName" class="form-control" placeholder="Proveedor XYZ / Cliente ACME" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ExternalIntake.ContactName" class="form-label"></label>
+                <input asp-for="ExternalIntake.ContactName" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ExternalIntake.ContactEmail" class="form-label"></label>
+                <input asp-for="ExternalIntake.ContactEmail" class="form-control" />
+                <span asp-validation-for="ExternalIntake.ContactEmail" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Generar link externo</button>
+        </form>
+    </aside>
 </section>
 
 <section class="analysis-grid">

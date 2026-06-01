@@ -10,10 +10,12 @@ public class RcaController : Controller
 {
     private static readonly Guid DemoTenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly IRcaIncidentService _rcaIncidentService;
+    private readonly IRcaExternalIntakeService _externalIntakeService;
 
-    public RcaController(IRcaIncidentService rcaIncidentService)
+    public RcaController(IRcaIncidentService rcaIncidentService, IRcaExternalIntakeService externalIntakeService)
     {
         _rcaIncidentService = rcaIncidentService;
+        _externalIntakeService = externalIntakeService;
     }
 
     [HttpGet]
@@ -162,6 +164,66 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.ExternalIntake = model;
+            return View(nameof(Details), details);
+        }
+
+        var request = new CreateExternalIntakeRequest
+        {
+            ActorType = model.ActorType,
+            ActorName = model.ActorName,
+            ContactName = model.ContactName,
+            ContactEmail = model.ContactEmail,
+            ExpiresAt = model.ExpiresAt
+        };
+
+        var result = await _externalIntakeService.CreateAsync(id, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError($"ExternalIntake.{error.Field}", error.Message);
+            }
+
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.ExternalIntake = model;
+            return View(nameof(Details), details);
+        }
+
+        var link = Url.Action("Index", "ExternalIntake", new { token = result.Data.Token }, Request.Scheme);
+        TempData["StatusMessage"] = "Link externo creado.";
+        TempData["ExternalIntakeLink"] = link;
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevokeExternalIntake(Guid id, Guid intakeId, CancellationToken cancellationToken)
+    {
+        var result = await _externalIntakeService.RevokeAsync(intakeId, cancellationToken);
+        TempData["StatusMessage"] = result.Success ? "Link externo revocado." : "No se pudo revocar el link externo.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
     {
         return
@@ -224,12 +286,14 @@ public class RcaController : Controller
         }
 
         var actionsResult = await _rcaIncidentService.ListCorrectiveActionsAsync(id, cancellationToken);
+        var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
 
         return new RcaIncidentDetailsViewModel
         {
             Incident = incidentResult.Data,
             Canvas = canvasResult.Data,
-            CorrectiveActions = actionsResult.Data ?? []
+            CorrectiveActions = actionsResult.Data ?? [],
+            ExternalIntakes = externalIntakesResult.Data ?? []
         };
     }
 }

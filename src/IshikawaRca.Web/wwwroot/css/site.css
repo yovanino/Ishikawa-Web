@@ -588,6 +588,47 @@ a {
   max-width: 620px;
 }
 
+.external-intake-body {
+  background:
+    linear-gradient(180deg, rgba(12, 31, 40, 0.08), rgba(12, 31, 40, 0)),
+    var(--bg);
+  min-height: 100vh;
+}
+
+.external-intake-shell {
+  margin: 0 auto;
+  max-width: 980px;
+  padding: 28px 16px 48px;
+}
+
+.external-intake-header {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 16px;
+  padding: 20px;
+}
+
+.external-intake-header h1 {
+  font-size: 1.65rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.external-intake-header p {
+  color: #627384;
+  margin: 3px 0 0;
+}
+
+.external-intake-form {
+  margin: 0;
+}
+
 .form-layout {
   align-items: start;
   display: grid;

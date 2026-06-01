@@ -1,0 +1,318 @@
+using System.Security.Cryptography;
+using System.Text;
+using IshikawaRca.Application.Rca;
+using IshikawaRca.Contracts.Common;
+using IshikawaRca.Contracts.Rca;
+using IshikawaRca.Domain.Entities;
+using IshikawaRca.Domain.Enums;
+using IshikawaRca.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace IshikawaRca.Infrastructure.Services;
+
+public class EfRcaExternalIntakeService : IRcaExternalIntakeService
+{
+    private static readonly TimeSpan DefaultExpiration = TimeSpan.FromDays(14);
+    private readonly RcaDbContext _dbContext;
+
+    public EfRcaExternalIntakeService(RcaDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<ApiResult<CreatedExternalIntakeDto>> CreateAsync(Guid incidentId, CreateExternalIntakeRequest request, CancellationToken cancellationToken = default)
+    {
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<CreatedExternalIntakeDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        var errors = ValidateCreate(request);
+        if (errors.Count > 0)
+        {
+            return ApiResult<CreatedExternalIntakeDto>.Fail("No se pudo crear el link externo.", errors.ToArray());
+        }
+
+        var token = CreateToken();
+        var actorType = ParseActorType(request.ActorType);
+        var intake = new RcaExternalIntakeRequest
+        {
+            TenantId = incident.TenantId,
+            RcaIncidentId = incident.Id,
+            ActorType = actorType,
+            ActorName = Normalize(request.ActorName) ?? incident.ClaimOwnerName,
+            ContactName = Normalize(request.ContactName),
+            ContactEmail = Normalize(request.ContactEmail),
+            TokenHash = HashToken(token),
+            ExpiresAt = request.ExpiresAt ?? DateTimeOffset.UtcNow.Add(DefaultExpiration),
+            Status = RcaExternalIntakeStatus.Sent
+        };
+
+        _dbContext.RcaExternalIntakeRequests.Add(intake);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<CreatedExternalIntakeDto>.Ok(
+            new CreatedExternalIntakeDto
+            {
+                Intake = ToDto(intake, incident.Title),
+                Token = token
+            },
+            "Link externo creado.");
+    }
+
+    public async Task<ApiResult<IReadOnlyList<RcaExternalIntakeDto>>> ListByIncidentAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<IReadOnlyList<RcaExternalIntakeDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        var intakes = await _dbContext.RcaExternalIntakeRequests
+            .AsNoTracking()
+            .Where(x => x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => ToDto(x, incident.Title))
+            .ToListAsync(cancellationToken);
+
+        return ApiResult<IReadOnlyList<RcaExternalIntakeDto>>.Ok(intakes);
+    }
+
+    public async Task<ApiResult<RcaExternalIntakeDto>> GetByTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var result = await FindByTokenAsync(token, track: true, cancellationToken);
+        if (!result.Success || result.Intake is null || result.IncidentTitle is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail("Link externo invalido.", result.Error);
+        }
+
+        if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow && result.Intake.Status is not RcaExternalIntakeStatus.Submitted and not RcaExternalIntakeStatus.Reviewed)
+        {
+            result.Intake.Status = RcaExternalIntakeStatus.Expired;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo expiro.",
+                new ApiError { Field = nameof(token), Code = "INTAKE_EXPIRED", Message = "Solicita un nuevo link al equipo interno." });
+        }
+
+        if (result.Intake.Status == RcaExternalIntakeStatus.Revoked)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo fue revocado.",
+                new ApiError { Field = nameof(token), Code = "INTAKE_REVOKED", Message = "El link ya no esta habilitado." });
+        }
+
+        if (result.Intake.Status == RcaExternalIntakeStatus.Sent)
+        {
+            result.Intake.Status = RcaExternalIntakeStatus.Opened;
+            result.Intake.OpenedAt = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(result.Intake, result.IncidentTitle));
+    }
+
+    public async Task<ApiResult<RcaExternalIntakeDto>> SubmitAsync(string token, SubmitExternalIntakeRequest request, CancellationToken cancellationToken = default)
+    {
+        var result = await FindByTokenAsync(token, track: true, cancellationToken);
+        if (!result.Success || result.Intake is null || result.IncidentTitle is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail("Link externo invalido.", result.Error);
+        }
+
+        if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow)
+        {
+            result.Intake.Status = RcaExternalIntakeStatus.Expired;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo expiro.",
+                new ApiError { Field = nameof(token), Code = "INTAKE_EXPIRED", Message = "Solicita un nuevo link al equipo interno." });
+        }
+
+        if (result.Intake.Status is RcaExternalIntakeStatus.Revoked or RcaExternalIntakeStatus.Submitted or RcaExternalIntakeStatus.Reviewed)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "El link externo no acepta nuevas respuestas.",
+                new ApiError { Field = nameof(token), Code = "INTAKE_CLOSED", Message = "La solicitud ya fue cerrada o revocada." });
+        }
+
+        var errors = ValidateSubmit(request);
+        if (errors.Count > 0)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail("No se pudo enviar la respuesta externa.", errors.ToArray());
+        }
+
+        result.Intake.ContactName = Normalize(request.ContactName) ?? result.Intake.ContactName;
+        result.Intake.ContactEmail = Normalize(request.ContactEmail) ?? result.Intake.ContactEmail;
+        result.Intake.ClaimReference = Normalize(request.ClaimReference);
+        result.Intake.MaterialCode = Normalize(request.MaterialCode);
+        result.Intake.BatchOrLot = Normalize(request.BatchOrLot);
+        result.Intake.Description = request.Description.Trim();
+        result.Intake.ContainmentResponse = Normalize(request.ContainmentResponse);
+        result.Intake.ProposedRootCause = Normalize(request.ProposedRootCause);
+        result.Intake.ProposedCorrectiveAction = Normalize(request.ProposedCorrectiveAction);
+        result.Intake.EvidenceSummary = Normalize(request.EvidenceSummary);
+        result.Intake.SubmittedAt = DateTimeOffset.UtcNow;
+        result.Intake.Status = RcaExternalIntakeStatus.Submitted;
+        result.Intake.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(result.Intake, result.IncidentTitle), "Respuesta externa enviada.");
+    }
+
+    public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, CancellationToken cancellationToken = default)
+    {
+        var intake = await _dbContext.RcaExternalIntakeRequests
+            .FirstOrDefaultAsync(x => x.Id == intakeId && !x.IsDeleted, cancellationToken);
+
+        if (intake is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "No se encontro el link externo.",
+                new ApiError { Field = nameof(intakeId), Code = "INTAKE_NOT_FOUND", Message = "El identificador no corresponde a un intake activo." });
+        }
+
+        var incidentTitle = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .Where(x => x.Id == intake.RcaIncidentId)
+            .Select(x => x.Title)
+            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        intake.Status = RcaExternalIntakeStatus.Revoked;
+        intake.UpdatedAt = DateTimeOffset.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Link externo revocado.");
+    }
+
+    private async Task<(bool Success, RcaExternalIntakeRequest? Intake, string? IncidentTitle, ApiError Error)> FindByTokenAsync(string token, bool track, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return (false, null, null, new ApiError { Field = nameof(token), Code = "TOKEN_REQUIRED", Message = "Token requerido." });
+        }
+
+        var hash = HashToken(token);
+        var query = _dbContext.RcaExternalIntakeRequests.Where(x => x.TokenHash == hash && !x.IsDeleted);
+        if (!track)
+        {
+            query = query.AsNoTracking();
+        }
+
+        var intake = await query.FirstOrDefaultAsync(cancellationToken);
+        if (intake is null)
+        {
+            return (false, null, null, new ApiError { Field = nameof(token), Code = "INTAKE_NOT_FOUND", Message = "El link no corresponde a una solicitud activa." });
+        }
+
+        var incidentTitle = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .Where(x => x.Id == intake.RcaIncidentId && !x.IsDeleted)
+            .Select(x => x.Title)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (incidentTitle is null)
+        {
+            return (false, null, null, new ApiError { Field = nameof(token), Code = "RCA_NOT_FOUND", Message = "El RCA asociado ya no esta disponible." });
+        }
+
+        return (true, intake, incidentTitle, new ApiError());
+    }
+
+    private static List<ApiError> ValidateCreate(CreateExternalIntakeRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (!Enum.TryParse<RcaClaimActorType>(request.ActorType, true, out var actorType) || actorType == RcaClaimActorType.InternalArea)
+        {
+            errors.Add(new ApiError { Field = nameof(request.ActorType), Code = "INVALID_ACTOR_TYPE", Message = "El link externo solo puede crearse para Customer o Supplier." });
+        }
+
+        if (request.ExpiresAt.HasValue && request.ExpiresAt.Value <= DateTimeOffset.UtcNow)
+        {
+            errors.Add(new ApiError { Field = nameof(request.ExpiresAt), Code = "INVALID_EXPIRATION", Message = "La expiracion debe ser futura." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateSubmit(SubmitExternalIntakeRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Description), Code = "DESCRIPTION_REQUIRED", Message = "La descripcion es obligatoria." });
+        }
+
+        return errors;
+    }
+
+    private static RcaClaimActorType ParseActorType(string actorType)
+    {
+        return Enum.TryParse<RcaClaimActorType>(actorType, true, out var parsed)
+            ? parsed
+            : RcaClaimActorType.Supplier;
+    }
+
+    private static RcaExternalIntakeDto ToDto(RcaExternalIntakeRequest intake, string incidentTitle)
+    {
+        return new RcaExternalIntakeDto
+        {
+            Id = intake.Id,
+            RcaIncidentId = intake.RcaIncidentId,
+            IncidentTitle = incidentTitle,
+            ActorType = intake.ActorType.ToString(),
+            ActorName = intake.ActorName,
+            ContactName = intake.ContactName,
+            ContactEmail = intake.ContactEmail,
+            Status = intake.Status.ToString(),
+            CreatedAt = intake.CreatedAt,
+            ExpiresAt = intake.ExpiresAt,
+            OpenedAt = intake.OpenedAt,
+            SubmittedAt = intake.SubmittedAt,
+            ReviewedAt = intake.ReviewedAt,
+            ClaimReference = intake.ClaimReference,
+            MaterialCode = intake.MaterialCode,
+            BatchOrLot = intake.BatchOrLot,
+            Description = intake.Description,
+            ContainmentResponse = intake.ContainmentResponse,
+            ProposedRootCause = intake.ProposedRootCause,
+            ProposedCorrectiveAction = intake.ProposedCorrectiveAction,
+            EvidenceSummary = intake.EvidenceSummary
+        };
+    }
+
+    private static string CreateToken()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes);
+    }
+
+    private static string? Normalize(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+}

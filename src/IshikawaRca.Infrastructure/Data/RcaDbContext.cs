@@ -19,6 +19,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<CorrectiveAction> CorrectiveActions => Set<CorrectiveAction>();
 
+    public DbSet<RcaExternalIntakeRequest> RcaExternalIntakeRequests => Set<RcaExternalIntakeRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -27,6 +29,7 @@ public class RcaDbContext : DbContext
         ConfigureIshikawaBranch(modelBuilder);
         ConfigureIshikawaCause(modelBuilder);
         ConfigureCorrectiveAction(modelBuilder);
+        ConfigureRcaExternalIntakeRequest(modelBuilder);
     }
 
     private static void ConfigureRcaIncident(ModelBuilder modelBuilder)
@@ -129,6 +132,34 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.Status, x.DueDate });
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId });
         entity.HasIndex(x => new { x.TenantId, x.CauseId });
+    }
+
+    private static void ConfigureRcaExternalIntakeRequest(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaExternalIntakeRequest>();
+
+        entity.ToTable("rca_external_intake_requests");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.ActorType).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ActorName).HasMaxLength(160);
+        entity.Property(x => x.ContactName).HasMaxLength(160);
+        entity.Property(x => x.ContactEmail).HasMaxLength(254);
+        entity.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ReviewedByUserId).HasMaxLength(160);
+        entity.Property(x => x.ClaimReference).HasMaxLength(160);
+        entity.Property(x => x.MaterialCode).HasMaxLength(120);
+        entity.Property(x => x.BatchOrLot).HasMaxLength(120);
+        entity.Property(x => x.Description).HasColumnType("text");
+        entity.Property(x => x.ContainmentResponse).HasColumnType("text");
+        entity.Property(x => x.ProposedRootCause).HasColumnType("text");
+        entity.Property(x => x.ProposedCorrectiveAction).HasColumnType("text");
+        entity.Property(x => x.EvidenceSummary).HasColumnType("text");
+
+        entity.HasIndex(x => x.TokenHash).IsUnique();
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.Status });
+        entity.HasIndex(x => new { x.TenantId, x.ActorType, x.ActorName });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

@@ -1,0 +1,25 @@
+@model string
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Link no disponible</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="external-intake-body">
+    <main class="external-intake-shell">
+        <section class="empty-state premium-empty">
+            <span class="empty-symbol">RCA</span>
+            <h1>Link no disponible</h1>
+            <p>@Model</p>
+        </section>
+    </main>
+</body>
+</html>

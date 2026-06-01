@@ -46,6 +46,15 @@ Recommended flow:
 5. Internal quality/supply chain user reviews and imports/approves the supplier input.
 6. Approved data becomes part of the RCA audit trail.
 
+MVP implemented:
+
+- Internal user can generate supplier/customer links from the RCA detail screen.
+- Token is shown once and stored as a SHA-256 hash.
+- External page has no full module navigation.
+- External actor can submit reference, material, lot, description, containment, proposed root cause, proposed action and evidence summary.
+- Internal screen shows intake status and submitted response.
+- Links can be revoked before submission/review.
+
 ## Security Rules
 
 External links must be treated as controlled access tokens, not public pages.
@@ -143,9 +152,9 @@ AI must not auto-accept external responses into the official RCA. A human review
 
 ## Immediate Recommendation
 
-Next data-model step: keep extending the explicit actor model:
+Next data-model step: add formal review/import:
 
-- keep `ClaimScope` for internal/external grouping;
-- use `ClaimActorType` with `InternalArea`, `Customer`, `Supplier`;
-- keep `ClaimOwnerName` as the display name;
-- add external intake request/token model only when we start the supplier/customer portal.
+- reviewer approves/rejects external response;
+- approved response can become evidence;
+- proposed corrective action can become CAPA draft;
+- attachments can be added with storage policy from the global platform.

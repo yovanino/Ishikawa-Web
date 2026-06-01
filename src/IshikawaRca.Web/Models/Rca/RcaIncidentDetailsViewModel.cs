@@ -11,9 +11,13 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<CorrectiveActionDto> CorrectiveActions { get; set; } = [];
 
+    public IReadOnlyList<RcaExternalIntakeDto> ExternalIntakes { get; set; } = [];
+
     public AddIshikawaCauseViewModel Cause { get; set; } = new();
 
     public AddCorrectiveActionViewModel Action { get; set; } = new();
+
+    public CreateExternalIntakeViewModel ExternalIntake { get; set; } = new();
 
     public IReadOnlyList<SelectListItem> BranchOptions =>
         Canvas.Branches

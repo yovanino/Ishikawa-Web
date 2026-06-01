@@ -30,6 +30,7 @@ public static class DependencyInjection
                     .CommandTimeout(15)));
 
         services.AddScoped<IRcaIncidentService, EfRcaIncidentService>();
+        services.AddScoped<IRcaExternalIntakeService, EfRcaExternalIntakeService>();
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
 

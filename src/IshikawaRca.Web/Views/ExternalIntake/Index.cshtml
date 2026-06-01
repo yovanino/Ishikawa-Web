@@ -1,0 +1,89 @@
+@model IshikawaRca.Web.Models.Rca.ExternalIntakePortalViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Respuesta externa RCA</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="external-intake-body">
+    <main class="external-intake-shell">
+        <section class="external-intake-header">
+            <span class="brand-mark">IR</span>
+            <div>
+                <p class="module-kicker">@Model.Intake.ActorType</p>
+                <h1>Respuesta externa RCA</h1>
+                <p>@Model.Intake.IncidentTitle</p>
+            </div>
+            <span class="status-chip">@Model.Intake.Status</span>
+        </section>
+
+        <form class="form-panel premium-form external-intake-form" asp-controller="ExternalIntake" asp-action="Submit" asp-route-token="@Model.Token" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-section">
+                <h2>Contacto y referencia</h2>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label asp-for="ContactName" class="form-label"></label>
+                        <input asp-for="ContactName" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label asp-for="ContactEmail" class="form-label"></label>
+                        <input asp-for="ContactEmail" class="form-control" />
+                        <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                    </div>
+                    <div class="form-field">
+                        <label asp-for="ClaimReference" class="form-label"></label>
+                        <input asp-for="ClaimReference" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label asp-for="MaterialCode" class="form-label"></label>
+                        <input asp-for="MaterialCode" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label asp-for="BatchOrLot" class="form-label"></label>
+                        <input asp-for="BatchOrLot" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Respuesta</h2>
+                <div class="form-field form-field-wide">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label asp-for="ContainmentResponse" class="form-label"></label>
+                    <textarea asp-for="ContainmentResponse" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label asp-for="ProposedRootCause" class="form-label"></label>
+                    <textarea asp-for="ProposedRootCause" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label asp-for="ProposedCorrectiveAction" class="form-label"></label>
+                    <textarea asp-for="ProposedCorrectiveAction" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label asp-for="EvidenceSummary" class="form-label"></label>
+                    <textarea asp-for="EvidenceSummary" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Enviar respuesta</button>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

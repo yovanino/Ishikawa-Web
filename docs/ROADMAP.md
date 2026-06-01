@@ -25,6 +25,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] API para crear incidentes desde sistemas externos.
 - [x] Contexto basico de reclamo interno/externo.
 - [x] Actor de reclamo explicito: area interna, cliente o proveedor.
+- [x] Intake link seguro MVP para proveedor/cliente.
 
 ## Fase 2 - Experiencia Visual
 
@@ -44,7 +45,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Integracion SCADA/Gateway por API.
 - Timeline de RCA.
 - Estados y auditoria ampliada.
-- Intake link seguro para proveedor/cliente.
+- Revision/aprobacion formal de intake externo.
+- Adjuntos/evidencia en intake externo.
 
 ## Fase 4 - Inteligencia Asistida
 
