@@ -97,6 +97,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
 
 El smoke test crea un incidente demo, agrega causa raiz, agrega accion correctiva, consulta snapshot/eventos de integracion y prueba la IA en modo stub.
 
+Validar flujo de intake externo con revision interna:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-external-intake-review.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20 -RequestTimeoutSeconds 10 -ShutdownTimeoutSeconds 10
+```
+
+Este smoke test crea un RCA, genera link externo, envia una respuesta como proveedor y la acepta internamente importando causa y accion.
+
 Validacion local completa con arranque, smoke test y parada:
 
 ```powershell

@@ -138,6 +138,35 @@
                                 </form>
                             }
                         </div>
+                        @if (intake.Status == "Submitted")
+                        {
+                            <form class="external-review-form" asp-controller="Rca" asp-action="ReviewExternalIntake" asp-route-id="@incident.Id" method="post">
+                                <input type="hidden" name="intakeId" value="@intake.Id" />
+                                <div>
+                                    <label class="form-label">Rama destino</label>
+                                    <select name="branchId" class="form-select form-select-sm">
+                                        @foreach (var branch in Model.BranchOptions)
+                                        {
+                                            <option value="@branch.Value">@branch.Text</option>
+                                        }
+                                    </select>
+                                </div>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="importCause" value="true" checked />
+                                    <span class="form-check-label">Importar causa</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="markCauseAsRoot" value="true" />
+                                    <span class="form-check-label">Marcar raiz</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="importCorrectiveAction" value="true" checked />
+                                    <span class="form-check-label">Importar accion</span>
+                                </label>
+                                <input class="form-control form-control-sm" name="reviewedByUserId" placeholder="Revisor" />
+                                <button type="submit" class="btn btn-sm btn-primary">Aceptar respuesta</button>
+                            </form>
+                        }
                     </section>
                 }
             </div>

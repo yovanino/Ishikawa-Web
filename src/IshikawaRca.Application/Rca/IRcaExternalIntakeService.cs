@@ -13,5 +13,7 @@ public interface IRcaExternalIntakeService
 
     Task<ApiResult<RcaExternalIntakeDto>> SubmitAsync(string token, SubmitExternalIntakeRequest request, CancellationToken cancellationToken = default);
 
+    Task<ApiResult<RcaExternalIntakeDto>> ReviewAsync(Guid intakeId, ReviewExternalIntakeRequest request, CancellationToken cancellationToken = default);
+
     Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, CancellationToken cancellationToken = default);
 }

@@ -28,6 +28,7 @@ Fecha de corte: 2026-06-01.
    - Feed derivado de eventos RCA.
    - Actor de reclamo: area interna, cliente o proveedor.
    - Intake link seguro MVP para cliente/proveedor con token hasheado.
+   - Revision interna de intake externo con importacion a causa Ishikawa y accion correctiva.
 
 5. Preparacion IA
    - Contratos de asistencia IA.
@@ -45,11 +46,11 @@ Fecha de corte: 2026-06-01.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Agregar adjuntos reales al intake externo.
-- Agregar revision/aprobacion formal para convertir respuestas externas en evidencia/acciones.
+- Separar aprobacion/rechazo formal con auditoria fina y adjuntos reales.
 
 ## Siguiente Corte Recomendado
 
 El proximo paso natural es elegir uno de estos dos caminos:
 
 - Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
-- Workflow RCA: timeline, auditoria, aprobacion de intake externo, evidencias y CAPA.
+- Workflow RCA: timeline, auditoria ampliada, evidencias adjuntas y CAPA.

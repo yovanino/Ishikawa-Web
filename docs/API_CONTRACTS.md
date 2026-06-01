@@ -44,6 +44,7 @@ El MVP de intake externo se expone como flujo MVC controlado, no como API public
 ```http
 POST /Rca/CreateExternalIntake/{incidentId}
 POST /Rca/RevokeExternalIntake/{incidentId}?intakeId={intakeId}
+POST /Rca/ReviewExternalIntake/{incidentId}
 GET  /external-intake/{token}
 POST /external-intake/{token}
 ```
@@ -68,6 +69,21 @@ Respuesta externa esperada:
 ```
 
 Estados del intake: `Sent`, `Opened`, `Submitted`, `Reviewed`, `Expired`, `Revoked`.
+
+Revision interna esperada:
+
+```json
+{
+  "intakeId": "8b30e5b6-dadb-4886-8d3e-4e39ce189bb4",
+  "branchId": "2a70bcb5-2423-4b2a-95b0-9a7140a8ca6f",
+  "importCause": true,
+  "markCauseAsRoot": false,
+  "importCorrectiveAction": true,
+  "reviewedByUserId": "calidad"
+}
+```
+
+Cuando se aprueba, el modulo puede crear una causa Ishikawa desde `proposedRootCause`, una accion correctiva desde `proposedCorrectiveAction` y marca el intake como `Reviewed`.
 
 ## APIs de Integracion entre Modulos
 

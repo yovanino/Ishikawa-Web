@@ -172,6 +172,98 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(result.Intake, result.IncidentTitle), "Respuesta externa enviada.");
     }
 
+    public async Task<ApiResult<RcaExternalIntakeDto>> ReviewAsync(Guid intakeId, ReviewExternalIntakeRequest request, CancellationToken cancellationToken = default)
+    {
+        var intake = await _dbContext.RcaExternalIntakeRequests
+            .FirstOrDefaultAsync(x => x.Id == intakeId && !x.IsDeleted, cancellationToken);
+
+        if (intake is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "No se encontro la respuesta externa.",
+                new ApiError { Field = nameof(intakeId), Code = "INTAKE_NOT_FOUND", Message = "El identificador no corresponde a una solicitud activa." });
+        }
+
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == intake.RcaIncidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(intakeId), Code = "RCA_NOT_FOUND", Message = "El RCA asociado ya no esta disponible." });
+        }
+
+        if (intake.Status != RcaExternalIntakeStatus.Submitted)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail(
+                "La respuesta externa no esta pendiente de revision.",
+                new ApiError { Field = nameof(intake.Status), Code = "INTAKE_NOT_SUBMITTED", Message = "Solo se pueden revisar respuestas enviadas." });
+        }
+
+        var errors = ValidateReview(request, intake);
+        if (errors.Count > 0)
+        {
+            return ApiResult<RcaExternalIntakeDto>.Fail("No se pudo revisar la respuesta externa.", errors.ToArray());
+        }
+
+        IshikawaCause? importedCause = null;
+        if (request.ImportCause)
+        {
+            var branch = await _dbContext.IshikawaBranches
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.BranchId && x.RcaIncidentId == intake.RcaIncidentId && !x.IsDeleted, cancellationToken);
+
+            if (branch is null)
+            {
+                return ApiResult<RcaExternalIntakeDto>.Fail(
+                    "No se pudo importar la causa externa.",
+                    new ApiError { Field = nameof(request.BranchId), Code = "BRANCH_NOT_FOUND", Message = "La rama seleccionada no corresponde al RCA." });
+            }
+
+            importedCause = new IshikawaCause
+            {
+                TenantId = intake.TenantId,
+                RcaIncidentId = intake.RcaIncidentId,
+                BranchId = request.BranchId,
+                Title = ToTitle(intake.ProposedRootCause, "Causa propuesta externa"),
+                Description = TrimToMax(BuildCauseDescription(intake), 4000),
+                ProbabilityScore = 3,
+                ImpactScore = 3,
+                FrequencyScore = 1,
+                IsRootCause = request.MarkCauseAsRoot,
+                EvidenceSummary = TrimToMax(BuildEvidenceSummary(intake), 4000)
+            };
+
+            _dbContext.IshikawaCauses.Add(importedCause);
+        }
+
+        if (request.ImportCorrectiveAction)
+        {
+            var action = new CorrectiveAction
+            {
+                TenantId = intake.TenantId,
+                RcaIncidentId = intake.RcaIncidentId,
+                CauseId = importedCause?.Id,
+                Title = ToTitle(intake.ProposedCorrectiveAction, "Accion propuesta externa"),
+                Description = TrimToMax(BuildActionDescription(intake), 4000),
+                Status = CorrectiveActionStatus.Open
+            };
+
+            _dbContext.CorrectiveActions.Add(action);
+        }
+
+        intake.Status = RcaExternalIntakeStatus.Reviewed;
+        intake.ReviewedAt = DateTimeOffset.UtcNow;
+        intake.ReviewedByUserId = Normalize(request.ReviewedByUserId);
+        intake.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incident.Title), "Respuesta externa revisada.");
+    }
+
     public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, CancellationToken cancellationToken = default)
     {
         var intake = await _dbContext.RcaExternalIntakeRequests
@@ -260,6 +352,33 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         return errors;
     }
 
+    private static List<ApiError> ValidateReview(ReviewExternalIntakeRequest request, RcaExternalIntakeRequest intake)
+    {
+        var errors = new List<ApiError>();
+
+        if (!request.ImportCause && !request.ImportCorrectiveAction)
+        {
+            errors.Add(new ApiError { Field = nameof(request.ImportCause), Code = "IMPORT_REQUIRED", Message = "Selecciona al menos una importacion o revoca el link." });
+        }
+
+        if (request.ImportCause && request.BranchId == Guid.Empty)
+        {
+            errors.Add(new ApiError { Field = nameof(request.BranchId), Code = "BRANCH_REQUIRED", Message = "La rama Ishikawa es obligatoria para importar causa." });
+        }
+
+        if (request.ImportCause && string.IsNullOrWhiteSpace(intake.ProposedRootCause))
+        {
+            errors.Add(new ApiError { Field = nameof(intake.ProposedRootCause), Code = "CAUSE_REQUIRED", Message = "La respuesta externa no tiene causa propuesta." });
+        }
+
+        if (request.ImportCorrectiveAction && string.IsNullOrWhiteSpace(intake.ProposedCorrectiveAction))
+        {
+            errors.Add(new ApiError { Field = nameof(intake.ProposedCorrectiveAction), Code = "ACTION_REQUIRED", Message = "La respuesta externa no tiene accion propuesta." });
+        }
+
+        return errors;
+    }
+
     private static RcaClaimActorType ParseActorType(string actorType)
     {
         return Enum.TryParse<RcaClaimActorType>(actorType, true, out var parsed)
@@ -314,5 +433,65 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string ToTitle(string? value, string fallback)
+    {
+        return TrimToMax(Normalize(value) ?? fallback, 220);
+    }
+
+    private static string TrimToMax(string value, int maxLength)
+    {
+        return value.Length <= maxLength ? value : value[..maxLength];
+    }
+
+    private static string BuildCauseDescription(RcaExternalIntakeRequest intake)
+    {
+        var parts = new List<string>
+        {
+            $"Respuesta externa de {intake.ActorType} {(intake.ActorName ?? string.Empty)}.".Trim(),
+            $"Descripcion: {intake.Description}"
+        };
+
+        AddIfPresent(parts, "Referencia", intake.ClaimReference);
+        AddIfPresent(parts, "Material", intake.MaterialCode);
+        AddIfPresent(parts, "Lote", intake.BatchOrLot);
+        AddIfPresent(parts, "Contencion informada", intake.ContainmentResponse);
+
+        return string.Join(Environment.NewLine, parts);
+    }
+
+    private static string BuildEvidenceSummary(RcaExternalIntakeRequest intake)
+    {
+        var parts = new List<string>();
+        AddIfPresent(parts, "Evidencia externa", intake.EvidenceSummary);
+        AddIfPresent(parts, "Descripcion externa", intake.Description);
+        AddIfPresent(parts, "Referencia", intake.ClaimReference);
+        AddIfPresent(parts, "Material", intake.MaterialCode);
+        AddIfPresent(parts, "Lote", intake.BatchOrLot);
+
+        return string.Join(Environment.NewLine, parts);
+    }
+
+    private static string BuildActionDescription(RcaExternalIntakeRequest intake)
+    {
+        var parts = new List<string>
+        {
+            $"Accion propuesta por {intake.ActorType} {(intake.ActorName ?? string.Empty)}.".Trim()
+        };
+
+        AddIfPresent(parts, "Detalle propuesto", intake.ProposedCorrectiveAction);
+        AddIfPresent(parts, "Contencion informada", intake.ContainmentResponse);
+        AddIfPresent(parts, "Evidencia", intake.EvidenceSummary);
+
+        return string.Join(Environment.NewLine, parts);
+    }
+
+    private static void AddIfPresent(List<string> parts, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            parts.Add($"{label}: {value.Trim()}");
+        }
     }
 }

@@ -224,6 +224,35 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReviewExternalIntake(
+        Guid id,
+        Guid intakeId,
+        Guid branchId,
+        bool importCause,
+        bool markCauseAsRoot,
+        bool importCorrectiveAction,
+        string? reviewedByUserId,
+        CancellationToken cancellationToken)
+    {
+        var request = new ReviewExternalIntakeRequest
+        {
+            BranchId = branchId,
+            ImportCause = importCause,
+            MarkCauseAsRoot = markCauseAsRoot,
+            ImportCorrectiveAction = importCorrectiveAction,
+            ReviewedByUserId = reviewedByUserId
+        };
+
+        var result = await _externalIntakeService.ReviewAsync(intakeId, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Respuesta externa revisada e importada."
+            : result.Message ?? "No se pudo revisar la respuesta externa.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
     {
         return

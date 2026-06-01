@@ -945,6 +945,31 @@ textarea.form-control {
   padding: 14px;
 }
 
+.external-review-form {
+  align-items: end;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(170px, 1.3fr) repeat(3, minmax(112px, auto)) minmax(130px, 0.8fr) auto;
+  margin-top: 4px;
+  padding: 12px;
+}
+
+.external-review-form .form-check {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  margin: 0 0 8px;
+  min-height: 32px;
+}
+
+.external-review-form .form-check-input {
+  margin: 0;
+}
+
 .severity-pill {
   border-radius: 999px;
   display: inline-flex;
@@ -1070,6 +1095,10 @@ textarea.form-control {
   .form-actions,
   .action-row {
     display: grid;
+  }
+
+  .external-review-form {
+    grid-template-columns: 1fr;
   }
 
   .score-grid {
