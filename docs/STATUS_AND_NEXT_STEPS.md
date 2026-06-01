@@ -29,6 +29,7 @@ Fecha de corte: 2026-06-01.
    - Actor de reclamo: area interna, cliente o proveedor.
    - Intake link seguro MVP para cliente/proveedor con token hasheado.
    - Revision interna de intake externo con importacion a causa Ishikawa y accion correctiva.
+   - Eventos de integracion para intake externo creado/abierto/enviado/revisado/revocado/expirado.
 
 5. Preparacion IA
    - Contratos de asistencia IA.
@@ -53,4 +54,4 @@ Fecha de corte: 2026-06-01.
 El proximo paso natural es elegir uno de estos dos caminos:
 
 - Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
-- Workflow RCA: timeline, auditoria ampliada, evidencias adjuntas y CAPA.
+- Workflow RCA: timeline visual, rechazo formal de intake externo, evidencias adjuntas y CAPA.

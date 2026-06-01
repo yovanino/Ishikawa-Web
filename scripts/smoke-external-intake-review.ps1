@@ -184,6 +184,8 @@ try {
     Assert-Success $canvasAfter "Get canvas after review"
     $snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
     Assert-Success $snapshot "Get snapshot after review"
+    $events = Invoke-JsonGet "$base/api/v1/integrations/rca/events?incidentId=$incidentId"
+    Assert-Success $events "Get integration events after review"
 
     $importedCause = $canvasAfter.data.causes | Where-Object { $_.title -eq "Parametro de proceso fuera de ventana en proveedor." }
     if (-not $importedCause) {
@@ -193,6 +195,12 @@ try {
     $importedAction = $snapshot.data.openActions | Where-Object { $_.title -eq "Recalibrar dispositivo de control y enviar certificado." }
     if (-not $importedAction) {
         throw "Imported external action not found."
+    }
+
+    foreach ($eventType in @("RcaExternalIntakeCreated", "RcaExternalIntakeOpened", "RcaExternalIntakeSubmitted", "RcaExternalIntakeReviewed")) {
+        if (-not ($events.data | Where-Object { $_.type -eq $eventType })) {
+            throw "Expected integration event not found: $eventType"
+        }
     }
 
     Write-Host "External review smoke completed. Incident=$incidentId Intake=$intakeId"

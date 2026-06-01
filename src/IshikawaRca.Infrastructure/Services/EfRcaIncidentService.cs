@@ -397,6 +397,16 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["dueDate"] = action.DueDate?.ToString("O")
                     }));
             }
+
+            var externalIntakes = await _dbContext.RcaExternalIntakeRequests
+                .AsNoTracking()
+                .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var intake in externalIntakes)
+            {
+                AddExternalIntakeEvents(events, incident, intake);
+            }
         }
 
         var filteredEvents = events
@@ -698,6 +708,90 @@ public class EfRcaIncidentService : IRcaIncidentService
             ExternalEventId = incident.ExternalEventId,
             ExternalWorkOrderId = incident.ExternalWorkOrderId,
             Data = data
+        };
+    }
+
+    private static void AddExternalIntakeEvents(List<RcaDomainEventDto> events, RcaIncident incident, RcaExternalIntakeRequest intake)
+    {
+        var data = CreateExternalIntakeEventData(intake);
+
+        events.Add(CreateEvent(
+            $"rca-external-intake-created:{intake.Id}",
+            "RcaExternalIntakeCreated",
+            intake.CreatedAt,
+            incident,
+            data));
+
+        if (intake.OpenedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-opened:{intake.Id}",
+                "RcaExternalIntakeOpened",
+                intake.OpenedAt.Value,
+                incident,
+                data));
+        }
+
+        if (intake.SubmittedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-submitted:{intake.Id}",
+                "RcaExternalIntakeSubmitted",
+                intake.SubmittedAt.Value,
+                incident,
+                data));
+        }
+
+        if (intake.ReviewedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-reviewed:{intake.Id}",
+                "RcaExternalIntakeReviewed",
+                intake.ReviewedAt.Value,
+                incident,
+                data));
+        }
+
+        if (intake.Status == RcaExternalIntakeStatus.Revoked)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-revoked:{intake.Id}",
+                "RcaExternalIntakeRevoked",
+                intake.UpdatedAt ?? intake.CreatedAt,
+                incident,
+                data));
+        }
+
+        if (intake.Status == RcaExternalIntakeStatus.Expired)
+        {
+            events.Add(CreateEvent(
+                $"rca-external-intake-expired:{intake.Id}",
+                "RcaExternalIntakeExpired",
+                intake.UpdatedAt ?? intake.ExpiresAt,
+                incident,
+                data));
+        }
+    }
+
+    private static Dictionary<string, string?> CreateExternalIntakeEventData(RcaExternalIntakeRequest intake)
+    {
+        return new Dictionary<string, string?>
+        {
+            ["intakeId"] = intake.Id.ToString(),
+            ["actorType"] = intake.ActorType.ToString(),
+            ["actorName"] = intake.ActorName,
+            ["contactEmail"] = intake.ContactEmail,
+            ["status"] = intake.Status.ToString(),
+            ["expiresAt"] = intake.ExpiresAt.ToString("O"),
+            ["submittedAt"] = intake.SubmittedAt?.ToString("O"),
+            ["reviewedAt"] = intake.ReviewedAt?.ToString("O"),
+            ["reviewedByUserId"] = intake.ReviewedByUserId,
+            ["claimReference"] = intake.ClaimReference,
+            ["materialCode"] = intake.MaterialCode,
+            ["batchOrLot"] = intake.BatchOrLot,
+            ["hasProposedRootCause"] = (!string.IsNullOrWhiteSpace(intake.ProposedRootCause)).ToString(),
+            ["hasProposedCorrectiveAction"] = (!string.IsNullOrWhiteSpace(intake.ProposedCorrectiveAction)).ToString(),
+            ["hasEvidenceSummary"] = (!string.IsNullOrWhiteSpace(intake.EvidenceSummary)).ToString()
         };
     }
 

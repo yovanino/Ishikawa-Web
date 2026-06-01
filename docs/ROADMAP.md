@@ -46,6 +46,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Integracion SCADA/Gateway por API.
 - Timeline de RCA.
 - Estados y auditoria ampliada.
+- Eventos de integracion para intake externo.
 - Rechazo formal y auditoria ampliada de intake externo.
 - Adjuntos/evidencia en intake externo.
 

@@ -183,12 +183,18 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaCauseCreated`
 - `RcaRootCauseSelected`
 - `RcaCorrectiveActionCreated`
+- `RcaExternalIntakeCreated`
+- `RcaExternalIntakeOpened`
+- `RcaExternalIntakeSubmitted`
+- `RcaExternalIntakeReviewed`
+- `RcaExternalIntakeRevoked`
+- `RcaExternalIntakeExpired`
 - `RcaEvidenceAttached`
 - `RcaSeverityChanged`
 - `RcaEscalatedTo8D`
 - `RcaClosed`
 
-En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
+En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, causas, acciones e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
 
 ## Regla de Compatibilidad
 

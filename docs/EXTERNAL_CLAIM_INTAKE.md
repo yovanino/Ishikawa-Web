@@ -54,6 +54,7 @@ MVP implemented:
 - External actor can submit reference, material, lot, description, containment, proposed root cause, proposed action and evidence summary.
 - Internal screen shows intake status and submitted response.
 - Internal reviewer can accept a submitted response, import the proposed root cause into an Ishikawa branch, optionally mark it as root cause and import the proposed corrective action.
+- Integration event feed exposes created, opened, submitted, reviewed, revoked and expired intake states for the future global platform.
 - Links can be revoked before submission/review.
 
 ## Security Rules
