@@ -55,6 +55,14 @@ public class RcaIncident : TenantEntity
 
     public string? EscalationReason { get; set; }
 
+    public RcaWizardStep WizardStep { get; set; } = RcaWizardStep.Problem;
+
+    public DateTimeOffset? WizardStepCompletedAt { get; set; }
+
+    public string? WizardStepCompletedByUserId { get; set; }
+
+    public string? WizardStepNotes { get; set; }
+
     public ICollection<IshikawaBranch> Branches { get; set; } = new List<IshikawaBranch>();
 
     public ICollection<CorrectiveAction> CorrectiveActions { get; set; } = new List<CorrectiveAction>();

@@ -40,6 +40,18 @@ POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
 
+Wizard RCA:
+
+```json
+{
+  "step": "Causes",
+  "completedByUserId": "calidad",
+  "notes": "Causas iniciales cargadas y listas para evidencia."
+}
+```
+
+Etapas validas: `Problem`, `Causes`, `Evidence`, `Actions`, `Validation`, `Closed`. El endpoint valida prerequisitos minimos para avanzar: causas cargadas, evidencia cargada, acciones cargadas, acciones sin pendientes y RCA cerrado para la etapa `Closed`. El snapshot de integracion expone `wizardStep` para que Gantt, AI Gateway, app global u otros modulos consuman el avance sin acoplarse a la UI.
+
 Escalamiento a 8D:
 
 ```json
@@ -283,7 +295,7 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaEscalatedTo8D`
 - `RcaClosed`
 
-En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, causas, acciones, evidencia e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
+En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, wizard, causas, acciones, evidencia e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
 
 ## Regla de Compatibilidad
 

@@ -396,6 +396,43 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA escalado a 8D."));
     }
 
+    public Task<ApiResult<RcaIncidentDto>> CompleteWizardStepAsync(Guid incidentId, CompleteRcaWizardStepRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateCompleteWizardStepRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail("No se pudo completar la etapa del wizard RCA.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var step = ParseWizardStep(request.Step);
+        var prerequisiteErrors = ValidateWizardPrerequisites(incident, step);
+        if (prerequisiteErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail("No se pudo completar la etapa del wizard RCA.", prerequisiteErrors.ToArray()));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (step >= incident.WizardStep)
+        {
+            incident.WizardStep = step;
+        }
+
+        incident.WizardStepCompletedAt = now;
+        incident.WizardStepCompletedByUserId = Normalize(request.CompletedByUserId);
+        incident.WizardStepNotes = Normalize(request.Notes);
+        incident.UpdatedAt = now;
+        incident.UpdatedByUserId = Normalize(request.CompletedByUserId);
+
+        return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Etapa del wizard RCA completada."));
+    }
+
     public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
@@ -575,6 +612,58 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateCompleteWizardStepRequest(CompleteRcaWizardStepRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Step))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Step), Code = "WIZARD_STEP_REQUIRED", Message = "La etapa del wizard es obligatoria." });
+        }
+        else if (!Enum.TryParse<RcaWizardStep>(request.Step, true, out _))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Step), Code = "INVALID_WIZARD_STEP", Message = "Step debe ser Problem, Causes, Evidence, Actions, Validation o Closed." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateWizardPrerequisites(RcaIncident incident, RcaWizardStep step)
+    {
+        var errors = new List<ApiError>();
+        var causes = incident.Branches.SelectMany(x => x.Causes).Where(x => !x.IsDeleted).ToList();
+        var actions = incident.CorrectiveActions.Where(x => !x.IsDeleted).ToList();
+        var evidence = incident.Evidence.Where(x => !x.IsDeleted).ToList();
+
+        if (step >= RcaWizardStep.Causes && causes.Count == 0)
+        {
+            errors.Add(new ApiError { Field = "Causes", Code = "CAUSE_REQUIRED", Message = "Debe cargar al menos una causa para avanzar el wizard." });
+        }
+
+        if (step >= RcaWizardStep.Evidence && evidence.Count == 0)
+        {
+            errors.Add(new ApiError { Field = "Evidence", Code = "EVIDENCE_REQUIRED", Message = "Debe registrar al menos una evidencia para avanzar el wizard." });
+        }
+
+        if (step >= RcaWizardStep.Actions && actions.Count == 0)
+        {
+            errors.Add(new ApiError { Field = "CorrectiveActions", Code = "ACTION_REQUIRED", Message = "Debe registrar al menos una accion correctiva para avanzar el wizard." });
+        }
+
+        if (step >= RcaWizardStep.Validation &&
+            actions.Any(x => x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled))
+        {
+            errors.Add(new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas para validar el wizard." });
+        }
+
+        if (step == RcaWizardStep.Closed && incident.Status != RcaIncidentStatus.Closed)
+        {
+            errors.Add(new ApiError { Field = nameof(incident.Status), Code = "RCA_NOT_CLOSED", Message = "El RCA debe estar cerrado para completar la etapa Closed del wizard." });
+        }
+
+        return errors;
+    }
+
     private static void ValidateScore(int value, string field, string label, List<ApiError> errors)
     {
         if (value is < 0 or > 5)
@@ -595,6 +684,13 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Enum.TryParse<CorrectiveActionStatus>(status, true, out var parsed)
             ? parsed
             : CorrectiveActionStatus.Open;
+    }
+
+    private static RcaWizardStep ParseWizardStep(string step)
+    {
+        return Enum.TryParse<RcaWizardStep>(step, true, out var parsed)
+            ? parsed
+            : RcaWizardStep.Problem;
     }
 
     private static RcaClaimScope ResolveClaimScope(CreateRcaIncidentRequest request)
@@ -677,7 +773,11 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             EscalatedTo8D = incident.EscalatedTo8D,
             EscalatedTo8DAt = incident.EscalatedTo8DAt,
             EscalatedTo8DByUserId = incident.EscalatedTo8DByUserId,
-            EscalationReason = incident.EscalationReason
+            EscalationReason = incident.EscalationReason,
+            WizardStep = incident.WizardStep.ToString(),
+            WizardStepCompletedAt = incident.WizardStepCompletedAt,
+            WizardStepCompletedByUserId = incident.WizardStepCompletedByUserId,
+            WizardStepNotes = incident.WizardStepNotes
         };
     }
 
@@ -792,6 +892,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             LineCode = incident.LineCode,
             WorkOrderCode = incident.WorkOrderCode,
             EscalatedTo8D = incident.EscalatedTo8D,
+            WizardStep = incident.WizardStep.ToString(),
             RootCauseTitle = rootCause?.Title,
             RootCauseEvidenceSummary = rootCause?.EvidenceSummary,
             CauseCount = causes.Count,
@@ -865,6 +966,22 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["status"] = incident.Status.ToString(),
                     ["escalatedByUserId"] = incident.EscalatedTo8DByUserId,
                     ["escalationReason"] = incident.EscalationReason
+                }));
+        }
+
+        if (incident.WizardStepCompletedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-wizard-step-completed:{incident.Id}:{incident.WizardStep}",
+                "RcaWizardStepCompleted",
+                incident.WizardStepCompletedAt.Value,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["step"] = incident.WizardStep.ToString(),
+                    ["completedByUserId"] = incident.WizardStepCompletedByUserId,
+                    ["notes"] = incident.WizardStepNotes
                 }));
         }
 

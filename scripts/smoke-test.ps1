@@ -68,6 +68,13 @@ Assert-Success $incident "Create incident"
 $incidentId = $incident.data.id
 Write-Host "Created incident: $incidentId"
 
+$wizardProblem = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Problem"
+    completedByUserId = "quality"
+    notes = "Problema definido por smoke test."
+}
+Assert-Success $wizardProblem "Complete wizard problem step"
+
 $canvas = Invoke-JsonGet "$base/api/v1/rca/incidents/$incidentId/canvas"
 Assert-Success $canvas "Get canvas"
 $branchId = $canvas.data.branches[0].id
@@ -87,6 +94,13 @@ $causeBody = @{
 $cause = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/causes" $causeBody
 Assert-Success $cause "Add cause"
 Write-Host "Added cause: $($cause.data.id)"
+
+$wizardCauses = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Causes"
+    completedByUserId = "quality"
+    notes = "Causas iniciales cargadas."
+}
+Assert-Success $wizardCauses "Complete wizard causes step"
 
 $subCauseBody = @{
     branchId = $branchId
@@ -121,6 +135,13 @@ $evidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/evidence" $e
 Assert-Success $evidence "Add evidence"
 Write-Host "Added evidence: $($evidence.data.id)"
 
+$wizardEvidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Evidence"
+    completedByUserId = "quality"
+    notes = "Evidencia registrada."
+}
+Assert-Success $wizardEvidence "Complete wizard evidence step"
+
 $evidenceList = Invoke-JsonGet "$base/api/v1/rca/incidents/$incidentId/evidence"
 Assert-Success $evidenceList "List evidence"
 if ($evidenceList.data.Count -lt 1) {
@@ -139,6 +160,13 @@ $action = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions" $acti
 Assert-Success $action "Add corrective action"
 Write-Host "Added action: $($action.data.id)"
 
+$wizardActions = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Actions"
+    completedByUserId = "quality"
+    notes = "Accion correctiva registrada."
+}
+Assert-Success $wizardActions "Complete wizard actions step"
+
 $actionStatusBody = @{
     status = "Completed"
     completedByUserId = "quality"
@@ -151,6 +179,13 @@ if ($actionStatus.data.status -ne "Completed") {
     throw "Complete corrective action failed: expected Completed status"
 }
 Write-Host "Completed action: $($actionStatus.data.id)"
+
+$wizardValidation = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Validation"
+    completedByUserId = "quality"
+    notes = "Accion validada."
+}
+Assert-Success $wizardValidation "Complete wizard validation step"
 
 $escalationBody = @{
     escalatedByUserId = "quality"
@@ -176,6 +211,13 @@ if ($closedIncident.data.status -ne "Closed") {
 }
 Write-Host "Closed incident: $($closedIncident.data.id)"
 
+$wizardClosed = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
+    step = "Closed"
+    completedByUserId = "quality"
+    notes = "RCA cerrado formalmente."
+}
+Assert-Success $wizardClosed "Complete wizard closed step"
+
 $snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
 Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
@@ -184,6 +226,9 @@ if ($snapshot.data.status -ne "Closed") {
 }
 if (-not $snapshot.data.escalatedTo8D) {
     throw "Get integration snapshot failed: expected escalatedTo8D true"
+}
+if ($snapshot.data.wizardStep -ne "Closed") {
+    throw "Get integration snapshot failed: expected wizardStep Closed"
 }
 if ($snapshot.data.evidenceCount -lt 1) {
     throw "Get integration snapshot failed: expected evidenceCount >= 1"
@@ -206,6 +251,9 @@ if (-not ($events.data | Where-Object { $_.type -eq "RcaCorrectiveActionComplete
 }
 if (-not ($events.data | Where-Object { $_.type -eq "RcaEscalatedTo8D" })) {
     throw "Get integration events failed: expected RcaEscalatedTo8D event"
+}
+if (-not ($events.data | Where-Object { $_.type -eq "RcaWizardStepCompleted" })) {
+    throw "Get integration events failed: expected RcaWizardStepCompleted event"
 }
 if (-not ($events.data | Where-Object { $_.type -eq "RcaClosed" })) {
     throw "Get integration events failed: expected RcaClosed event"

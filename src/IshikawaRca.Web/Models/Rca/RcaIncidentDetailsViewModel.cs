@@ -29,6 +29,10 @@ public class RcaIncidentDetailsViewModel
 
     public EscalateRcaIncidentTo8DViewModel EscalateForm { get; set; } = new();
 
+    public CompleteRcaWizardStepViewModel WizardForm { get; set; } = new();
+
+    public IReadOnlyList<SelectListItem> WizardStepOptions { get; set; } = [];
+
     public IReadOnlyList<SelectListItem> BranchOptions =>
         Canvas.Branches
             .OrderBy(x => x.Order)

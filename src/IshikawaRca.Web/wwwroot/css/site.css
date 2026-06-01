@@ -778,6 +778,83 @@ textarea.form-control {
   padding: 20px;
 }
 
+.wizard-panel {
+  margin-bottom: 18px;
+}
+
+.wizard-rail {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+}
+
+.wizard-step {
+  background: #f8fafb;
+  border: 1px solid #dfe7ed;
+  border-radius: 8px;
+  min-height: 112px;
+  padding: 14px;
+}
+
+.wizard-step strong,
+.wizard-step small {
+  display: block;
+}
+
+.wizard-step strong {
+  color: #243746;
+  font-size: 0.96rem;
+  font-weight: 850;
+  margin: 10px 0 4px;
+}
+
+.wizard-step small {
+  color: #68788a;
+  line-height: 1.35;
+}
+
+.wizard-index {
+  align-items: center;
+  background: #e8eff4;
+  border-radius: 999px;
+  color: #304456;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.wizard-step-done {
+  background: #eef8f4;
+  border-color: #bedfd0;
+}
+
+.wizard-step-done .wizard-index {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.wizard-step-active {
+  background: var(--accent-soft);
+  border-color: #efcf88;
+  box-shadow: 0 14px 32px rgba(207, 145, 39, 0.16);
+}
+
+.wizard-step-active .wizard-index {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.wizard-form {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
 .capture-panel {
   position: sticky;
   top: 98px;
@@ -1021,6 +1098,10 @@ textarea.form-control {
   background: var(--brand);
 }
 
+.timeline-dot-wizard {
+  background: #2c6fbb;
+}
+
 .timeline-list strong,
 .timeline-list span,
 .timeline-list small {
@@ -1190,6 +1271,7 @@ textarea.form-control {
 
   .workflow-grid,
   .metric-grid,
+  .wizard-rail,
   .detail-grid,
   .form-grid,
   .branch-grid,

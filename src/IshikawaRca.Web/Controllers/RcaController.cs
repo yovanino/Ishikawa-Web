@@ -302,6 +302,37 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CompleteWizardStep(Guid id, [Bind(Prefix = "WizardForm")] CompleteRcaWizardStepViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.WizardForm = model;
+            return View(nameof(Details), details);
+        }
+
+        var request = new CompleteRcaWizardStepRequest
+        {
+            Step = model.Step,
+            CompletedByUserId = model.CompletedByUserId,
+            Notes = model.Notes
+        };
+
+        var result = await _rcaIncidentService.CompleteWizardStepAsync(id, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Etapa del wizard RCA completada."
+            : result.Message ?? "No se pudo completar la etapa del wizard RCA.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -488,7 +519,39 @@ public class RcaController : Controller
             TimelineEvents = timelineResult.Data?
                 .OrderByDescending(x => x.OccurredAt)
                 .Take(20)
-                .ToList() ?? []
+                .ToList() ?? [],
+            WizardStepOptions = GetWizardStepOptions(),
+            WizardForm = new CompleteRcaWizardStepViewModel
+            {
+                Step = GetNextWizardStep(incidentResult.Data.WizardStep)
+            }
+        };
+    }
+
+    private static IReadOnlyList<SelectListItem> GetWizardStepOptions()
+    {
+        return
+        [
+            new SelectListItem("Problema", "Problem"),
+            new SelectListItem("Causas", "Causes"),
+            new SelectListItem("Evidencias", "Evidence"),
+            new SelectListItem("Acciones", "Actions"),
+            new SelectListItem("Validacion", "Validation"),
+            new SelectListItem("Cierre", "Closed")
+        ];
+    }
+
+    private static string GetNextWizardStep(string currentStep)
+    {
+        return currentStep switch
+        {
+            "Problem" => "Causes",
+            "Causes" => "Evidence",
+            "Evidence" => "Actions",
+            "Actions" => "Validation",
+            "Validation" => "Closed",
+            "Closed" => "Closed",
+            _ => "Problem"
         };
     }
 }

@@ -9,6 +9,17 @@
     var causesById = Model.Canvas.Causes.ToDictionary(x => x.Id);
     var rootCause = Model.Canvas.Causes.FirstOrDefault(x => x.IsRootCause);
     var openActions = Model.CorrectiveActions.Count(x => !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+    var wizardSteps = new[]
+    {
+        new { Key = "Problem", Label = "Problema", Detail = "Contexto y alcance" },
+        new { Key = "Causes", Label = "Causas", Detail = "Hipotesis Ishikawa" },
+        new { Key = "Evidence", Label = "Evidencias", Detail = "Datos y anexos" },
+        new { Key = "Actions", Label = "Acciones", Detail = "Plan correctivo" },
+        new { Key = "Validation", Label = "Validacion", Detail = "Eficacia confirmada" },
+        new { Key = "Closed", Label = "Cierre", Detail = "RCA formalizado" }
+    };
+    var currentWizardIndex = Array.FindIndex(wizardSteps, x => string.Equals(x.Key, incident.WizardStep, StringComparison.OrdinalIgnoreCase));
+    currentWizardIndex = currentWizardIndex < 0 ? 0 : currentWizardIndex;
 }
 
 <section class="rca-command-center">
@@ -69,6 +80,51 @@
     </article>
 </section>
 
+<section class="analysis-panel wizard-panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Wizard RCA</h2>
+            <span>Flujo guiado independiente y listo para integrarse con Gantt, AI y la app global</span>
+        </div>
+        <span class="canvas-counter">@wizardSteps[currentWizardIndex].Label</span>
+    </div>
+
+    <ol class="wizard-rail" aria-label="Etapas del wizard RCA">
+        @for (var i = 0; i < wizardSteps.Length; i++)
+        {
+            var step = wizardSteps[i];
+            var state = i < currentWizardIndex ? "done" : i == currentWizardIndex ? "active" : "locked";
+            <li class="wizard-step wizard-step-@state">
+                <span class="wizard-index">@(i + 1)</span>
+                <strong>@step.Label</strong>
+                <small>@step.Detail</small>
+            </li>
+        }
+    </ol>
+
+    <form asp-controller="Rca" asp-action="CompleteWizardStep" asp-route-id="@incident.Id" method="post" class="wizard-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-grid">
+            <div>
+                <label asp-for="WizardForm.Step" class="form-label">Etapa a completar</label>
+                <select asp-for="WizardForm.Step" asp-items="Model.WizardStepOptions" class="form-select"></select>
+                <span asp-validation-for="WizardForm.Step" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="WizardForm.CompletedByUserId" class="form-label">Completado por</label>
+                <input asp-for="WizardForm.CompletedByUserId" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="WizardForm.Notes" class="form-label">Nota de avance</label>
+                <input asp-for="WizardForm.Notes" class="form-control" />
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Completar etapa</button>
+            </div>
+        </div>
+    </form>
+</section>
+
 <section class="detail-grid">
     <article class="detail-panel">
         <h2>Estado operativo</h2>
@@ -77,6 +133,8 @@
             <dd><span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span></dd>
             <dt>Estado RCA</dt>
             <dd>@incident.Status</dd>
+            <dt>Wizard</dt>
+            <dd>@wizardSteps[currentWizardIndex].Label</dd>
             <dt>Tipo de reclamo</dt>
             <dd>@incident.ClaimScope</dd>
             <dt>Actor</dt>
@@ -674,6 +732,11 @@
             return "external";
         }
 
+        if (eventType.Contains("Wizard", StringComparison.OrdinalIgnoreCase))
+        {
+            return "wizard";
+        }
+
         if (eventType.Contains("Evidence", StringComparison.OrdinalIgnoreCase))
         {
             return "evidence";
@@ -703,6 +766,7 @@
             "RcaCorrectiveActionCreated" => "Accion correctiva creada",
             "RcaCorrectiveActionCompleted" => "Accion correctiva completada",
             "RcaEscalatedTo8D" => "RCA escalado a 8D",
+            "RcaWizardStepCompleted" => "Etapa de wizard completada",
             "RcaEvidenceAttached" => "Evidencia agregada",
             "RcaExternalIntakeCreated" => "Link externo creado",
             "RcaExternalIntakeOpened" => "Link externo abierto",

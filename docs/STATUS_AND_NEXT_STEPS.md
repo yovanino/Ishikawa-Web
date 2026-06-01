@@ -19,6 +19,7 @@ Fecha de corte: 2026-06-01.
    - Alta/listado/detalle de incidentes.
    - Canvas Ishikawa inicial.
    - Timeline visual inicial en detalle RCA.
+   - Wizard RCA basico con etapas Problema, Causas, Evidencias, Acciones, Validacion y Cierre.
    - Carga de causas con puntajes.
    - Carga de subcausas vinculadas a una causa padre.
    - Marcado de causa raiz.
@@ -31,11 +32,13 @@ Fecha de corte: 2026-06-01.
 4. Integracion externa
    - Endpoints versionados `/api/v1`.
    - Snapshots para Gantt, Gateway, OEE, Andon o app global.
+   - `wizardStep` disponible en DTO de incidente y snapshot de integracion.
    - Feed derivado de eventos RCA.
    - Conteo de evidencia en snapshots de integracion.
    - Eventos de accion correctiva creada y completada para integracion.
    - Evento de RCA escalado a 8D para integracion.
    - Evento de RCA cerrado para integracion.
+   - Evento de etapa wizard RCA completada para integracion.
    - Actor de reclamo: area interna, cliente o proveedor.
    - Intake link seguro MVP para cliente/proveedor con token hasheado.
    - Revision interna de intake externo con importacion a causa Ishikawa y accion correctiva.

@@ -191,4 +191,21 @@ public class RcaIncidentsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("{id:guid}/wizard/step")]
+    [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaIncidentDto>>> CompleteWizardStep(Guid id, CompleteRcaWizardStepRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.CompleteWizardStepAsync(id, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return result.Errors.Any(x => x.Code == "RCA_NOT_FOUND")
+                ? NotFound(result)
+                : BadRequest(result);
+        }
+
+        return Ok(result);
+    }
 }

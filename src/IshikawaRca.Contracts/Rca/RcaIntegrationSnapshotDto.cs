@@ -42,6 +42,8 @@ public class RcaIntegrationSnapshotDto
 
     public bool EscalatedTo8D { get; set; }
 
+    public string WizardStep { get; set; } = string.Empty;
+
     public string? RootCauseTitle { get; set; }
 
     public string? RootCauseEvidenceSummary { get; set; }

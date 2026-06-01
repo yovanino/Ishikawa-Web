@@ -51,4 +51,12 @@ public class RcaIncidentDto
     public string? EscalatedTo8DByUserId { get; set; }
 
     public string? EscalationReason { get; set; }
+
+    public string WizardStep { get; set; } = string.Empty;
+
+    public DateTimeOffset? WizardStepCompletedAt { get; set; }
+
+    public string? WizardStepCompletedByUserId { get; set; }
+
+    public string? WizardStepNotes { get; set; }
 }
