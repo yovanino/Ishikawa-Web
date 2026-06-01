@@ -26,6 +26,10 @@ public class RcaIncidentDto
 
     public DateTimeOffset? ClosedAt { get; set; }
 
+    public string? ClosedByUserId { get; set; }
+
+    public string? ClosureSummary { get; set; }
+
     public string SourceSystem { get; set; } = string.Empty;
 
     public string? ExternalTaskId { get; set; }

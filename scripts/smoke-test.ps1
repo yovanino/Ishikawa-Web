@@ -152,9 +152,24 @@ if ($actionStatus.data.status -ne "Completed") {
 }
 Write-Host "Completed action: $($actionStatus.data.id)"
 
+$closeBody = @{
+    closedByUserId = "quality"
+    closureSummary = "Smoke RCA cerrado con causa raiz, subcausa, evidencia y accion completada."
+}
+
+$closedIncident = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/close" $closeBody
+Assert-Success $closedIncident "Close incident"
+if ($closedIncident.data.status -ne "Closed") {
+    throw "Close incident failed: expected Closed status"
+}
+Write-Host "Closed incident: $($closedIncident.data.id)"
+
 $snapshot = Invoke-JsonGet "$base/api/v1/integrations/rca/incidents/$incidentId/snapshot"
 Assert-Success $snapshot "Get integration snapshot"
 Write-Host "Snapshot root cause: $($snapshot.data.rootCauseTitle)"
+if ($snapshot.data.status -ne "Closed") {
+    throw "Get integration snapshot failed: expected Closed status"
+}
 if ($snapshot.data.evidenceCount -lt 1) {
     throw "Get integration snapshot failed: expected evidenceCount >= 1"
 }
@@ -173,6 +188,9 @@ if (-not ($events.data | Where-Object { $_.type -eq "RcaEvidenceAttached" })) {
 }
 if (-not ($events.data | Where-Object { $_.type -eq "RcaCorrectiveActionCompleted" })) {
     throw "Get integration events failed: expected RcaCorrectiveActionCompleted event"
+}
+if (-not ($events.data | Where-Object { $_.type -eq "RcaClosed" })) {
+    throw "Get integration events failed: expected RcaClosed event"
 }
 
 $aiSummary = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/ai/summarize" @{}

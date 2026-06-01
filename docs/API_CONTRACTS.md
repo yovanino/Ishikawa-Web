@@ -40,6 +40,17 @@ POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
 
+Cierre formal RCA:
+
+```json
+{
+  "closedByUserId": "calidad",
+  "closureSummary": "Causa raiz confirmada, evidencia registrada y acciones correctivas verificadas."
+}
+```
+
+Para cerrar un RCA debe existir causa raiz y no deben quedar acciones abiertas. El cierre actualiza `status = Closed`, `closedAt`, `closedByUserId`, `closureSummary` y publica `RcaClosed` en el feed de integracion.
+
 Validacion/cierre de accion correctiva:
 
 ```json

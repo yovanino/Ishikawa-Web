@@ -25,6 +25,8 @@ public class RcaIncidentDetailsViewModel
 
     public AddRcaEvidenceViewModel EvidenceForm { get; set; } = new();
 
+    public CloseRcaIncidentViewModel CloseForm { get; set; } = new();
+
     public IReadOnlyList<SelectListItem> BranchOptions =>
         Canvas.Branches
             .OrderBy(x => x.Order)

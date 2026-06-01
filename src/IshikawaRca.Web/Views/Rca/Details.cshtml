@@ -87,6 +87,13 @@
             <dd>@incident.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
             <dt>Evento</dt>
             <dd>@incident.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+            @if (incident.ClosedAt.HasValue)
+            {
+                <dt>Cerrado</dt>
+                <dd>@incident.ClosedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd>
+                <dt>Resumen</dt>
+                <dd>@(incident.ClosureSummary ?? "Sin resumen.")</dd>
+            }
         </dl>
     </article>
 
@@ -104,6 +111,36 @@
         </dl>
     </article>
 </section>
+
+@if (incident.Status != "Closed")
+{
+    <section class="analysis-panel close-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Cierre RCA</h2>
+                <span>Cierre formal con causa raiz y acciones validadas</span>
+            </div>
+            <span class="canvas-counter">@openActions accion(es) abierta(s)</span>
+        </div>
+        <form asp-controller="Rca" asp-action="Close" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-grid">
+                <div>
+                    <label asp-for="CloseForm.ClosedByUserId" class="form-label">Cerrado por</label>
+                    <input asp-for="CloseForm.ClosedByUserId" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="CloseForm.ClosureSummary" class="form-label">Resumen de cierre</label>
+                    <input asp-for="CloseForm.ClosureSummary" class="form-control" />
+                    <span asp-validation-for="CloseForm.ClosureSummary" class="text-danger"></span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Cerrar RCA</button>
+                </div>
+            </div>
+        </form>
+    </section>
+}
 
 <section class="analysis-panel timeline-panel">
     <div class="panel-heading">
@@ -636,6 +673,7 @@
             "RcaExternalIntakeRejected" => "Respuesta externa rechazada",
             "RcaExternalIntakeRevoked" => "Link externo revocado",
             "RcaExternalIntakeExpired" => "Link externo expirado",
+            "RcaClosed" => "Incidente RCA cerrado",
             _ => eventType
         };
     }

@@ -400,6 +400,69 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia agregada.");
     }
 
+    public async Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateCloseRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return ApiResult<RcaIncidentDto>.Fail("No se pudo cerrar el incidente RCA.", validationErrors.ToArray());
+        }
+
+        var incident = await _dbContext.RcaIncidents
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        if (incident.Status == RcaIncidentStatus.Closed)
+        {
+            return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "El incidente RCA ya estaba cerrado.");
+        }
+
+        var hasRootCause = await _dbContext.IshikawaCauses
+            .AsNoTracking()
+            .AnyAsync(x => x.RcaIncidentId == incidentId && x.IsRootCause && !x.IsDeleted, cancellationToken);
+
+        if (!hasRootCause)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo cerrar el incidente RCA.",
+                new ApiError { Field = "RootCause", Code = "ROOT_CAUSE_REQUIRED", Message = "Debe existir una causa raiz antes del cierre." });
+        }
+
+        var hasOpenActions = await _dbContext.CorrectiveActions
+            .AsNoTracking()
+            .AnyAsync(x =>
+                x.RcaIncidentId == incidentId &&
+                x.Status != CorrectiveActionStatus.Completed &&
+                x.Status != CorrectiveActionStatus.Cancelled &&
+                !x.IsDeleted,
+                cancellationToken);
+
+        if (hasOpenActions)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo cerrar el incidente RCA.",
+                new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas antes del cierre." });
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        incident.Status = RcaIncidentStatus.Closed;
+        incident.ClosedAt = now;
+        incident.ClosedByUserId = Normalize(request.ClosedByUserId);
+        incident.ClosureSummary = request.ClosureSummary.Trim();
+        incident.UpdatedAt = now;
+        incident.UpdatedByUserId = Normalize(request.ClosedByUserId);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA cerrado.");
+    }
+
     public async Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         var incident = await _dbContext.RcaIncidents
@@ -486,6 +549,22 @@ public class EfRcaIncidentService : IRcaIncidentService
                     ["claimActorType"] = incident.ClaimActorType.ToString(),
                     ["claimOwnerName"] = incident.ClaimOwnerName
                 }));
+
+            if (incident.ClosedAt.HasValue)
+            {
+                events.Add(CreateEvent(
+                    $"rca-incident-closed:{incident.Id}",
+                    "RcaClosed",
+                    incident.ClosedAt.Value,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["title"] = incident.Title,
+                        ["status"] = incident.Status.ToString(),
+                        ["closedByUserId"] = incident.ClosedByUserId,
+                        ["closureSummary"] = incident.ClosureSummary
+                    }));
+            }
 
             var causes = await _dbContext.IshikawaCauses
                 .AsNoTracking()
@@ -696,6 +775,18 @@ public class EfRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateCloseRequest(CloseRcaIncidentRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.ClosureSummary))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ClosureSummary), Code = "CLOSURE_SUMMARY_REQUIRED", Message = "El resumen de cierre es obligatorio." });
+        }
+
+        return errors;
+    }
+
     private static void ValidateScore(int value, string field, string label, List<ApiError> errors)
     {
         if (value is < 0 or > 5)
@@ -786,6 +877,8 @@ public class EfRcaIncidentService : IRcaIncidentService
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
             ClosedAt = incident.ClosedAt,
+            ClosedByUserId = incident.ClosedByUserId,
+            ClosureSummary = incident.ClosureSummary,
             SourceSystem = incident.SourceSystem,
             ExternalTaskId = incident.ExternalTaskId,
             ExternalEventId = incident.ExternalEventId,

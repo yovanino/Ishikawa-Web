@@ -309,6 +309,59 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia agregada."));
     }
 
+    public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateCloseRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail("No se pudo cerrar el incidente RCA.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        if (incident.Status == RcaIncidentStatus.Closed)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "El incidente RCA ya estaba cerrado."));
+        }
+
+        var hasRootCause = incident.Branches
+            .SelectMany(x => x.Causes)
+            .Any(x => x.IsRootCause && !x.IsDeleted);
+
+        if (!hasRootCause)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo cerrar el incidente RCA.",
+                new ApiError { Field = "RootCause", Code = "ROOT_CAUSE_REQUIRED", Message = "Debe existir una causa raiz antes del cierre." }));
+        }
+
+        var hasOpenActions = incident.CorrectiveActions.Any(x =>
+            x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled &&
+            !x.IsDeleted);
+
+        if (hasOpenActions)
+        {
+            return Task.FromResult(ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo cerrar el incidente RCA.",
+                new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas antes del cierre." }));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        incident.Status = RcaIncidentStatus.Closed;
+        incident.ClosedAt = now;
+        incident.ClosedByUserId = Normalize(request.ClosedByUserId);
+        incident.ClosureSummary = request.ClosureSummary.Trim();
+        incident.UpdatedAt = now;
+        incident.UpdatedByUserId = Normalize(request.ClosedByUserId);
+
+        return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA cerrado."));
+    }
+
     public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
@@ -464,6 +517,18 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateCloseRequest(CloseRcaIncidentRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.ClosureSummary))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ClosureSummary), Code = "CLOSURE_SUMMARY_REQUIRED", Message = "El resumen de cierre es obligatorio." });
+        }
+
+        return errors;
+    }
+
     private static void ValidateScore(int value, string field, string label, List<ApiError> errors)
     {
         if (value is < 0 or > 5)
@@ -554,6 +619,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             OccurredAt = incident.OccurredAt,
             CreatedAt = incident.CreatedAt,
             ClosedAt = incident.ClosedAt,
+            ClosedByUserId = incident.ClosedByUserId,
+            ClosureSummary = incident.ClosureSummary,
             SourceSystem = incident.SourceSystem,
             ExternalTaskId = incident.ExternalTaskId,
             ExternalEventId = incident.ExternalEventId,
@@ -719,6 +786,22 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["claimOwnerName"] = incident.ClaimOwnerName
                 })
         };
+
+        if (incident.ClosedAt.HasValue)
+        {
+            events.Add(CreateEvent(
+                $"rca-incident-closed:{incident.Id}",
+                "RcaClosed",
+                incident.ClosedAt.Value,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["status"] = incident.Status.ToString(),
+                    ["closedByUserId"] = incident.ClosedByUserId,
+                    ["closureSummary"] = incident.ClosureSummary
+                }));
+        }
 
         foreach (var cause in incident.Branches.SelectMany(x => x.Causes).Where(x => !x.IsDeleted))
         {

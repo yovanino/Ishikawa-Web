@@ -242,6 +242,36 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Close(Guid id, [Bind(Prefix = "CloseForm")] CloseRcaIncidentViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+            if (details is null)
+            {
+                return NotFound();
+            }
+
+            details.CloseForm = model;
+            return View(nameof(Details), details);
+        }
+
+        var request = new CloseRcaIncidentRequest
+        {
+            ClosedByUserId = model.ClosedByUserId,
+            ClosureSummary = model.ClosureSummary
+        };
+
+        var result = await _rcaIncidentService.CloseAsync(id, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Incidente RCA cerrado."
+            : result.Message ?? "No se pudo cerrar el incidente RCA.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
