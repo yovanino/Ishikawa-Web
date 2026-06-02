@@ -22,9 +22,14 @@ Crear `src/IshikawaRca.Web/appsettings.Local.json` o usar variable de entorno. E
     "Mode": "Stub",
     "BaseUrl": "",
     "TimeoutSeconds": 30
+  },
+  "EvidenceStorage": {
+    "RootPath": "App_Data"
   }
 }
 ```
+
+`EvidenceStorage:RootPath` define el repositorio fisico de adjuntos de evidencia. Puede ser relativo al proyecto Web, como `App_Data`, o absoluto, como `D:\IndustrialOps\EvidenceRepository`. En produccion tambien puede configurarse con la variable de entorno `EvidenceStorage__RootPath`.
 
 Alternativa por terminal:
 

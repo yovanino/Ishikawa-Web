@@ -12,6 +12,7 @@ builder.Logging.AddDebug();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
+builder.Services.Configure<EvidenceStorageOptions>(builder.Configuration.GetSection("EvidenceStorage"));
 builder.Services.AddSingleton<IEvidenceFileStorage, EvidenceFileStorage>();
 
 var app = builder.Build();

@@ -113,7 +113,7 @@ Evidencia RCA inicial:
 }
 ```
 
-En esta fase se registran metadatos, resumen y URI/referencia de evidencia. El almacenamiento binario de archivos queda separado para la politica documental global.
+En esta fase se registran metadatos, resumen y URI/referencia de evidencia. Los adjuntos binarios iniciales se almacenan en el repositorio configurado por `EvidenceStorage:RootPath` y quedan disponibles por endpoint de descarga controlada.
 
 Causas y subcausas:
 

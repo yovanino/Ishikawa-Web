@@ -1,6 +1,12 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.Options;
 
 namespace IshikawaRca.Web.Services;
+
+public class EvidenceStorageOptions
+{
+    public string RootPath { get; set; } = "App_Data";
+}
 
 public record StoredEvidenceFile(
     string FileName,
@@ -48,10 +54,12 @@ public class EvidenceFileStorage : IEvidenceFileStorage
     };
 
     private readonly IWebHostEnvironment _environment;
+    private readonly EvidenceStorageOptions _options;
 
-    public EvidenceFileStorage(IWebHostEnvironment environment)
+    public EvidenceFileStorage(IWebHostEnvironment environment, IOptions<EvidenceStorageOptions> options)
     {
         _environment = environment;
+        _options = options.Value;
     }
 
     public long MaxFileSizeBytes => 100L * 1024L * 1024L;
@@ -130,7 +138,13 @@ public class EvidenceFileStorage : IEvidenceFileStorage
 
     private string GetStorageRoot()
     {
-        return Path.Combine(_environment.ContentRootPath, "App_Data");
+        var configuredRoot = string.IsNullOrWhiteSpace(_options.RootPath)
+            ? "App_Data"
+            : Environment.ExpandEnvironmentVariables(_options.RootPath);
+
+        return Path.IsPathRooted(configuredRoot)
+            ? Path.GetFullPath(configuredRoot)
+            : Path.GetFullPath(Path.Combine(_environment.ContentRootPath, configuredRoot));
     }
 
     private static async Task<string> ComputeSha256Async(string physicalPath, CancellationToken cancellationToken)
