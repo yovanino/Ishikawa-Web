@@ -288,12 +288,34 @@
                 @foreach (var evidence in Model.Evidence)
                 {
                     var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == evidence.CauseId);
+                    var hasAttachment = !string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey);
+                    var isImageAttachment = IsImageContentType(evidence.AttachmentContentType);
+                    var extensionLabel = GetAttachmentExtension(evidence.AttachmentFileName, evidence.AttachmentContentType);
 
-                    <section class="evidence-card">
-                        <div>
-                            <span class="source-chip">@evidence.EvidenceType</span>
-                            <span class="source-chip">@evidence.Source</span>
-                        </div>
+                    <section class="evidence-card @(hasAttachment ? "evidence-card-with-media" : string.Empty)">
+                        @if (hasAttachment)
+                        {
+                            <a class="evidence-thumb"
+                               asp-controller="Rca"
+                               asp-action="DownloadEvidence"
+                               asp-route-id="@incident.Id"
+                               asp-route-evidenceId="@evidence.Id"
+                               aria-label="Descargar adjunto @(evidence.AttachmentFileName ?? evidence.Title)">
+                                @if (isImageAttachment)
+                                {
+                                    <img src="@Url.Action("PreviewEvidence", "Rca", new { id = incident.Id, evidenceId = evidence.Id })" alt="Miniatura de @evidence.Title" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span>@extensionLabel</span>
+                                }
+                            </a>
+                        }
+                        <div class="evidence-card-body">
+                            <div class="evidence-chip-row">
+                                <span class="source-chip">@evidence.EvidenceType</span>
+                                <span class="source-chip">@evidence.Source</span>
+                            </div>
                         <strong>@evidence.Title</strong>
                         <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
                         @if (!string.IsNullOrWhiteSpace(evidence.Summary))
@@ -304,16 +326,19 @@
                         {
                             <a href="@evidence.ReferenceUri" target="_blank" rel="noopener">Abrir referencia</a>
                         }
-                        @if (!string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey))
+                        @if (hasAttachment)
                         {
+                            <div class="evidence-attachment-meta">
                             <a asp-controller="Rca" asp-action="DownloadEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id">Descargar adjunto</a>
-                            <small>@(evidence.AttachmentFileName ?? "Archivo") · @FormatFileSize(evidence.AttachmentSizeBytes) · @(evidence.AttachmentContentType ?? "binario")</small>
+                            <small title="@evidence.AttachmentFileName">@GetCompactFileName(evidence.AttachmentFileName) &middot; @FormatFileSize(evidence.AttachmentSizeBytes) &middot; @(evidence.AttachmentContentType ?? "binario")</small>
                             @if (!string.IsNullOrWhiteSpace(evidence.AttachmentSha256))
                             {
-                                <small>SHA-256 @evidence.AttachmentSha256</small>
+                                <small class="hash-line" title="@evidence.AttachmentSha256">SHA-256 @GetShortHash(evidence.AttachmentSha256)</small>
                             }
+                            </div>
                         }
                         <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
                     </section>
                 }
             </div>
@@ -837,5 +862,53 @@
         }
 
         return $"{value} B";
+    }
+
+    private static bool IsImageContentType(string? contentType)
+    {
+        return !string.IsNullOrWhiteSpace(contentType) &&
+               contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetAttachmentExtension(string? fileName, string? contentType)
+    {
+        var extension = System.IO.Path.GetExtension(fileName);
+        if (!string.IsNullOrWhiteSpace(extension))
+        {
+            return extension.TrimStart('.').ToUpperInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(contentType) && contentType.Contains('/'))
+        {
+            return contentType[(contentType.IndexOf('/') + 1)..].ToUpperInvariant();
+        }
+
+        return "FILE";
+    }
+
+    private static string GetCompactFileName(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return "Archivo";
+        }
+
+        const int maxLength = 34;
+        if (fileName.Length <= maxLength)
+        {
+            return fileName;
+        }
+
+        var extension = System.IO.Path.GetExtension(fileName);
+        var baseName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+        var baseLimit = Math.Max(12, maxLength - extension.Length - 3);
+        var compactBase = baseName.Length > baseLimit ? baseName[..baseLimit] : baseName;
+
+        return $"{compactBase}...{extension}";
+    }
+
+    private static string GetShortHash(string hash)
+    {
+        return hash.Length > 20 ? $"{hash[..12]}...{hash[^8..]}" : hash;
     }
 }

@@ -304,6 +304,38 @@ public class RcaController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> PreviewEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
+    {
+        var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
+        if (!evidenceResult.Success)
+        {
+            return NotFound();
+        }
+
+        var evidence = evidenceResult.Data?.FirstOrDefault(x => x.Id == evidenceId);
+        if (evidence is null ||
+            string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey) ||
+            !IsImageContentType(evidence.AttachmentContentType))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var file = _evidenceFileStorage.Resolve(
+                evidence.AttachmentStorageKey,
+                evidence.AttachmentFileName,
+                evidence.AttachmentContentType);
+
+            return PhysicalFile(file.PhysicalPath, file.ContentType);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Close(Guid id, [Bind(Prefix = "CloseForm")] CloseRcaIncidentViewModel model, CancellationToken cancellationToken)
@@ -617,5 +649,11 @@ public class RcaController : Controller
             "Closed" => "Closed",
             _ => "Problem"
         };
+    }
+
+    private static bool IsImageContentType(string? contentType)
+    {
+        return !string.IsNullOrWhiteSpace(contentType) &&
+               contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1170,13 +1170,64 @@ textarea.form-control {
   border-radius: 8px;
   display: grid;
   gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
   padding: 14px;
 }
 
-.evidence-card > div {
+.evidence-card-with-media {
+  align-items: start;
+  gap: 12px;
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+.evidence-card-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.evidence-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
+}
+
+.evidence-thumb {
+  align-items: center;
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #edf4f8, #ffffff);
+  border: 1px solid #d9e4ea;
+  border-radius: 8px;
+  color: #50687a;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  justify-content: center;
+  overflow: hidden;
+  text-decoration: none;
+  text-transform: uppercase;
+  width: 96px;
+}
+
+.evidence-thumb img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.evidence-thumb span {
+  padding: 8px;
+  text-align: center;
+}
+
+.evidence-attachment-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 }
 
 .evidence-card strong,
@@ -1184,6 +1235,17 @@ textarea.form-control {
 .evidence-card small,
 .evidence-card a {
   display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.hash-line {
+  font-family: Consolas, "Courier New", monospace;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .form-help {
@@ -1322,6 +1384,14 @@ textarea.form-control {
 
   .detail-panel dl {
     grid-template-columns: 1fr;
+  }
+
+  .evidence-card-with-media {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  .evidence-thumb {
+    width: 68px;
   }
 
   .form-actions,
