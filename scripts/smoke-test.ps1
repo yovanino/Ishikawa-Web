@@ -31,6 +31,52 @@ function Invoke-JsonGet {
         -TimeoutSec $RequestTimeoutSeconds
 }
 
+function Invoke-MultipartPost {
+    param(
+        [string]$Uri,
+        [hashtable]$Fields,
+        [string]$FilePath,
+        [string]$FileFieldName = "Attachment",
+        [string]$FileContentType = "text/plain"
+    )
+
+    Add-Type -AssemblyName System.Net.Http
+
+    $client = [System.Net.Http.HttpClient]::new()
+    $client.Timeout = [TimeSpan]::FromSeconds($RequestTimeoutSeconds)
+    $content = [System.Net.Http.MultipartFormDataContent]::new()
+    $stream = $null
+
+    try {
+        foreach ($key in $Fields.Keys) {
+            if ($null -ne $Fields[$key]) {
+                $content.Add([System.Net.Http.StringContent]::new([string]$Fields[$key]), $key)
+            }
+        }
+
+        $stream = [System.IO.File]::OpenRead($FilePath)
+        $fileContent = [System.Net.Http.StreamContent]::new($stream)
+        $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse($FileContentType)
+        $content.Add($fileContent, $FileFieldName, [System.IO.Path]::GetFileName($FilePath))
+
+        $response = $client.PostAsync($Uri, $content).GetAwaiter().GetResult()
+        $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+        if (-not $response.IsSuccessStatusCode) {
+            throw "Multipart post failed: $($response.StatusCode) $body"
+        }
+
+        return $body | ConvertFrom-Json
+    }
+    finally {
+        if ($null -ne $stream) {
+            $stream.Dispose()
+        }
+
+        $content.Dispose()
+        $client.Dispose()
+    }
+}
+
 function Assert-Success {
     param(
         [object]$Result,
@@ -134,6 +180,41 @@ $evidenceBody = @{
 $evidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/evidence" $evidenceBody
 Assert-Success $evidence "Add evidence"
 Write-Host "Added evidence: $($evidence.data.id)"
+
+$artifactDir = Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")) "artifacts"
+if (-not (Test-Path $artifactDir)) {
+    New-Item -ItemType Directory -Path $artifactDir | Out-Null
+}
+
+$evidenceFilePath = Join-Path $artifactDir "smoke-evidence-$timestamp.txt"
+Set-Content -Path $evidenceFilePath -Value "Smoke evidence attachment $timestamp" -Encoding UTF8
+$fileEvidence = Invoke-MultipartPost `
+    -Uri "$base/api/v1/rca/incidents/$incidentId/evidence-files" `
+    -Fields @{
+        Title = "Smoke evidence file"
+        EvidenceType = "Document"
+        Source = "Manual"
+        Summary = "Archivo adjunto creado por smoke test."
+        CauseId = $cause.data.id
+        CapturedByUserId = "quality"
+    } `
+    -FilePath $evidenceFilePath `
+    -FileContentType "text/plain"
+Assert-Success $fileEvidence "Add evidence file"
+if ([string]::IsNullOrWhiteSpace($fileEvidence.data.attachmentStorageKey)) {
+    throw "Add evidence file failed: expected attachmentStorageKey"
+}
+
+$downloadPath = Join-Path $artifactDir "smoke-evidence-download-$timestamp.txt"
+Invoke-WebRequest `
+    -Method Get `
+    -Uri "$base/api/v1/rca/incidents/$incidentId/evidence/$($fileEvidence.data.id)/attachment" `
+    -TimeoutSec $RequestTimeoutSeconds `
+    -OutFile $downloadPath
+if (-not (Test-Path $downloadPath)) {
+    throw "Download evidence attachment failed: file not found"
+}
+Write-Host "Added evidence file: $($fileEvidence.data.id)"
 
 $wizardEvidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
     step = "Evidence"

@@ -1,4 +1,5 @@
 using IshikawaRca.Infrastructure;
+using IshikawaRca.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,7 @@ builder.Logging.AddDebug();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<IEvidenceFileStorage, EvidenceFileStorage>();
 
 var app = builder.Build();
 

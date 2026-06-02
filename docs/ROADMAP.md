@@ -40,7 +40,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Context menu industrial.
 - Auto-layout inicial.
 - [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
-- Adjuntos binarios/documentales.
+- [x] Adjuntos binarios/documentales iniciales para evidencias.
 - Comentarios.
 
 ## Fase 3 - Integracion Operacional

@@ -160,6 +160,11 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
         entity.Property(x => x.Summary).HasMaxLength(4000);
         entity.Property(x => x.ReferenceUri).HasMaxLength(1000);
+        entity.Property(x => x.AttachmentFileName).HasMaxLength(260);
+        entity.Property(x => x.AttachmentContentType).HasMaxLength(160);
+        entity.Property(x => x.AttachmentStorageProvider).HasMaxLength(64);
+        entity.Property(x => x.AttachmentStorageKey).HasMaxLength(500);
+        entity.Property(x => x.AttachmentSha256).HasMaxLength(64);
         entity.Property(x => x.CapturedByUserId).HasMaxLength(160);
 
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.CapturedAt });

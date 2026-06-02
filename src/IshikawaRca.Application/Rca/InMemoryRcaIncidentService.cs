@@ -300,6 +300,12 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Source = Normalize(request.Source) ?? "Manual",
             Summary = Normalize(request.Summary),
             ReferenceUri = Normalize(request.ReferenceUri),
+            AttachmentFileName = Normalize(request.AttachmentFileName),
+            AttachmentContentType = Normalize(request.AttachmentContentType),
+            AttachmentSizeBytes = request.AttachmentSizeBytes,
+            AttachmentStorageProvider = Normalize(request.AttachmentStorageProvider),
+            AttachmentStorageKey = Normalize(request.AttachmentStorageKey),
+            AttachmentSha256 = Normalize(request.AttachmentSha256),
             CapturedAt = request.CapturedAt ?? DateTimeOffset.UtcNow,
             CapturedByUserId = Normalize(request.CapturedByUserId)
         };
@@ -843,6 +849,12 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Source = evidence.Source,
             Summary = evidence.Summary,
             ReferenceUri = evidence.ReferenceUri,
+            AttachmentFileName = evidence.AttachmentFileName,
+            AttachmentContentType = evidence.AttachmentContentType,
+            AttachmentSizeBytes = evidence.AttachmentSizeBytes,
+            AttachmentStorageProvider = evidence.AttachmentStorageProvider,
+            AttachmentStorageKey = evidence.AttachmentStorageKey,
+            AttachmentSha256 = evidence.AttachmentSha256,
             CapturedAt = evidence.CapturedAt,
             CapturedByUserId = evidence.CapturedByUserId,
             CreatedAt = evidence.CreatedAt
@@ -1052,7 +1064,12 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["title"] = evidence.Title,
                     ["evidenceType"] = evidence.EvidenceType,
                     ["source"] = evidence.Source,
-                    ["referenceUri"] = evidence.ReferenceUri
+                    ["referenceUri"] = evidence.ReferenceUri,
+                    ["attachmentFileName"] = evidence.AttachmentFileName,
+                    ["attachmentContentType"] = evidence.AttachmentContentType,
+                    ["attachmentSizeBytes"] = evidence.AttachmentSizeBytes?.ToString(),
+                    ["attachmentStorageProvider"] = evidence.AttachmentStorageProvider,
+                    ["attachmentSha256"] = evidence.AttachmentSha256
                 }));
         }
 

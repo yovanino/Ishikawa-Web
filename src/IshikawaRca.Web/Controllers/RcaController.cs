@@ -1,6 +1,7 @@
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Web.Models.Rca;
+using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -11,11 +12,16 @@ public class RcaController : Controller
     private static readonly Guid DemoTenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaExternalIntakeService _externalIntakeService;
+    private readonly IEvidenceFileStorage _evidenceFileStorage;
 
-    public RcaController(IRcaIncidentService rcaIncidentService, IRcaExternalIntakeService externalIntakeService)
+    public RcaController(
+        IRcaIncidentService rcaIncidentService,
+        IRcaExternalIntakeService externalIntakeService,
+        IEvidenceFileStorage evidenceFileStorage)
     {
         _rcaIncidentService = rcaIncidentService;
         _externalIntakeService = externalIntakeService;
+        _evidenceFileStorage = evidenceFileStorage;
     }
 
     [HttpGet]
@@ -191,6 +197,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(104_857_600)]
     public async Task<IActionResult> AddEvidence(Guid id, [Bind(Prefix = "EvidenceForm")] AddRcaEvidenceViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -205,6 +212,27 @@ public class RcaController : Controller
             return View(nameof(Details), details);
         }
 
+        StoredEvidenceFile? attachment = null;
+        if (model.Attachment is not null)
+        {
+            try
+            {
+                attachment = await _evidenceFileStorage.SaveAsync(id, model.Attachment, cancellationToken);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException)
+            {
+                ModelState.AddModelError("EvidenceForm.Attachment", ex.Message);
+                var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+                if (details is null)
+                {
+                    return NotFound();
+                }
+
+                details.EvidenceForm = model;
+                return View(nameof(Details), details);
+            }
+        }
+
         var request = new AddRcaEvidenceRequest
         {
             CauseId = model.CauseId,
@@ -213,6 +241,12 @@ public class RcaController : Controller
             Source = model.Source,
             Summary = model.Summary,
             ReferenceUri = model.ReferenceUri,
+            AttachmentFileName = attachment?.FileName,
+            AttachmentContentType = attachment?.ContentType,
+            AttachmentSizeBytes = attachment?.SizeBytes,
+            AttachmentStorageProvider = attachment?.StorageProvider,
+            AttachmentStorageKey = attachment?.StorageKey,
+            AttachmentSha256 = attachment?.Sha256,
             CapturedAt = model.CapturedAt,
             CapturedByUserId = model.CapturedByUserId
         };
@@ -238,6 +272,36 @@ public class RcaController : Controller
         TempData["StatusMessage"] = "Evidencia agregada.";
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DownloadEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
+    {
+        var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
+        if (!evidenceResult.Success)
+        {
+            return NotFound();
+        }
+
+        var evidence = evidenceResult.Data?.FirstOrDefault(x => x.Id == evidenceId);
+        if (evidence is null || string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var file = _evidenceFileStorage.Resolve(
+                evidence.AttachmentStorageKey,
+                evidence.AttachmentFileName,
+                evidence.AttachmentContentType);
+
+            return PhysicalFile(file.PhysicalPath, file.ContentType, file.FileName);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpPost]

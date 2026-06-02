@@ -1,6 +1,8 @@
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
+using IshikawaRca.Web.Models.Rca;
+using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IshikawaRca.Web.Controllers.Api;
@@ -10,10 +12,12 @@ namespace IshikawaRca.Web.Controllers.Api;
 public class RcaIncidentsController : ControllerBase
 {
     private readonly IRcaIncidentService _rcaIncidentService;
+    private readonly IEvidenceFileStorage _evidenceFileStorage;
 
-    public RcaIncidentsController(IRcaIncidentService rcaIncidentService)
+    public RcaIncidentsController(IRcaIncidentService rcaIncidentService, IEvidenceFileStorage evidenceFileStorage)
     {
         _rcaIncidentService = rcaIncidentService;
+        _evidenceFileStorage = evidenceFileStorage;
     }
 
     [HttpPost]
@@ -156,6 +160,95 @@ public class RcaIncidentsController : ControllerBase
         }
 
         return CreatedAtAction(nameof(ListEvidence), new { id }, result);
+    }
+
+    [HttpPost("{id:guid}/evidence-files")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(104_857_600)]
+    [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResult<RcaEvidenceDto>>> AddEvidenceFile(
+        Guid id,
+        [FromForm] AddRcaEvidenceFileViewModel form,
+        CancellationToken cancellationToken)
+    {
+        if (form.Attachment is null)
+        {
+            return BadRequest(ApiResult<RcaEvidenceDto>.Fail(
+                "No se pudo agregar la evidencia.",
+                new ApiError { Field = nameof(form.Attachment), Code = "ATTACHMENT_REQUIRED", Message = "El archivo adjunto es obligatorio." }));
+        }
+
+        StoredEvidenceFile attachment;
+        try
+        {
+            attachment = await _evidenceFileStorage.SaveAsync(id, form.Attachment, cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            return BadRequest(ApiResult<RcaEvidenceDto>.Fail(
+                "No se pudo agregar la evidencia.",
+                new ApiError { Field = nameof(form.Attachment), Code = "INVALID_ATTACHMENT", Message = ex.Message }));
+        }
+
+        var request = new AddRcaEvidenceRequest
+        {
+            CauseId = form.CauseId,
+            ExternalIntakeId = form.ExternalIntakeId,
+            Title = form.Title,
+            EvidenceType = form.EvidenceType,
+            Source = form.Source,
+            Summary = form.Summary,
+            ReferenceUri = form.ReferenceUri,
+            CapturedAt = form.CapturedAt,
+            CapturedByUserId = form.CapturedByUserId,
+            AttachmentFileName = attachment.FileName,
+            AttachmentContentType = attachment.ContentType,
+            AttachmentSizeBytes = attachment.SizeBytes,
+            AttachmentStorageProvider = attachment.StorageProvider,
+            AttachmentStorageKey = attachment.StorageKey,
+            AttachmentSha256 = attachment.Sha256
+        };
+
+        var result = await _rcaIncidentService.AddEvidenceAsync(id, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return BadRequest(result);
+        }
+
+        return CreatedAtAction(nameof(ListEvidence), new { id }, result);
+    }
+
+    [HttpGet("{id:guid}/evidence/{evidenceId:guid}/attachment")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadEvidenceAttachment(Guid id, Guid evidenceId, CancellationToken cancellationToken)
+    {
+        var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
+        if (!evidenceResult.Success)
+        {
+            return NotFound();
+        }
+
+        var evidence = evidenceResult.Data?.FirstOrDefault(x => x.Id == evidenceId);
+        if (evidence is null || string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var file = _evidenceFileStorage.Resolve(
+                evidence.AttachmentStorageKey,
+                evidence.AttachmentFileName,
+                evidence.AttachmentContentType);
+
+            return PhysicalFile(file.PhysicalPath, file.ContentType, file.FileName);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FileNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpPost("{id:guid}/close")]

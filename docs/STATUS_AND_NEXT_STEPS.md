@@ -28,6 +28,7 @@ Fecha de corte: 2026-06-01.
    - Cierre formal de RCA con causa raiz, acciones cerradas y resumen obligatorio.
    - Escalamiento formal a 8D con fecha, usuario y motivo.
    - Registro inicial de evidencias RCA con tipo, fuente, resumen, URI/referencia y relacion opcional a causa o intake externo.
+   - Adjuntos reales de evidencia: documentos, imagenes, PDF y videos con metadata, descarga controlada y SHA-256.
 
 4. Integracion externa
    - Endpoints versionados `/api/v1`.
@@ -60,7 +61,7 @@ Fecha de corte: 2026-06-01.
 - Agregar tests automatizados cuando el flujo se estabilice.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
-- Agregar almacenamiento binario/documental real para adjuntos de evidencia e intake externo.
+- Extender adjuntos binarios/documentales al intake externo.
 - Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
 
 ## Siguiente Corte Recomendado

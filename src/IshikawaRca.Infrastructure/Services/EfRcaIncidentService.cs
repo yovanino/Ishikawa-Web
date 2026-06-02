@@ -390,6 +390,12 @@ public class EfRcaIncidentService : IRcaIncidentService
             Source = Normalize(request.Source) ?? "Manual",
             Summary = Normalize(request.Summary),
             ReferenceUri = Normalize(request.ReferenceUri),
+            AttachmentFileName = Normalize(request.AttachmentFileName),
+            AttachmentContentType = Normalize(request.AttachmentContentType),
+            AttachmentSizeBytes = request.AttachmentSizeBytes,
+            AttachmentStorageProvider = Normalize(request.AttachmentStorageProvider),
+            AttachmentStorageKey = Normalize(request.AttachmentStorageKey),
+            AttachmentSha256 = Normalize(request.AttachmentSha256),
             CapturedAt = request.CapturedAt ?? DateTimeOffset.UtcNow,
             CapturedByUserId = Normalize(request.CapturedByUserId)
         };
@@ -761,7 +767,12 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["title"] = evidenceItem.Title,
                         ["evidenceType"] = evidenceItem.EvidenceType,
                         ["source"] = evidenceItem.Source,
-                        ["referenceUri"] = evidenceItem.ReferenceUri
+                        ["referenceUri"] = evidenceItem.ReferenceUri,
+                        ["attachmentFileName"] = evidenceItem.AttachmentFileName,
+                        ["attachmentContentType"] = evidenceItem.AttachmentContentType,
+                        ["attachmentSizeBytes"] = evidenceItem.AttachmentSizeBytes?.ToString(),
+                        ["attachmentStorageProvider"] = evidenceItem.AttachmentStorageProvider,
+                        ["attachmentSha256"] = evidenceItem.AttachmentSha256
                     }));
             }
 
@@ -1173,6 +1184,12 @@ public class EfRcaIncidentService : IRcaIncidentService
             Source = evidence.Source,
             Summary = evidence.Summary,
             ReferenceUri = evidence.ReferenceUri,
+            AttachmentFileName = evidence.AttachmentFileName,
+            AttachmentContentType = evidence.AttachmentContentType,
+            AttachmentSizeBytes = evidence.AttachmentSizeBytes,
+            AttachmentStorageProvider = evidence.AttachmentStorageProvider,
+            AttachmentStorageKey = evidence.AttachmentStorageKey,
+            AttachmentSha256 = evidence.AttachmentSha256,
             CapturedAt = evidence.CapturedAt,
             CapturedByUserId = evidence.CapturedByUserId,
             CreatedAt = evidence.CreatedAt

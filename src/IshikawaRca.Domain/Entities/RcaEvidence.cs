@@ -20,6 +20,18 @@ public class RcaEvidence : TenantEntity
 
     public string? ReferenceUri { get; set; }
 
+    public string? AttachmentFileName { get; set; }
+
+    public string? AttachmentContentType { get; set; }
+
+    public long? AttachmentSizeBytes { get; set; }
+
+    public string? AttachmentStorageProvider { get; set; }
+
+    public string? AttachmentStorageKey { get; set; }
+
+    public string? AttachmentSha256 { get; set; }
+
     public DateTimeOffset CapturedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string? CapturedByUserId { get; set; }

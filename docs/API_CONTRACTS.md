@@ -36,6 +36,8 @@ POST /api/v1/rca/incidents/{id}/actions
 POST /api/v1/rca/incidents/{id}/actions/{actionId}/status
 GET  /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/evidence
+POST /api/v1/rca/incidents/{id}/evidence-files
+GET  /api/v1/rca/incidents/{id}/evidence/{evidenceId}/attachment
 POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
@@ -62,6 +64,15 @@ Escalamiento a 8D:
 ```
 
 El escalamiento a 8D marca `escalatedTo8D = true`, registra fecha/usuario/motivo, cambia el estado a `EscalatedTo8D` y publica `RcaEscalatedTo8D`. El RCA puede luego cerrarse formalmente cuando cumpla las condiciones de cierre.
+
+Evidencia con adjunto:
+
+```http
+POST /api/v1/rca/incidents/{id}/evidence-files
+Content-Type: multipart/form-data
+```
+
+Campos de formulario: `Attachment` obligatorio, `title`, `evidenceType`, `source`, `summary`, `causeId`, `externalIntakeId`, `capturedByUserId`, `capturedAt`, `referenceUri`. El almacenamiento local MVP acepta PDF, Office, CSV/TXT, imagenes y videos hasta 100 MB. El DTO devuelve nombre, content-type, tamano, storage provider, storage key y SHA-256. La descarga se hace por endpoint controlado, no por path publico.
 
 Cierre formal RCA:
 

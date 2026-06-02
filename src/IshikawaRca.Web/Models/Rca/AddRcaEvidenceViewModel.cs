@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace IshikawaRca.Web.Models.Rca;
 
@@ -23,6 +24,8 @@ public class AddRcaEvidenceViewModel
 
     [StringLength(1000)]
     public string? ReferenceUri { get; set; }
+
+    public IFormFile? Attachment { get; set; }
 
     public DateTimeOffset? CapturedAt { get; set; }
 

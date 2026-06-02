@@ -304,6 +304,15 @@
                         {
                             <a href="@evidence.ReferenceUri" target="_blank" rel="noopener">Abrir referencia</a>
                         }
+                        @if (!string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey))
+                        {
+                            <a asp-controller="Rca" asp-action="DownloadEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id">Descargar adjunto</a>
+                            <small>@(evidence.AttachmentFileName ?? "Archivo") · @FormatFileSize(evidence.AttachmentSizeBytes) · @(evidence.AttachmentContentType ?? "binario")</small>
+                            @if (!string.IsNullOrWhiteSpace(evidence.AttachmentSha256))
+                            {
+                                <small>SHA-256 @evidence.AttachmentSha256</small>
+                            }
+                        }
                         <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
                     </section>
                 }
@@ -313,7 +322,7 @@
 
     <aside class="analysis-panel capture-panel">
         <h2>Nueva evidencia</h2>
-        <form asp-controller="Rca" asp-action="AddEvidence" asp-route-id="@incident.Id" method="post">
+        <form asp-controller="Rca" asp-action="AddEvidence" asp-route-id="@incident.Id" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">
@@ -369,6 +378,13 @@
             <div class="mb-3">
                 <label asp-for="EvidenceForm.ReferenceUri" class="form-label">Referencia / URL</label>
                 <input asp-for="EvidenceForm.ReferenceUri" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.Attachment" class="form-label">Adjunto</label>
+                <input asp-for="EvidenceForm.Attachment" class="form-control" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.avi,.mkv,.webm" />
+                <span asp-validation-for="EvidenceForm.Attachment" class="text-danger"></span>
+                <small class="form-help">PDF, Office, CSV/TXT, imagenes y videos hasta 100 MB.</small>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Agregar evidencia</button>
@@ -800,5 +816,26 @@
         }
 
         return timelineEvent.SourceSystem;
+    }
+
+    private static string FormatFileSize(long? bytes)
+    {
+        if (!bytes.HasValue)
+        {
+            return "-";
+        }
+
+        var value = bytes.Value;
+        if (value >= 1024L * 1024L)
+        {
+            return $"{value / 1024d / 1024d:0.##} MB";
+        }
+
+        if (value >= 1024L)
+        {
+            return $"{value / 1024d:0.##} KB";
+        }
+
+        return $"{value} B";
     }
 }

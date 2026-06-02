@@ -1186,6 +1186,13 @@ textarea.form-control {
   display: block;
 }
 
+.form-help {
+  color: #6d7c8b;
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
+
 .evidence-card span,
 .evidence-card small {
   color: #657586;

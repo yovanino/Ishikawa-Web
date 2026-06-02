@@ -12,6 +12,7 @@ artifacts/
 
 # ASP.NET / local config
 appsettings.Local.json
+App_Data/
 *.db
 *.sqlite
 *.sqlite3
