@@ -23,3 +23,28 @@ Checks:
 - Overflow check returned `maxOverflow=0`, so no evidence card child escaped horizontally.
 
 Result: passed.
+
+## 2026-06-03 - RCA evidence compact previews
+
+Scope: validate compact attachment preview behavior for the RCA evidence card.
+
+Validated URL:
+
+`http://127.0.0.1:5075/Rca/Details/20163d83-e46e-4cb1-846f-45bdeb7572b6`
+
+Environment:
+
+- `ASPNETCORE_ENVIRONMENT=Development`
+- Local web host: `http://localhost:5075`
+- Database-backed incident data
+
+Checks:
+
+- Detail page returned `200`.
+- Evidence card rendered `data-preview-kind`.
+- Evidence card rendered grouped file actions.
+- Inline preview link rendered for previewable attachments.
+- Existing image preview returned `200`, `Content-Type=image/jpeg`, and `Content-Disposition=inline`.
+- UI classification now covers image, video, PDF, text/CSV/JSON/XML, Office, and generic file tiles.
+
+Result: passed.

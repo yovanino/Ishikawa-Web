@@ -1212,6 +1212,31 @@ textarea.form-control {
   width: 96px;
 }
 
+.evidence-thumb[data-preview-kind="pdf"] {
+  background: linear-gradient(145deg, #fff0f0, #ffffff);
+  border-color: #f2c8c8;
+  color: #9c2f2f;
+}
+
+.evidence-thumb[data-preview-kind="office"] {
+  background: linear-gradient(145deg, #eef5ff, #ffffff);
+  border-color: #c7daf3;
+  color: #2b5b8d;
+}
+
+.evidence-thumb[data-preview-kind="text"] {
+  background: linear-gradient(145deg, #eef8f3, #ffffff);
+  border-color: #c6e3d4;
+  color: #23664a;
+}
+
+.evidence-thumb[data-preview-kind="video"] {
+  background: #121b24;
+  border-color: #2c3b4a;
+  color: #ffffff;
+  position: relative;
+}
+
 .evidence-thumb img {
   display: block;
   height: 100%;
@@ -1219,15 +1244,59 @@ textarea.form-control {
   width: 100%;
 }
 
-.evidence-thumb span {
+.evidence-thumb video {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.evidence-thumb-type {
+  font-size: 1rem;
+  letter-spacing: 0;
+  line-height: 1;
   padding: 8px;
   text-align: center;
+}
+
+.evidence-thumb small {
+  color: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+  opacity: 0.76;
+  padding: 0 8px 8px;
+  text-align: center;
+}
+
+.evidence-thumb-badge {
+  background: rgb(18 27 36 / 82%);
+  border-radius: 999px;
+  bottom: 7px;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  left: 50%;
+  line-height: 1;
+  padding: 5px 7px;
+  position: absolute;
+  transform: translateX(-50%);
 }
 
 .evidence-attachment-meta {
   display: grid;
   gap: 3px;
   min-width: 0;
+}
+
+.evidence-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.evidence-file-actions a {
+  font-weight: 780;
 }
 
 .evidence-card strong,
@@ -1238,6 +1307,16 @@ textarea.form-control {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.evidence-card .evidence-thumb {
+  display: flex;
+  flex-direction: column;
+}
+
+.evidence-card .evidence-thumb[data-preview-kind="image"],
+.evidence-card .evidence-thumb[data-preview-kind="video"] {
+  flex-direction: row;
 }
 
 .hash-line {

@@ -316,7 +316,7 @@ public class RcaController : Controller
         var evidence = evidenceResult.Data?.FirstOrDefault(x => x.Id == evidenceId);
         if (evidence is null ||
             string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey) ||
-            !IsImageContentType(evidence.AttachmentContentType))
+            !IsPreviewableContentType(evidence.AttachmentContentType))
         {
             return NotFound();
         }
@@ -327,6 +327,8 @@ public class RcaController : Controller
                 evidence.AttachmentStorageKey,
                 evidence.AttachmentFileName,
                 evidence.AttachmentContentType);
+
+            Response.Headers.ContentDisposition = "inline";
 
             return PhysicalFile(file.PhysicalPath, file.ContentType);
         }
@@ -655,5 +657,21 @@ public class RcaController : Controller
     {
         return !string.IsNullOrWhiteSpace(contentType) &&
                contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPreviewableContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/json", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/xml", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("text/csv", StringComparison.OrdinalIgnoreCase);
     }
 }

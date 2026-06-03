@@ -290,12 +290,17 @@
                     var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == evidence.CauseId);
                     var hasAttachment = !string.IsNullOrWhiteSpace(evidence.AttachmentStorageKey);
                     var isImageAttachment = IsImageContentType(evidence.AttachmentContentType);
+                    var isVideoAttachment = IsVideoContentType(evidence.AttachmentContentType);
+                    var canPreviewAttachment = IsPreviewableContentType(evidence.AttachmentContentType);
                     var extensionLabel = GetAttachmentExtension(evidence.AttachmentFileName, evidence.AttachmentContentType);
+                    var previewKind = GetAttachmentPreviewKind(evidence.AttachmentFileName, evidence.AttachmentContentType);
+                    var previewLabel = GetAttachmentPreviewLabel(previewKind);
 
                     <section class="evidence-card @(hasAttachment ? "evidence-card-with-media" : string.Empty)">
                         @if (hasAttachment)
                         {
                             <a class="evidence-thumb"
+                               data-preview-kind="@previewKind"
                                asp-controller="Rca"
                                asp-action="DownloadEvidence"
                                asp-route-id="@incident.Id"
@@ -305,9 +310,15 @@
                                 {
                                     <img src="@Url.Action("PreviewEvidence", "Rca", new { id = incident.Id, evidenceId = evidence.Id })" alt="Miniatura de @evidence.Title" loading="lazy" />
                                 }
+                                else if (isVideoAttachment)
+                                {
+                                    <video src="@Url.Action("PreviewEvidence", "Rca", new { id = incident.Id, evidenceId = evidence.Id })" muted preload="metadata" playsinline></video>
+                                    <span class="evidence-thumb-badge">@extensionLabel</span>
+                                }
                                 else
                                 {
-                                    <span>@extensionLabel</span>
+                                    <span class="evidence-thumb-type">@extensionLabel</span>
+                                    <small>@previewLabel</small>
                                 }
                             </a>
                         }
@@ -316,28 +327,34 @@
                                 <span class="source-chip">@evidence.EvidenceType</span>
                                 <span class="source-chip">@evidence.Source</span>
                             </div>
-                        <strong>@evidence.Title</strong>
-                        <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
-                        @if (!string.IsNullOrWhiteSpace(evidence.Summary))
-                        {
-                            <small>@evidence.Summary</small>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(evidence.ReferenceUri))
-                        {
-                            <a href="@evidence.ReferenceUri" target="_blank" rel="noopener">Abrir referencia</a>
-                        }
-                        @if (hasAttachment)
-                        {
-                            <div class="evidence-attachment-meta">
-                            <a asp-controller="Rca" asp-action="DownloadEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id">Descargar adjunto</a>
-                            <small title="@evidence.AttachmentFileName">@GetCompactFileName(evidence.AttachmentFileName) &middot; @FormatFileSize(evidence.AttachmentSizeBytes) &middot; @(evidence.AttachmentContentType ?? "binario")</small>
-                            @if (!string.IsNullOrWhiteSpace(evidence.AttachmentSha256))
+                            <strong>@evidence.Title</strong>
+                            <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                            @if (!string.IsNullOrWhiteSpace(evidence.Summary))
                             {
-                                <small class="hash-line" title="@evidence.AttachmentSha256">SHA-256 @GetShortHash(evidence.AttachmentSha256)</small>
+                                <small>@evidence.Summary</small>
                             }
-                            </div>
-                        }
-                        <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                            @if (!string.IsNullOrWhiteSpace(evidence.ReferenceUri))
+                            {
+                                <a href="@evidence.ReferenceUri" target="_blank" rel="noopener">Abrir referencia</a>
+                            }
+                            @if (hasAttachment)
+                            {
+                                <div class="evidence-attachment-meta">
+                                    <div class="evidence-file-actions">
+                                        @if (canPreviewAttachment)
+                                        {
+                                            <a asp-controller="Rca" asp-action="PreviewEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id" target="_blank" rel="noopener">Vista previa</a>
+                                        }
+                                        <a asp-controller="Rca" asp-action="DownloadEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id">Descargar adjunto</a>
+                                    </div>
+                                    <small title="@evidence.AttachmentFileName">@GetCompactFileName(evidence.AttachmentFileName) &middot; @FormatFileSize(evidence.AttachmentSizeBytes) &middot; @(evidence.AttachmentContentType ?? "binario")</small>
+                                    @if (!string.IsNullOrWhiteSpace(evidence.AttachmentSha256))
+                                    {
+                                        <small class="hash-line" title="@evidence.AttachmentSha256">SHA-256 @GetShortHash(evidence.AttachmentSha256)</small>
+                                    }
+                                </div>
+                            }
+                            <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
                         </div>
                     </section>
                 }
@@ -868,6 +885,79 @@
     {
         return !string.IsNullOrWhiteSpace(contentType) &&
                contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsVideoContentType(string? contentType)
+    {
+        return !string.IsNullOrWhiteSpace(contentType) &&
+               contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPreviewableContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/json", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("application/xml", StringComparison.OrdinalIgnoreCase) ||
+               contentType.Equals("text/csv", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetAttachmentPreviewKind(string? fileName, string? contentType)
+    {
+        var extension = (System.IO.Path.GetExtension(fileName) ?? string.Empty)
+            .TrimStart('.')
+            .ToLowerInvariant();
+
+        if (IsImageContentType(contentType))
+        {
+            return "image";
+        }
+
+        if (IsVideoContentType(contentType))
+        {
+            return "video";
+        }
+
+        if (contentType?.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) == true ||
+            extension == "pdf")
+        {
+            return "pdf";
+        }
+
+        if (contentType?.StartsWith("text/", StringComparison.OrdinalIgnoreCase) == true ||
+            contentType?.Equals("application/json", StringComparison.OrdinalIgnoreCase) == true ||
+            contentType?.Equals("application/xml", StringComparison.OrdinalIgnoreCase) == true ||
+            extension is "txt" or "csv" or "json" or "xml" or "log")
+        {
+            return "text";
+        }
+
+        if (extension is "doc" or "docx" or "xls" or "xlsx" or "ppt" or "pptx" or "odt" or "ods" or "odp")
+        {
+            return "office";
+        }
+
+        return "file";
+    }
+
+    private static string GetAttachmentPreviewLabel(string previewKind)
+    {
+        return previewKind switch
+        {
+            "pdf" => "PDF",
+            "text" => "Texto",
+            "office" => "Office",
+            "video" => "Video",
+            "image" => "Imagen",
+            _ => "Archivo"
+        };
     }
 
     private static string GetAttachmentExtension(string? fileName, string? contentType)
