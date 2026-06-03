@@ -28,6 +28,8 @@ public interface IEvidenceFileStorage
     Task<StoredEvidenceFile> SaveAsync(Guid incidentId, IFormFile file, CancellationToken cancellationToken);
 
     EvidenceFileResolution Resolve(string storageKey, string? fileName, string? contentType);
+
+    void Delete(string? storageKey);
 }
 
 public class EvidenceFileStorage : IEvidenceFileStorage
@@ -134,6 +136,26 @@ public class EvidenceFileStorage : IEvidenceFileStorage
             physicalPath,
             string.IsNullOrWhiteSpace(fileName) ? Path.GetFileName(physicalPath) : fileName,
             string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+    }
+
+    public void Delete(string? storageKey)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey) ||
+            storageKey.Contains("..", StringComparison.Ordinal) ||
+            Path.IsPathRooted(storageKey))
+        {
+            return;
+        }
+
+        var normalizedKey = storageKey.Replace('/', Path.DirectorySeparatorChar);
+        var physicalPath = Path.GetFullPath(Path.Combine(GetStorageRoot(), normalizedKey));
+        var root = Path.GetFullPath(GetStorageRoot());
+        if (!physicalPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(physicalPath))
+        {
+            return;
+        }
+
+        File.Delete(physicalPath);
     }
 
     private string GetStorageRoot()

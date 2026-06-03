@@ -1,4 +1,5 @@
 @model IshikawaRca.Web.Models.Rca.RcaIncidentDetailsViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Detalle RCA";
@@ -355,6 +356,72 @@
                                 </div>
                             }
                             <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                            <details class="evidence-manage">
+                                <summary>Gestionar evidencia</summary>
+                                <form class="evidence-edit-form" asp-controller="Rca" asp-action="UpdateEvidence" asp-route-id="@incident.Id" method="post">
+                                    <input type="hidden" name="EvidenceEdit.EvidenceId" value="@evidence.Id" />
+                                    <div class="evidence-form-grid">
+                                        <label>
+                                            <span>Titulo</span>
+                                            <input class="form-control" name="EvidenceEdit.Title" value="@evidence.Title" maxlength="220" required />
+                                        </label>
+                                        <label>
+                                            <span>Causa</span>
+                                            <select class="form-select" name="EvidenceEdit.CauseId">
+                                                <option value="" selected="@(evidence.CauseId is null ? "selected" : null)">Sin causa especifica</option>
+                                                @foreach (var cause in Model.CauseOptions)
+                                                {
+                                                    <option value="@cause.Value" selected="@(cause.Value == evidence.CauseId?.ToString() ? "selected" : null)">@cause.Text</option>
+                                                }
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Tipo</span>
+                                            <select class="form-select" name="EvidenceEdit.EvidenceType">
+                                                @foreach (var option in GetEvidenceTypeOptions())
+                                                {
+                                                    <option value="@option.Value" selected="@(option.Value == evidence.EvidenceType ? "selected" : null)">@option.Text</option>
+                                                }
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Origen</span>
+                                            <select class="form-select" name="EvidenceEdit.Source">
+                                                @foreach (var option in GetEvidenceSourceOptions())
+                                                {
+                                                    <option value="@option.Value" selected="@(option.Value == evidence.Source ? "selected" : null)">@option.Text</option>
+                                                }
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <label>
+                                        <span>Resumen</span>
+                                        <textarea class="form-control" name="EvidenceEdit.Summary" rows="3" maxlength="4000">@evidence.Summary</textarea>
+                                    </label>
+                                    <label>
+                                        <span>Referencia / URL</span>
+                                        <input class="form-control" name="EvidenceEdit.ReferenceUri" value="@evidence.ReferenceUri" maxlength="1000" />
+                                    </label>
+                                    <div class="evidence-manage-actions">
+                                        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+                                    </div>
+                                </form>
+
+                                <form class="evidence-replace-form" asp-controller="Rca" asp-action="ReplaceEvidenceAttachment" asp-route-id="@incident.Id" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="EvidenceAttachment.EvidenceId" value="@evidence.Id" />
+                                    <label>
+                                        <span>Reemplazar adjunto</span>
+                                        <input class="form-control" name="EvidenceAttachment.Attachment" type="file" />
+                                    </label>
+                                    <div class="evidence-manage-actions">
+                                        <button class="btn btn-secondary" type="submit">Reemplazar archivo</button>
+                                    </div>
+                                </form>
+
+                                <form class="evidence-delete-form" asp-controller="Rca" asp-action="DeleteEvidence" asp-route-id="@incident.Id" asp-route-evidenceId="@evidence.Id" method="post">
+                                    <button class="btn btn-danger" type="submit" onclick="return confirm('Eliminar esta evidencia del RCA?');">Eliminar evidencia</button>
+                                </form>
+                            </details>
                         </div>
                     </section>
                 }
@@ -1000,5 +1067,30 @@
     private static string GetShortHash(string hash)
     {
         return hash.Length > 20 ? $"{hash[..12]}...{hash[^8..]}" : hash;
+    }
+
+    private static IReadOnlyList<SelectListItem> GetEvidenceTypeOptions()
+    {
+        return
+        [
+            new SelectListItem("Observacion", "Observation"),
+            new SelectListItem("Documento", "Document"),
+            new SelectListItem("Foto", "Photo"),
+            new SelectListItem("Sensor", "Sensor"),
+            new SelectListItem("Cliente", "Customer"),
+            new SelectListItem("Proveedor", "Supplier")
+        ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetEvidenceSourceOptions()
+    {
+        return
+        [
+            new SelectListItem("Manual", "Manual"),
+            new SelectListItem("Intake externo", "ExternalIntake"),
+            new SelectListItem("SCADA", "SCADA"),
+            new SelectListItem("OEE", "OEE"),
+            new SelectListItem("Gantt", "GANTT")
+        ];
     }
 }

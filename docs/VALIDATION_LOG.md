@@ -48,3 +48,30 @@ Checks:
 - UI classification now covers image, video, PDF, text/CSV/JSON/XML, Office, and generic file tiles.
 
 Result: passed.
+
+## 2026-06-03 - RCA evidence actions
+
+Scope: validate evidence management actions for metadata edition, attachment replacement, and deletion.
+
+Environment:
+
+- `ASPNETCORE_ENVIRONMENT=Development`
+- Local web host: `http://localhost:5075`
+- Database-backed incident data
+
+API smoke:
+
+- Created temporary RCA incident with `SourceSystem=SMOKE`.
+- Uploaded initial evidence attachment.
+- Updated evidence metadata through `PUT /api/v1/rca/incidents/{id}/evidence/{evidenceId}`.
+- Replaced evidence attachment through `POST /api/v1/rca/incidents/{id}/evidence/{evidenceId}/attachment`.
+- Deleted evidence through `DELETE /api/v1/rca/incidents/{id}/evidence/{evidenceId}`.
+- Confirmed evidence list returned `0` records after deletion.
+
+UI smoke:
+
+- Detail page returned `200`.
+- Evidence management panel rendered.
+- Update, replace attachment, and delete evidence forms rendered.
+
+Result: passed.

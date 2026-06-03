@@ -1299,6 +1299,56 @@ textarea.form-control {
   font-weight: 780;
 }
 
+.evidence-manage {
+  border-top: 1px solid #dfe7ed;
+  margin-top: 4px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.evidence-manage summary {
+  color: #415568;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.evidence-manage form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.evidence-manage label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.evidence-manage label span {
+  color: #405365;
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.evidence-form-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evidence-manage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.evidence-delete-form {
+  border-top: 1px dashed #d9e2e8;
+  padding-top: 10px;
+}
+
 .evidence-card strong,
 .evidence-card span,
 .evidence-card small,
@@ -1471,6 +1521,10 @@ textarea.form-control {
 
   .evidence-thumb {
     width: 68px;
+  }
+
+  .evidence-form-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-actions,

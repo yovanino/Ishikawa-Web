@@ -315,6 +315,99 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia agregada."));
     }
 
+    public Task<ApiResult<RcaEvidenceDto>> UpdateEvidenceAsync(Guid incidentId, Guid evidenceId, UpdateRcaEvidenceRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateUpdateEvidenceRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail("No se pudo actualizar la evidencia.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var evidence = incident.Evidence.FirstOrDefault(x => x.Id == evidenceId && !x.IsDeleted);
+        if (evidence is null)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro la evidencia RCA.",
+                new ApiError { Field = nameof(evidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia no corresponde al incidente RCA." }));
+        }
+
+        evidence.CauseId = request.CauseId;
+        evidence.Title = request.Title.Trim();
+        evidence.EvidenceType = Normalize(request.EvidenceType) ?? "Observation";
+        evidence.Source = Normalize(request.Source) ?? "Manual";
+        evidence.Summary = Normalize(request.Summary);
+        evidence.ReferenceUri = Normalize(request.ReferenceUri);
+        evidence.CapturedAt = request.CapturedAt ?? evidence.CapturedAt;
+        evidence.CapturedByUserId = Normalize(request.CapturedByUserId);
+        evidence.UpdatedAt = DateTimeOffset.UtcNow;
+
+        return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia actualizada."));
+    }
+
+    public Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateReplaceEvidenceAttachmentRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail("No se pudo reemplazar el adjunto.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var evidence = incident.Evidence.FirstOrDefault(x => x.Id == evidenceId && !x.IsDeleted);
+        if (evidence is null)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro la evidencia RCA.",
+                new ApiError { Field = nameof(evidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia no corresponde al incidente RCA." }));
+        }
+
+        evidence.AttachmentFileName = Normalize(request.AttachmentFileName);
+        evidence.AttachmentContentType = Normalize(request.AttachmentContentType);
+        evidence.AttachmentSizeBytes = request.AttachmentSizeBytes;
+        evidence.AttachmentStorageProvider = Normalize(request.AttachmentStorageProvider);
+        evidence.AttachmentStorageKey = Normalize(request.AttachmentStorageKey);
+        evidence.AttachmentSha256 = Normalize(request.AttachmentSha256);
+        evidence.UpdatedAt = DateTimeOffset.UtcNow;
+
+        return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Adjunto reemplazado."));
+    }
+
+    public Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken = default)
+    {
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var evidence = incident.Evidence.FirstOrDefault(x => x.Id == evidenceId && !x.IsDeleted);
+        if (evidence is null)
+        {
+            return Task.FromResult(ApiResult<RcaEvidenceDto>.Fail(
+                "No se encontro la evidencia RCA.",
+                new ApiError { Field = nameof(evidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia no corresponde al incidente RCA." }));
+        }
+
+        evidence.IsDeleted = true;
+        evidence.UpdatedAt = DateTimeOffset.UtcNow;
+
+        return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia eliminada."));
+    }
+
     public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateCloseRequest(request);
@@ -589,6 +682,50 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         if (string.IsNullOrWhiteSpace(request.Source))
         {
             errors.Add(new ApiError { Field = nameof(request.Source), Code = "EVIDENCE_SOURCE_REQUIRED", Message = "El origen de la evidencia es obligatorio." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateUpdateEvidenceRequest(UpdateRcaEvidenceRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Title), Code = "EVIDENCE_TITLE_REQUIRED", Message = "El titulo de la evidencia es obligatorio." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.EvidenceType))
+        {
+            errors.Add(new ApiError { Field = nameof(request.EvidenceType), Code = "EVIDENCE_TYPE_REQUIRED", Message = "El tipo de evidencia es obligatorio." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Source))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Source), Code = "EVIDENCE_SOURCE_REQUIRED", Message = "El origen de la evidencia es obligatorio." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateReplaceEvidenceAttachmentRequest(ReplaceRcaEvidenceAttachmentRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.AttachmentFileName))
+        {
+            errors.Add(new ApiError { Field = nameof(request.AttachmentFileName), Code = "ATTACHMENT_FILE_NAME_REQUIRED", Message = "El nombre del adjunto es obligatorio." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.AttachmentStorageKey))
+        {
+            errors.Add(new ApiError { Field = nameof(request.AttachmentStorageKey), Code = "ATTACHMENT_STORAGE_KEY_REQUIRED", Message = "La ubicacion del adjunto es obligatoria." });
+        }
+
+        if (request.AttachmentSizeBytes <= 0)
+        {
+            errors.Add(new ApiError { Field = nameof(request.AttachmentSizeBytes), Code = "ATTACHMENT_SIZE_REQUIRED", Message = "El adjunto debe tener contenido." });
         }
 
         return errors;

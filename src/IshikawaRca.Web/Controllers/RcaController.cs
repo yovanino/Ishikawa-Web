@@ -274,6 +274,114 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateEvidence(Guid id, [Bind(Prefix = "EvidenceEdit")] UpdateRcaEvidenceViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["StatusMessage"] = "No se pudo actualizar la evidencia: revisa los campos obligatorios.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var request = new UpdateRcaEvidenceRequest
+        {
+            CauseId = model.CauseId,
+            Title = model.Title,
+            EvidenceType = model.EvidenceType,
+            Source = model.Source,
+            Summary = model.Summary,
+            ReferenceUri = model.ReferenceUri,
+            CapturedAt = model.CapturedAt,
+            CapturedByUserId = model.CapturedByUserId
+        };
+
+        var result = await _rcaIncidentService.UpdateEvidenceAsync(id, model.EvidenceId, request, cancellationToken);
+        TempData["StatusMessage"] = result.Success
+            ? "Evidencia actualizada."
+            : result.Message ?? "No se pudo actualizar la evidencia.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(104_857_600)]
+    public async Task<IActionResult> ReplaceEvidenceAttachment(Guid id, [Bind(Prefix = "EvidenceAttachment")] ReplaceRcaEvidenceAttachmentViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || model.Attachment is null)
+        {
+            TempData["StatusMessage"] = "Selecciona un archivo valido para reemplazar el adjunto.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var existingEvidence = await FindEvidenceAsync(id, model.EvidenceId, cancellationToken);
+        if (existingEvidence is null)
+        {
+            return NotFound();
+        }
+
+        StoredEvidenceFile attachment;
+        try
+        {
+            attachment = await _evidenceFileStorage.SaveAsync(id, model.Attachment, cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            TempData["StatusMessage"] = ex.Message;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var request = new ReplaceRcaEvidenceAttachmentRequest
+        {
+            AttachmentFileName = attachment.FileName,
+            AttachmentContentType = attachment.ContentType,
+            AttachmentSizeBytes = attachment.SizeBytes,
+            AttachmentStorageProvider = attachment.StorageProvider,
+            AttachmentStorageKey = attachment.StorageKey,
+            AttachmentSha256 = attachment.Sha256
+        };
+
+        var result = await _rcaIncidentService.ReplaceEvidenceAttachmentAsync(id, model.EvidenceId, request, cancellationToken);
+        if (result.Success)
+        {
+            _evidenceFileStorage.Delete(existingEvidence.AttachmentStorageKey);
+        }
+        else
+        {
+            _evidenceFileStorage.Delete(attachment.StorageKey);
+        }
+
+        TempData["StatusMessage"] = result.Success
+            ? "Adjunto reemplazado."
+            : result.Message ?? "No se pudo reemplazar el adjunto.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
+    {
+        var existingEvidence = await FindEvidenceAsync(id, evidenceId, cancellationToken);
+        if (existingEvidence is null)
+        {
+            return NotFound();
+        }
+
+        var result = await _rcaIncidentService.DeleteEvidenceAsync(id, evidenceId, cancellationToken);
+        if (result.Success)
+        {
+            _evidenceFileStorage.Delete(existingEvidence.AttachmentStorageKey);
+        }
+
+        TempData["StatusMessage"] = result.Success
+            ? "Evidencia eliminada."
+            : result.Message ?? "No se pudo eliminar la evidencia.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     [HttpGet]
     public async Task<IActionResult> DownloadEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
     {
@@ -624,6 +732,17 @@ public class RcaController : Controller
                 Step = GetNextWizardStep(incidentResult.Data.WizardStep)
             }
         };
+    }
+
+    private async Task<RcaEvidenceDto?> FindEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken)
+    {
+        var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(incidentId, cancellationToken);
+        if (!evidenceResult.Success)
+        {
+            return null;
+        }
+
+        return evidenceResult.Data?.FirstOrDefault(x => x.Id == evidenceId);
     }
 
     private static IReadOnlyList<SelectListItem> GetWizardStepOptions()
