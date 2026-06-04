@@ -19,6 +19,37 @@ public class AddRcaFactViewModel
     [StringLength(220)]
     public string? SourceDetail { get; set; }
 
+    public string FactSeverity { get; set; } = "Info";
+
+    [StringLength(80)]
+    public string? ShiftCode { get; set; }
+
+    [StringLength(80)]
+    public string? MachineCode { get; set; }
+
+    [StringLength(80)]
+    public string? LineCode { get; set; }
+
+    [StringLength(120)]
+    public string? WorkOrderCode { get; set; }
+
+    [StringLength(120)]
+    public string? MaterialCode { get; set; }
+
+    [StringLength(120)]
+    public string? BatchOrLot { get; set; }
+
+    [StringLength(120)]
+    public string? AlarmCode { get; set; }
+
+    [StringLength(160)]
+    public string? MeasurementName { get; set; }
+
+    public decimal? MeasurementValue { get; set; }
+
+    [StringLength(40)]
+    public string? MeasurementUnit { get; set; }
+
     [Required]
     [StringLength(220)]
     public string Title { get; set; } = string.Empty;

@@ -227,6 +227,17 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.FactType).HasMaxLength(64).IsRequired();
         entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
         entity.Property(x => x.SourceDetail).HasMaxLength(220);
+        entity.Property(x => x.FactSeverity).HasMaxLength(32).HasDefaultValue("Info").IsRequired();
+        entity.Property(x => x.ShiftCode).HasMaxLength(80);
+        entity.Property(x => x.MachineCode).HasMaxLength(80);
+        entity.Property(x => x.LineCode).HasMaxLength(80);
+        entity.Property(x => x.WorkOrderCode).HasMaxLength(120);
+        entity.Property(x => x.MaterialCode).HasMaxLength(120);
+        entity.Property(x => x.BatchOrLot).HasMaxLength(120);
+        entity.Property(x => x.AlarmCode).HasMaxLength(120);
+        entity.Property(x => x.MeasurementName).HasMaxLength(160);
+        entity.Property(x => x.MeasurementValue).HasPrecision(18, 6);
+        entity.Property(x => x.MeasurementUnit).HasMaxLength(40);
         entity.Property(x => x.Title).HasMaxLength(220).IsRequired();
         entity.Property(x => x.Description).HasMaxLength(4000);
         entity.Property(x => x.CapturedByUserId).HasMaxLength(160);
@@ -237,6 +248,10 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.CorrectiveActionId });
         entity.HasIndex(x => new { x.TenantId, x.ExternalIntakeId });
         entity.HasIndex(x => new { x.TenantId, x.FactType });
+        entity.HasIndex(x => new { x.TenantId, x.FactSeverity });
+        entity.HasIndex(x => new { x.TenantId, x.MachineCode, x.OccurredAt });
+        entity.HasIndex(x => new { x.TenantId, x.ShiftCode, x.OccurredAt });
+        entity.HasIndex(x => new { x.TenantId, x.AlarmCode });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

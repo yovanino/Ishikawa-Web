@@ -41,6 +41,25 @@ Database:
 
 Result: passed.
 
+## 2026-06-04 - RCA fact industrial classification
+
+Scope: validate 3C, industrial classification for RCA facts.
+
+Checks:
+
+- Added fact severity, shift, machine, line, work order, material, lot, alarm and measurement fields to RCA facts.
+- Extended DTO/request contracts, EF service, in-memory service, MVC form, detail display, event payload and PDF export.
+- Added fact type options for customer claim, supplier claim and containment.
+- Build passed with 0 errors.
+- EF reports no pending model changes after migration.
+
+Database:
+
+- Migration `20260604141954_AddRcaFactIndustrialClassification` applied successfully.
+- `FactSeverity` uses default `Info` for existing rows.
+
+Result: passed.
+
 ## 2026-06-04 - RCA PDF export
 
 Scope: validate PDF export with RCA closure and evidence manifest.

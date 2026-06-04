@@ -319,7 +319,55 @@
                         <span class="timeline-dot timeline-dot-fact"></span>
                         <div>
                             <strong>@fact.Title</strong>
-                            <span>@fact.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") | @GetFactTypeLabel(fact.FactType) | @GetFactSourceLabel(fact.Source)</span>
+                            <span>@fact.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") | @GetFactTypeLabel(fact.FactType) | @GetFactSourceLabel(fact.Source) | @GetFactSeverityLabel(fact.FactSeverity)</span>
+                            @if (!string.IsNullOrWhiteSpace(fact.ShiftCode) ||
+                                 !string.IsNullOrWhiteSpace(fact.MachineCode) ||
+                                 !string.IsNullOrWhiteSpace(fact.LineCode) ||
+                                 !string.IsNullOrWhiteSpace(fact.WorkOrderCode))
+                            {
+                                <small>
+                                    @if (!string.IsNullOrWhiteSpace(fact.ShiftCode))
+                                    {
+                                        <text>Turno: @fact.ShiftCode. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.MachineCode))
+                                    {
+                                        <text>Maquina: @fact.MachineCode. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.LineCode))
+                                    {
+                                        <text>Linea: @fact.LineCode. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.WorkOrderCode))
+                                    {
+                                        <text>OT: @fact.WorkOrderCode.</text>
+                                    }
+                                </small>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(fact.AlarmCode) ||
+                                 !string.IsNullOrWhiteSpace(fact.MaterialCode) ||
+                                 !string.IsNullOrWhiteSpace(fact.BatchOrLot) ||
+                                 !string.IsNullOrWhiteSpace(fact.MeasurementName))
+                            {
+                                <small>
+                                    @if (!string.IsNullOrWhiteSpace(fact.AlarmCode))
+                                    {
+                                        <text>Alarma: @fact.AlarmCode. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.MaterialCode))
+                                    {
+                                        <text>Material: @fact.MaterialCode. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.BatchOrLot))
+                                    {
+                                        <text>Lote: @fact.BatchOrLot. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.MeasurementName))
+                                    {
+                                        <text>Medicion: @fact.MeasurementName @(fact.MeasurementValue?.ToString("0.######") ?? "-") @fact.MeasurementUnit.</text>
+                                    }
+                                </small>
+                            }
                             @if (!string.IsNullOrWhiteSpace(fact.Description))
                             {
                                 <small>@fact.Description</small>
@@ -382,6 +430,10 @@
                     <select asp-for="FactForm.FactType" asp-items="GetFactTypeOptions()" class="form-select"></select>
                 </div>
                 <div>
+                    <label asp-for="FactForm.FactSeverity" class="form-label">Severidad</label>
+                    <select asp-for="FactForm.FactSeverity" asp-items="GetFactSeverityOptions()" class="form-select"></select>
+                </div>
+                <div>
                     <label asp-for="FactForm.Source" class="form-label">Fuente</label>
                     <select asp-for="FactForm.Source" asp-items="GetFactSourceOptions()" class="form-select"></select>
                 </div>
@@ -394,6 +446,49 @@
             <div class="mb-3">
                 <label asp-for="FactForm.SourceDetail" class="form-label">Detalle fuente</label>
                 <input asp-for="FactForm.SourceDetail" class="form-control" />
+            </div>
+
+            <div class="form-grid fact-form-grid">
+                <div>
+                    <label asp-for="FactForm.ShiftCode" class="form-label">Turno</label>
+                    <input asp-for="FactForm.ShiftCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.MachineCode" class="form-label">Maquina</label>
+                    <input asp-for="FactForm.MachineCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.LineCode" class="form-label">Linea</label>
+                    <input asp-for="FactForm.LineCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.WorkOrderCode" class="form-label">OT</label>
+                    <input asp-for="FactForm.WorkOrderCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.MaterialCode" class="form-label">Material</label>
+                    <input asp-for="FactForm.MaterialCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.BatchOrLot" class="form-label">Lote</label>
+                    <input asp-for="FactForm.BatchOrLot" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.AlarmCode" class="form-label">Alarma</label>
+                    <input asp-for="FactForm.AlarmCode" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.MeasurementName" class="form-label">Medicion</label>
+                    <input asp-for="FactForm.MeasurementName" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.MeasurementValue" class="form-label">Valor</label>
+                    <input asp-for="FactForm.MeasurementValue" class="form-control" type="number" step="0.000001" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.MeasurementUnit" class="form-label">Unidad</label>
+                    <input asp-for="FactForm.MeasurementUnit" class="form-control" />
+                </div>
             </div>
 
             <div class="mb-3">
@@ -1213,7 +1308,22 @@
             new SelectListItem("Inspeccion", "Inspection"),
             new SelectListItem("Cambio de turno", "ShiftChange"),
             new SelectListItem("Material / lote", "Material"),
-            new SelectListItem("Orden de trabajo", "WorkOrder")
+            new SelectListItem("Orden de trabajo", "WorkOrder"),
+            new SelectListItem("Reclamo cliente", "CustomerClaim"),
+            new SelectListItem("Reclamo proveedor", "SupplierClaim"),
+            new SelectListItem("Contencion", "Containment")
+        ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetFactSeverityOptions()
+    {
+        return
+        [
+            new SelectListItem("Informativo", "Info"),
+            new SelectListItem("Bajo", "Low"),
+            new SelectListItem("Medio", "Medium"),
+            new SelectListItem("Alto", "High"),
+            new SelectListItem("Critico", "Critical")
         ];
     }
 
@@ -1244,7 +1354,22 @@
             "ShiftChange" => "Cambio de turno",
             "Material" => "Material / lote",
             "WorkOrder" => "Orden de trabajo",
+            "CustomerClaim" => "Reclamo cliente",
+            "SupplierClaim" => "Reclamo proveedor",
+            "Containment" => "Contencion",
             _ => "Observacion"
+        };
+    }
+
+    private static string GetFactSeverityLabel(string severity)
+    {
+        return severity switch
+        {
+            "Low" => "Bajo",
+            "Medium" => "Medio",
+            "High" => "Alto",
+            "Critical" => "Critico",
+            _ => "Informativo"
         };
     }
 

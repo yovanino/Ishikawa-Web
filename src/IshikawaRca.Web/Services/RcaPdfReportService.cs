@@ -64,7 +64,11 @@ public class RcaPdfReportService : IRcaPdfReportService
                 var action = model.CorrectiveActions.FirstOrDefault(x => x.Id == fact.CorrectiveActionId);
                 var intake = model.ExternalIntakes.FirstOrDefault(x => x.Id == fact.ExternalIntakeId);
                 document.AddBullet($"{FormatDate(fact.OccurredAt)} - {fact.Title}");
-                document.AddKeyValue("Type / Source", $"{fact.FactType} / {fact.Source}");
+                document.AddKeyValue("Type / Source / Severity", $"{fact.FactType} / {fact.Source} / {fact.FactSeverity}");
+                document.AddKeyValue("Shift / Machine / Line", $"{fact.ShiftCode ?? "-"} / {fact.MachineCode ?? "-"} / {fact.LineCode ?? "-"}");
+                document.AddKeyValue("WO / Material / Lot", $"{fact.WorkOrderCode ?? "-"} / {fact.MaterialCode ?? "-"} / {fact.BatchOrLot ?? "-"}");
+                document.AddKeyValue("Alarm", fact.AlarmCode ?? "-");
+                document.AddKeyValue("Measurement", string.IsNullOrWhiteSpace(fact.MeasurementName) ? "-" : $"{fact.MeasurementName} {fact.MeasurementValue?.ToString("0.######", CultureInfo.InvariantCulture) ?? "-"} {fact.MeasurementUnit ?? string.Empty}");
                 document.AddKeyValue("Cause", cause?.Title ?? "-");
                 document.AddKeyValue("Evidence", evidence?.Title ?? "-");
                 document.AddKeyValue("Action", action?.Title ?? "-");
