@@ -19,6 +19,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaDomainEventDto> TimelineEvents { get; set; } = [];
 
+    public IReadOnlyList<RcaTimelineItemViewModel> UnifiedTimeline { get; set; } = [];
+
     public RcaWizardProgressDto WizardProgress { get; set; } = new();
 
     public AddIshikawaCauseViewModel Cause { get; set; } = new();

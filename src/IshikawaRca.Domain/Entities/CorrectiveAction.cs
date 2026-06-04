@@ -13,6 +13,10 @@ public class CorrectiveAction : TenantEntity
 
     public string? Description { get; set; }
 
+    public CorrectiveActionType ActionType { get; set; } = CorrectiveActionType.Corrective;
+
+    public RcaResolutionScope ResolutionScope { get; set; } = RcaResolutionScope.RootCause;
+
     public CorrectiveActionStatus Status { get; set; } = CorrectiveActionStatus.Open;
 
     public string? AssignedToUserId { get; set; }

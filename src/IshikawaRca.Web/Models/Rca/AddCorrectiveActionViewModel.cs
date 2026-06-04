@@ -13,6 +13,12 @@ public class AddCorrectiveActionViewModel
     [StringLength(4000)]
     public string? Description { get; set; }
 
+    [Required(ErrorMessage = "El tipo de accion es obligatorio.")]
+    public string ActionType { get; set; } = "Corrective";
+
+    [Required(ErrorMessage = "El ambito de resolucion es obligatorio.")]
+    public string ResolutionScope { get; set; } = "RootCause";
+
     [StringLength(160)]
     public string? AssignedToUserId { get; set; }
 

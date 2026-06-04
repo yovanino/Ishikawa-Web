@@ -31,6 +31,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacion
 - [x] Linea de hechos manual RCA para registrar observaciones, mediciones, alarmas y contexto.
 - [x] Hechos vinculables a causa, evidencia, accion correctiva e intake externo.
 - [x] Clasificacion industrial de hechos: severidad, turno, maquina, linea, OT, material, lote, alarma y medicion.
+- [x] Clasificacion de acciones por tipo: correctiva, preventiva y preventiva de recurrencia.
+- [x] Separacion de resolucion entre causa raiz del defecto y FUGA/no deteccion.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
 - [x] Contexto basico de reclamo interno/externo.
@@ -48,6 +50,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacion
 - [x] Linea de hechos manual visible en detalle RCA.
 - [x] Vinculos visuales de hechos con causa, evidencia, accion e intake externo.
 - [x] Clasificacion industrial visible y capturable en hechos RCA.
+- [x] Panel visual de resolucion causa raiz/FUGA para acciones correctivas.
 - [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
 - [x] Adjuntos binarios/documentales iniciales para evidencias.
 - [x] Miniaturas/previews compactos de evidencias.
@@ -62,6 +65,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacion
 - Integracion Gantt por API.
 - Integracion SCADA/Gateway por API.
 - [x] Timeline visual de RCA alimentada por eventos de integracion.
+- [x] Timeline unificado con hechos, evidencias, acciones, wizard, intake externo y contexto industrial.
 - Estados y auditoria ampliada.
 - [x] Evento de RCA escalado a 8D.
 - [x] Evento de etapa wizard RCA completada.

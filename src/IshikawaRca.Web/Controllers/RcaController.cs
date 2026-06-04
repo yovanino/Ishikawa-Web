@@ -153,6 +153,8 @@ public class RcaController : Controller
             CauseId = model.CauseId,
             Title = model.Title,
             Description = model.Description,
+            ActionType = model.ActionType,
+            ResolutionScope = model.ResolutionScope,
             AssignedToUserId = model.AssignedToUserId,
             DueDate = model.DueDate
         };
@@ -821,18 +823,25 @@ public class RcaController : Controller
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
         var wizardProgressResult = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
 
+        var facts = factsResult.Data ?? [];
+        var correctiveActions = actionsResult.Data ?? [];
+        var evidence = evidenceResult.Data ?? [];
+        var externalIntakes = externalIntakesResult.Data ?? [];
+        var timelineEvents = timelineResult.Data?
+            .OrderByDescending(x => x.OccurredAt)
+            .Take(30)
+            .ToList() ?? [];
+
         return new RcaIncidentDetailsViewModel
         {
             Incident = incidentResult.Data,
             Canvas = canvasResult.Data,
-            Facts = factsResult.Data ?? [],
-            CorrectiveActions = actionsResult.Data ?? [],
-            Evidence = evidenceResult.Data ?? [],
-            ExternalIntakes = externalIntakesResult.Data ?? [],
-            TimelineEvents = timelineResult.Data?
-                .OrderByDescending(x => x.OccurredAt)
-                .Take(20)
-                .ToList() ?? [],
+            Facts = facts,
+            CorrectiveActions = correctiveActions,
+            Evidence = evidence,
+            ExternalIntakes = externalIntakes,
+            TimelineEvents = timelineEvents,
+            UnifiedTimeline = BuildUnifiedTimeline(timelineEvents, canvasResult.Data, correctiveActions, evidence, externalIntakes),
             WizardProgress = wizardProgressResult.Data ?? new RcaWizardProgressDto
             {
                 IncidentId = id,
@@ -844,6 +853,404 @@ public class RcaController : Controller
             {
                 Step = wizardProgressResult.Data?.NextRecommendedStep ?? GetNextWizardStep(incidentResult.Data.WizardStep)
             }
+        };
+    }
+
+    private static IReadOnlyList<RcaTimelineItemViewModel> BuildUnifiedTimeline(
+        IReadOnlyList<RcaDomainEventDto> timelineEvents,
+        IshikawaCanvasDto canvas,
+        IReadOnlyList<CorrectiveActionDto> correctiveActions,
+        IReadOnlyList<RcaEvidenceDto> evidence,
+        IReadOnlyList<RcaExternalIntakeDto> externalIntakes)
+    {
+        var causesById = canvas.Causes.ToDictionary(x => x.Id, x => x.Title);
+        var actionsById = correctiveActions.ToDictionary(x => x.Id, x => x.Title);
+        var evidenceById = evidence.ToDictionary(x => x.Id, x => x.Title);
+        var intakesById = externalIntakes.ToDictionary(
+            x => x.Id,
+            x => string.IsNullOrWhiteSpace(x.ActorName) ? x.ActorType : $"{x.ActorType}: {x.ActorName}");
+
+        return timelineEvents
+            .Select(x => BuildUnifiedTimelineItem(x, causesById, actionsById, evidenceById, intakesById))
+            .ToList();
+    }
+
+    private static RcaTimelineItemViewModel BuildUnifiedTimelineItem(
+        RcaDomainEventDto timelineEvent,
+        IReadOnlyDictionary<Guid, string> causesById,
+        IReadOnlyDictionary<Guid, string> actionsById,
+        IReadOnlyDictionary<Guid, string> evidenceById,
+        IReadOnlyDictionary<Guid, string> intakesById)
+    {
+        var data = timelineEvent.Data;
+        var badges = BuildTimelineBadges(timelineEvent.Type, data);
+        var references = BuildTimelineReferences(timelineEvent, causesById, actionsById, evidenceById, intakesById);
+        var industrialContext = BuildIndustrialContext(timelineEvent.Type, data);
+
+        return new RcaTimelineItemViewModel
+        {
+            Id = timelineEvent.Id,
+            Type = timelineEvent.Type,
+            Kind = GetTimelineKind(timelineEvent.Type),
+            Label = GetTimelineLabel(timelineEvent.Type),
+            Detail = GetTimelineDetail(timelineEvent),
+            OccurredAt = timelineEvent.OccurredAt,
+            SourceSystem = timelineEvent.SourceSystem,
+            Severity = GetData(data, "factSeverity"),
+            Badges = badges,
+            References = references,
+            IndustrialContext = industrialContext
+        };
+    }
+
+    private static IReadOnlyList<string> BuildTimelineBadges(string eventType, IReadOnlyDictionary<string, string?> data)
+    {
+        var badges = new List<string>();
+
+        if (eventType.Contains("Fact", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(badges, GetFactTypeLabel(GetData(data, "factType")));
+            AddIfNotEmpty(badges, GetFactSourceLabel(GetData(data, "source")));
+            AddIfNotEmpty(badges, GetFactSeverityLabel(GetData(data, "factSeverity")));
+            return badges;
+        }
+
+        if (eventType.Contains("Evidence", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(badges, GetEvidenceTypeLabel(GetData(data, "evidenceType")));
+            AddIfNotEmpty(badges, GetFactSourceLabel(GetData(data, "source")));
+            AddIfNotEmpty(badges, GetEvidenceValidationLabel(GetData(data, "validationStatus")));
+            return badges;
+        }
+
+        if (eventType.Contains("Action", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(badges, GetActionStatusLabel(GetData(data, "status")));
+            AddIfNotEmpty(badges, FormatDueDate(GetData(data, "dueDate")));
+            return badges;
+        }
+
+        if (eventType.Contains("ExternalIntake", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(badges, GetExternalActorLabel(GetData(data, "actorType")));
+            AddIfNotEmpty(badges, GetExternalStatusLabel(GetData(data, "status")));
+            return badges;
+        }
+
+        if (eventType.Contains("Wizard", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(badges, GetWizardStepLabel(GetData(data, "step")));
+        }
+
+        return badges;
+    }
+
+    private static IReadOnlyList<string> BuildTimelineReferences(
+        RcaDomainEventDto timelineEvent,
+        IReadOnlyDictionary<Guid, string> causesById,
+        IReadOnlyDictionary<Guid, string> actionsById,
+        IReadOnlyDictionary<Guid, string> evidenceById,
+        IReadOnlyDictionary<Guid, string> intakesById)
+    {
+        var references = new List<string>();
+        var data = timelineEvent.Data;
+
+        AddReference(references, "Causa", GetData(data, "causeId"), causesById);
+        AddReference(references, "Evidencia", GetData(data, "evidenceId"), evidenceById);
+        AddReference(references, "Accion", GetData(data, "actionId"), actionsById);
+        AddReference(references, "Accion", GetData(data, "correctiveActionId"), actionsById);
+        AddReference(references, "Intake", GetData(data, "intakeId"), intakesById);
+        AddReference(references, "Intake", GetData(data, "externalIntakeId"), intakesById);
+        AddIfNotEmpty(references, Prefix("Fuente", GetData(data, "sourceDetail")));
+        AddIfNotEmpty(references, Prefix("Referencia", GetData(data, "referenceUri")));
+        AddIfNotEmpty(references, Prefix("Adjunto", GetData(data, "attachmentFileName")));
+        AddIfNotEmpty(references, Prefix("Usuario", GetData(data, "completedByUserId") ?? GetData(data, "reviewedByUserId") ?? GetData(data, "rejectedByUserId") ?? GetData(data, "capturedByUserId")));
+
+        return references.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static IReadOnlyList<string> BuildIndustrialContext(string eventType, IReadOnlyDictionary<string, string?> data)
+    {
+        var context = new List<string>();
+
+        AddIfNotEmpty(context, Prefix("Turno", GetData(data, "shiftCode")));
+        AddIfNotEmpty(context, Prefix("Maquina", GetData(data, "machineCode")));
+        AddIfNotEmpty(context, Prefix("Linea", GetData(data, "lineCode")));
+        AddIfNotEmpty(context, Prefix("OT", GetData(data, "workOrderCode")));
+        AddIfNotEmpty(context, Prefix("Material", GetData(data, "materialCode")));
+        AddIfNotEmpty(context, Prefix("Lote", GetData(data, "batchOrLot")));
+        AddIfNotEmpty(context, Prefix("Alarma", GetData(data, "alarmCode")));
+
+        var measurementName = GetData(data, "measurementName");
+        if (!string.IsNullOrWhiteSpace(measurementName))
+        {
+            var measurementValue = GetData(data, "measurementValue");
+            var measurementUnit = GetData(data, "measurementUnit");
+            AddIfNotEmpty(context, Prefix("Medicion", JoinParts(" ", measurementName, measurementValue, measurementUnit)));
+        }
+
+        if (eventType.Contains("ExternalIntake", StringComparison.OrdinalIgnoreCase))
+        {
+            AddIfNotEmpty(context, Prefix("Reclamo", GetData(data, "claimReference")));
+        }
+
+        return context;
+    }
+
+    private static void AddReference(
+        List<string> references,
+        string label,
+        string? id,
+        IReadOnlyDictionary<Guid, string> lookup)
+    {
+        if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out var guid) || !lookup.TryGetValue(guid, out var value))
+        {
+            return;
+        }
+
+        AddIfNotEmpty(references, Prefix(label, value));
+    }
+
+    private static string GetTimelineKind(string eventType)
+    {
+        if (eventType.Contains("Fact", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fact";
+        }
+
+        if (eventType.Contains("ExternalIntake", StringComparison.OrdinalIgnoreCase))
+        {
+            return "external";
+        }
+
+        if (eventType.Contains("Wizard", StringComparison.OrdinalIgnoreCase))
+        {
+            return "wizard";
+        }
+
+        if (eventType.Contains("Evidence", StringComparison.OrdinalIgnoreCase))
+        {
+            return "evidence";
+        }
+
+        if (eventType.Contains("Action", StringComparison.OrdinalIgnoreCase))
+        {
+            return "action";
+        }
+
+        if (eventType.Contains("RootCause", StringComparison.OrdinalIgnoreCase) ||
+            eventType.Contains("Cause", StringComparison.OrdinalIgnoreCase))
+        {
+            return "cause";
+        }
+
+        return "incident";
+    }
+
+    private static string GetTimelineLabel(string eventType)
+    {
+        return eventType switch
+        {
+            "RcaIncidentCreated" => "Incidente creado",
+            "RcaCauseCreated" => "Causa agregada",
+            "RcaRootCauseSelected" => "Causa raiz seleccionada",
+            "RcaCorrectiveActionCreated" => "Accion correctiva creada",
+            "RcaCorrectiveActionCompleted" => "Accion correctiva completada",
+            "RcaEscalatedTo8D" => "RCA escalado a 8D",
+            "RcaWizardStepCompleted" => "Etapa de wizard completada",
+            "RcaEvidenceAttached" => "Evidencia agregada",
+            "RcaFactRecorded" => "Hecho registrado",
+            "RcaExternalIntakeCreated" => "Link externo creado",
+            "RcaExternalIntakeOpened" => "Link externo abierto",
+            "RcaExternalIntakeSubmitted" => "Respuesta externa enviada",
+            "RcaExternalIntakeReviewed" => "Respuesta externa revisada",
+            "RcaExternalIntakeRejected" => "Respuesta externa rechazada",
+            "RcaExternalIntakeRevoked" => "Link externo revocado",
+            "RcaExternalIntakeExpired" => "Link externo expirado",
+            "RcaClosed" => "Incidente RCA cerrado",
+            _ => eventType
+        };
+    }
+
+    private static string GetTimelineDetail(RcaDomainEventDto timelineEvent)
+    {
+        var data = timelineEvent.Data;
+
+        if (data.TryGetValue("title", out var title) && !string.IsNullOrWhiteSpace(title))
+        {
+            return title;
+        }
+
+        if (data.TryGetValue("actorName", out var actorName) && !string.IsNullOrWhiteSpace(actorName))
+        {
+            return actorName;
+        }
+
+        if (data.TryGetValue("actorType", out var actorType) && !string.IsNullOrWhiteSpace(actorType))
+        {
+            return GetExternalActorLabel(actorType);
+        }
+
+        if (data.TryGetValue("notes", out var notes) && !string.IsNullOrWhiteSpace(notes))
+        {
+            return notes;
+        }
+
+        return timelineEvent.SourceSystem;
+    }
+
+    private static string? GetData(IReadOnlyDictionary<string, string?> data, string key)
+    {
+        return data.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
+    }
+
+    private static string? Prefix(string label, string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : $"{label}: {value}";
+    }
+
+    private static void AddIfNotEmpty(List<string> values, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            values.Add(value);
+        }
+    }
+
+    private static string JoinParts(string separator, params string?[] values)
+    {
+        return string.Join(separator, values.Where(x => !string.IsNullOrWhiteSpace(x)));
+    }
+
+    private static string? FormatDueDate(string? dueDate)
+    {
+        return DateTimeOffset.TryParse(dueDate, out var parsed)
+            ? $"Vence {parsed.LocalDateTime:dd/MM/yyyy}"
+            : null;
+    }
+
+    private static string GetFactTypeLabel(string? factType)
+    {
+        return factType switch
+        {
+            "Alarm" => "Alarma",
+            "Measurement" => "Medicion",
+            "Stop" => "Parada",
+            "Inspection" => "Inspeccion",
+            "ShiftChange" => "Cambio de turno",
+            "Material" => "Material / lote",
+            "WorkOrder" => "Orden de trabajo",
+            "CustomerClaim" => "Reclamo cliente",
+            "SupplierClaim" => "Reclamo proveedor",
+            "Containment" => "Contencion",
+            _ => "Observacion"
+        };
+    }
+
+    private static string GetFactSeverityLabel(string? severity)
+    {
+        return severity switch
+        {
+            "Low" => "Bajo",
+            "Medium" => "Medio",
+            "High" => "Alto",
+            "Critical" => "Critico",
+            _ => "Informativo"
+        };
+    }
+
+    private static string GetFactSourceLabel(string? source)
+    {
+        return source switch
+        {
+            "Operator" => "Operador",
+            "Quality" => "Calidad",
+            "Maintenance" => "Mantenimiento",
+            "Customer" => "Cliente",
+            "Supplier" => "Proveedor",
+            null => string.Empty,
+            _ => source
+        };
+    }
+
+    private static string GetEvidenceTypeLabel(string? evidenceType)
+    {
+        return evidenceType switch
+        {
+            "Document" => "Documento",
+            "Photo" => "Foto",
+            "Sensor" => "Sensor",
+            "Customer" => "Cliente",
+            "Supplier" => "Proveedor",
+            _ => "Observacion"
+        };
+    }
+
+    private static string GetEvidenceValidationLabel(string? status)
+    {
+        return status switch
+        {
+            "Validated" => "Validada",
+            "Rejected" => "Rechazada",
+            "Expired" => "Vencida",
+            _ => "Pendiente"
+        };
+    }
+
+    private static string GetActionStatusLabel(string? status)
+    {
+        return status switch
+        {
+            "InProgress" => "En progreso",
+            "WaitingValidation" => "Esperando validacion",
+            "Completed" => "Completada",
+            "Cancelled" => "Cancelada",
+            "Open" => "Abierta",
+            null => string.Empty,
+            _ => status
+        };
+    }
+
+    private static string GetExternalActorLabel(string? actorType)
+    {
+        return actorType switch
+        {
+            "Supplier" => "Proveedor",
+            "Customer" => "Cliente",
+            "InternalArea" => "Area interna",
+            null => string.Empty,
+            _ => actorType
+        };
+    }
+
+    private static string GetExternalStatusLabel(string? status)
+    {
+        return status switch
+        {
+            "Sent" => "Enviado",
+            "Opened" => "Abierto",
+            "Submitted" => "Enviado por externo",
+            "Reviewed" => "Revisado",
+            "Rejected" => "Rechazado",
+            "Revoked" => "Revocado",
+            "Expired" => "Vencido",
+            null => string.Empty,
+            _ => status
+        };
+    }
+
+    private static string GetWizardStepLabel(string? step)
+    {
+        return step switch
+        {
+            "Problem" => "Problema",
+            "Causes" => "Causas",
+            "Evidence" => "Evidencias",
+            "Actions" => "Acciones",
+            "Validation" => "Validacion",
+            "Closed" => "Cierre",
+            null => string.Empty,
+            _ => step
         };
     }
 

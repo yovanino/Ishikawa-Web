@@ -1,5 +1,6 @@
 using IshikawaRca.Domain.Common;
 using IshikawaRca.Domain.Entities;
+using IshikawaRca.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace IshikawaRca.Infrastructure.Data;
@@ -147,6 +148,8 @@ public class RcaDbContext : DbContext
 
         entity.Property(x => x.Title).HasMaxLength(220).IsRequired();
         entity.Property(x => x.Description).HasMaxLength(4000);
+        entity.Property(x => x.ActionType).HasConversion<string>().HasMaxLength(32).HasDefaultValue(CorrectiveActionType.Corrective).IsRequired();
+        entity.Property(x => x.ResolutionScope).HasConversion<string>().HasMaxLength(32).HasDefaultValue(RcaResolutionScope.RootCause).IsRequired();
         entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         entity.Property(x => x.AssignedToUserId).HasMaxLength(160);
         entity.Property(x => x.CompletedByUserId).HasMaxLength(160);
@@ -155,6 +158,7 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.Status, x.DueDate });
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId });
         entity.HasIndex(x => new { x.TenantId, x.CauseId });
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.ResolutionScope, x.ActionType });
     }
 
     private static void ConfigureRcaEvidence(ModelBuilder modelBuilder)

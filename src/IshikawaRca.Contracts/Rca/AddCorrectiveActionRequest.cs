@@ -8,6 +8,10 @@ public class AddCorrectiveActionRequest
 
     public string? Description { get; set; }
 
+    public string ActionType { get; set; } = "Corrective";
+
+    public string ResolutionScope { get; set; } = "RootCause";
+
     public string? AssignedToUserId { get; set; }
 
     public DateTimeOffset? DueDate { get; set; }

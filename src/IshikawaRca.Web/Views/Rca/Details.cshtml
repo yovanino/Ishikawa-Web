@@ -10,6 +10,12 @@
     var causesById = Model.Canvas.Causes.ToDictionary(x => x.Id);
     var rootCause = Model.Canvas.Causes.FirstOrDefault(x => x.IsRootCause);
     var openActions = Model.CorrectiveActions.Count(x => !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+    var rootResolutionActions = Model.CorrectiveActions
+        .Where(x => string.Equals(x.ResolutionScope, "RootCause", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+    var escapeResolutionActions = Model.CorrectiveActions
+        .Where(x => string.Equals(x.ResolutionScope, "Escape", StringComparison.OrdinalIgnoreCase))
+        .ToList();
     var wizardSteps = new[]
     {
         new { Key = "Problem", Label = "Problema", Detail = "Contexto y alcance" },
@@ -543,27 +549,81 @@
 <section class="analysis-panel timeline-panel">
     <div class="panel-heading">
         <div>
-            <h2>Timeline RCA</h2>
-            <span>Eventos operativos e integraciones del analisis</span>
+            <h2>Timeline unificado</h2>
+            <span>Hechos, evidencias, acciones, wizard e intake externo en una sola secuencia</span>
         </div>
-        <span class="canvas-counter">@Model.TimelineEvents.Count evento(s)</span>
+        <span class="canvas-counter">@Model.UnifiedTimeline.Count evento(s)</span>
     </div>
 
-    @if (Model.TimelineEvents.Count == 0)
+    @if (Model.UnifiedTimeline.Count == 0)
     {
         <p class="muted-text">Sin eventos registrados.</p>
     }
     else
     {
-        <ol class="timeline-list">
-            @foreach (var timelineEvent in Model.TimelineEvents)
+        <div class="timeline-summary-grid" aria-label="Resumen del timeline RCA">
+            <article>
+                <strong>@Model.UnifiedTimeline.Count(x => x.Kind == "fact")</strong>
+                <span>Hechos</span>
+            </article>
+            <article>
+                <strong>@Model.UnifiedTimeline.Count(x => x.Kind == "evidence")</strong>
+                <span>Evidencias</span>
+            </article>
+            <article>
+                <strong>@Model.UnifiedTimeline.Count(x => x.Kind == "action")</strong>
+                <span>Acciones</span>
+            </article>
+            <article>
+                <strong>@Model.UnifiedTimeline.Count(x => x.Kind == "external")</strong>
+                <span>Externos</span>
+            </article>
+        </div>
+
+        <ol class="timeline-list unified-timeline-list">
+            @foreach (var timelineEvent in Model.UnifiedTimeline)
             {
                 <li>
-                    <span class="timeline-dot timeline-dot-@GetTimelineKind(timelineEvent.Type)"></span>
-                    <div>
-                        <strong>@GetTimelineLabel(timelineEvent.Type)</strong>
-                        <span>@timelineEvent.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</span>
-                        <small>@GetTimelineDetail(timelineEvent)</small>
+                    <span class="timeline-dot timeline-dot-@timelineEvent.Kind"></span>
+                    <div class="timeline-item-card timeline-item-@timelineEvent.Kind">
+                        <div class="timeline-item-heading">
+                            <div>
+                                <strong>@timelineEvent.Label</strong>
+                                <span>@timelineEvent.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") | @timelineEvent.SourceSystem</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(timelineEvent.Severity))
+                            {
+                                <small class="timeline-severity timeline-severity-@timelineEvent.Severity.ToLowerInvariant()">@GetFactSeverityLabel(timelineEvent.Severity)</small>
+                            }
+                        </div>
+                        <p>@timelineEvent.Detail</p>
+                        @if (timelineEvent.Badges.Count > 0)
+                        {
+                            <div class="timeline-chip-row" aria-label="Clasificacion del evento">
+                                @foreach (var badge in timelineEvent.Badges)
+                                {
+                                    <span>@badge</span>
+                                }
+                            </div>
+                        }
+                        @if (timelineEvent.IndustrialContext.Count > 0)
+                        {
+                            <div class="timeline-context" aria-label="Contexto industrial">
+                                @foreach (var context in timelineEvent.IndustrialContext)
+                                {
+                                    <small>@context</small>
+                                }
+                            </div>
+                        }
+                        @if (timelineEvent.References.Count > 0)
+                        {
+                            <div class="timeline-reference-row" aria-label="Referencias relacionadas">
+                                @foreach (var reference in timelineEvent.References)
+                                {
+                                    <small>@reference</small>
+                                }
+                            </div>
+                        }
                     </div>
                 </li>
             }
@@ -1134,59 +1194,129 @@
     <article class="analysis-panel">
         <div class="panel-heading">
             <div>
-                <h2>Acciones correctivas</h2>
-                <span>Responsables, vencimientos y trazabilidad</span>
+                <h2>Resolucion del problema</h2>
+                <span>Causa raiz, FUGA, acciones y recurrencia</span>
             </div>
             <span class="canvas-counter">@Model.CorrectiveActions.Count accion(es)</span>
         </div>
 
-        @if (Model.CorrectiveActions.Count == 0)
-        {
-            <p class="muted-text">Sin acciones cargadas</p>
-        }
-        else
-        {
-            <div class="action-list">
-                @foreach (var action in Model.CorrectiveActions)
-                {
-                    var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == action.CauseId);
+        <div class="resolution-columns">
+            <section class="resolution-lane">
+                <div class="resolution-lane-heading">
+                    <div>
+                        <h3>Causa raiz del defecto</h3>
+                        <span>Contramedida y preventiva de recurrencia</span>
+                    </div>
+                    <span class="canvas-counter">@rootResolutionActions.Count</span>
+                </div>
 
-                    <section class="action-row">
-                        <div>
-                            <strong>@action.Title</strong>
-                            <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
-                            @if (!string.IsNullOrWhiteSpace(action.ValidationNotes))
-                            {
-                                <small>@action.ValidationNotes</small>
-                            }
-                        </div>
-                        <div>
-                            <span class="status-chip">@action.Status</span>
-                            <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
-                            @if (action.CompletedAt.HasValue)
-                            {
-                                <small>Validada @action.CompletedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
-                            }
-                        </div>
-                        @if (action.Status is not "Completed" and not "Cancelled")
-                        {
-                            <form class="action-status-form" asp-controller="Rca" asp-action="UpdateActionStatus" asp-route-id="@incident.Id" method="post">
-                                <input type="hidden" name="ActionId" value="@action.Id" />
-                                <select name="Status" class="form-select form-select-sm">
-                                    <option value="InProgress">En progreso</option>
-                                    <option value="WaitingValidation">Esperando validacion</option>
-                                    <option value="Completed">Completada</option>
-                                    <option value="Cancelled">Cancelada</option>
-                                </select>
-                                <input class="form-control form-control-sm" name="CompletedByUserId" placeholder="Validador" />
-                                <input class="form-control form-control-sm" name="ValidationNotes" placeholder="Evidencia o nota de validacion" />
-                                <button type="submit" class="btn btn-sm btn-primary">Actualizar</button>
-                            </form>
-                        }
-                    </section>
+                @if (rootResolutionActions.Count == 0)
+                {
+                    <p class="muted-text">Sin acciones para la causa raiz.</p>
                 }
-            </div>
-        }
+                else
+                {
+                    <div class="action-list">
+                        @foreach (var action in rootResolutionActions)
+                        {
+                            var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == action.CauseId);
+
+                            <section class="action-row">
+                                <div>
+                                    <strong>@action.Title</strong>
+                                    <span>@GetActionTypeLabel(action.ActionType) | @(linkedCause?.Title ?? "Sin causa asociada")</span>
+                                    @if (!string.IsNullOrWhiteSpace(action.ValidationNotes))
+                                    {
+                                        <small>@action.ValidationNotes</small>
+                                    }
+                                </div>
+                                <div>
+                                    <span class="status-chip">@action.Status</span>
+                                    <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
+                                    @if (action.CompletedAt.HasValue)
+                                    {
+                                        <small>Validada @action.CompletedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                                    }
+                                </div>
+                                @if (action.Status is not "Completed" and not "Cancelled")
+                                {
+                                    <form class="action-status-form" asp-controller="Rca" asp-action="UpdateActionStatus" asp-route-id="@incident.Id" method="post">
+                                        <input type="hidden" name="ActionId" value="@action.Id" />
+                                        <select name="Status" class="form-select form-select-sm">
+                                            <option value="InProgress">En progreso</option>
+                                            <option value="WaitingValidation">Esperando validacion</option>
+                                            <option value="Completed">Completada</option>
+                                            <option value="Cancelled">Cancelada</option>
+                                        </select>
+                                        <input class="form-control form-control-sm" name="CompletedByUserId" placeholder="Validador" />
+                                        <input class="form-control form-control-sm" name="ValidationNotes" placeholder="Evidencia o nota de validacion" />
+                                        <button type="submit" class="btn btn-sm btn-primary">Actualizar</button>
+                                    </form>
+                                }
+                            </section>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="resolution-lane">
+                <div class="resolution-lane-heading">
+                    <div>
+                        <h3>FUGA / no deteccion</h3>
+                        <span>Por que se envio o no se detecto el defecto</span>
+                    </div>
+                    <span class="canvas-counter">@escapeResolutionActions.Count</span>
+                </div>
+
+                @if (escapeResolutionActions.Count == 0)
+                {
+                    <p class="muted-text">Sin desarrollo de FUGA cargado.</p>
+                }
+                else
+                {
+                    <div class="action-list">
+                        @foreach (var action in escapeResolutionActions)
+                        {
+                            var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == action.CauseId);
+
+                            <section class="action-row">
+                                <div>
+                                    <strong>@action.Title</strong>
+                                    <span>@GetActionTypeLabel(action.ActionType) | @(linkedCause?.Title ?? "Sin causa asociada")</span>
+                                    @if (!string.IsNullOrWhiteSpace(action.ValidationNotes))
+                                    {
+                                        <small>@action.ValidationNotes</small>
+                                    }
+                                </div>
+                                <div>
+                                    <span class="status-chip">@action.Status</span>
+                                    <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
+                                    @if (action.CompletedAt.HasValue)
+                                    {
+                                        <small>Validada @action.CompletedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                                    }
+                                </div>
+                                @if (action.Status is not "Completed" and not "Cancelled")
+                                {
+                                    <form class="action-status-form" asp-controller="Rca" asp-action="UpdateActionStatus" asp-route-id="@incident.Id" method="post">
+                                        <input type="hidden" name="ActionId" value="@action.Id" />
+                                        <select name="Status" class="form-select form-select-sm">
+                                            <option value="InProgress">En progreso</option>
+                                            <option value="WaitingValidation">Esperando validacion</option>
+                                            <option value="Completed">Completada</option>
+                                            <option value="Cancelled">Cancelada</option>
+                                        </select>
+                                        <input class="form-control form-control-sm" name="CompletedByUserId" placeholder="Validador" />
+                                        <input class="form-control form-control-sm" name="ValidationNotes" placeholder="Evidencia o nota de validacion" />
+                                        <button type="submit" class="btn btn-sm btn-primary">Actualizar</button>
+                                    </form>
+                                }
+                            </section>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
     </article>
 
     <aside class="analysis-panel capture-panel">
@@ -1209,6 +1339,28 @@
                 <label asp-for="Action.Title" class="form-label">Accion</label>
                 <input asp-for="Action.Title" class="form-control" />
                 <span asp-validation-for="Action.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.ActionType" class="form-label">Tipo de accion</label>
+                <select asp-for="Action.ActionType" class="form-select">
+                    @foreach (var actionType in GetActionTypeOptions())
+                    {
+                        <option value="@actionType.Value">@actionType.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="Action.ActionType" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Action.ResolutionScope" class="form-label">Resolucion</label>
+                <select asp-for="Action.ResolutionScope" class="form-select">
+                    @foreach (var scope in GetResolutionScopeOptions())
+                    {
+                        <option value="@scope.Value">@scope.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="Action.ResolutionScope" class="text-danger"></span>
             </div>
 
             <div class="mb-3">
@@ -1573,6 +1725,35 @@
             "Ready" => "Lista",
             "Blocked" => "Bloqueada",
             _ => status
+        };
+    }
+
+    private static IReadOnlyList<SelectListItem> GetActionTypeOptions()
+    {
+        return
+        [
+            new SelectListItem("Correctiva", "Corrective"),
+            new SelectListItem("Preventiva", "Preventive"),
+            new SelectListItem("Preventiva de recurrencia", "RecurrencePreventive")
+        ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetResolutionScopeOptions()
+    {
+        return
+        [
+            new SelectListItem("Causa raiz del defecto", "RootCause"),
+            new SelectListItem("FUGA / no deteccion", "Escape")
+        ];
+    }
+
+    private static string GetActionTypeLabel(string actionType)
+    {
+        return actionType switch
+        {
+            "Preventive" => "Preventiva",
+            "RecurrencePreventive" => "Preventiva de recurrencia",
+            _ => "Correctiva"
         };
     }
 

@@ -12,6 +12,10 @@ public class CorrectiveActionDto
 
     public string? Description { get; set; }
 
+    public string ActionType { get; set; } = string.Empty;
+
+    public string ResolutionScope { get; set; } = string.Empty;
+
     public string Status { get; set; } = string.Empty;
 
     public string? AssignedToUserId { get; set; }

@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-04 - RCA unified timeline and resolution policy
+
+Scope: validate the unified investigation timeline and RCA resolution classification.
+
+Checks:
+
+- Added a unified timeline view model for incident detail events.
+- Timeline now groups facts, evidence, corrective actions, wizard progress and external intake events with badges, references and industrial context.
+- Corrective actions carry `ActionType` and `ResolutionScope` for root-cause and FUGA/no-detection resolution.
+- Added resolution policy requiring recurrence prevention for root cause and a full corrective/preventive/recurrence set when FUGA is analyzed.
+- Added EF migration `20260604143417_AddRcaResolutionActionClassification`.
+- Added lightweight domain policy test executable.
+- Build passed with 0 errors.
+- EF reports no pending model changes after migration.
+
+Database:
+
+- Migration `20260604143417_AddRcaResolutionActionClassification` applied successfully to local MySQL.
+
+Result: passed.
+
 ## 2026-06-04 - RCA manual fact line
 
 Scope: validate 3A, the manual RCA fact line for investigation facts.

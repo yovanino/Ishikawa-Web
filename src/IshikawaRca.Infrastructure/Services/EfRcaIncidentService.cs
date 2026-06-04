@@ -3,6 +3,7 @@ using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
+using IshikawaRca.Domain.Services;
 using IshikawaRca.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -265,6 +266,8 @@ public class EfRcaIncidentService : IRcaIncidentService
             CauseId = request.CauseId,
             Title = request.Title.Trim(),
             Description = Normalize(request.Description),
+            ActionType = ParseCorrectiveActionType(request.ActionType),
+            ResolutionScope = ParseResolutionScope(request.ResolutionScope),
             AssignedToUserId = Normalize(request.AssignedToUserId),
             DueDate = request.DueDate,
             Status = CorrectiveActionStatus.Open
@@ -700,6 +703,21 @@ public class EfRcaIncidentService : IRcaIncidentService
             return ApiResult<RcaIncidentDto>.Fail(
                 "No se pudo cerrar el incidente RCA.",
                 new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas antes del cierre." });
+        }
+
+        var actions = await _dbContext.CorrectiveActions
+            .AsNoTracking()
+            .Where(x => x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        var resolutionBlockers = RcaResolutionPolicy.GetResolutionBlockers(actions, HasEscapeAnalysis(actions));
+        if (resolutionBlockers.Count > 0)
+        {
+            return ApiResult<RcaIncidentDto>.Fail(
+                "No se pudo cerrar el incidente RCA.",
+                resolutionBlockers
+                    .Select(x => new ApiError { Field = "CorrectiveActions", Code = "RESOLUTION_ACTIONS_REQUIRED", Message = x })
+                    .ToArray());
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -1176,6 +1194,16 @@ public class EfRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = nameof(request.Title), Code = "ACTION_TITLE_REQUIRED", Message = "El titulo de la accion es obligatorio." });
         }
 
+        if (!Enum.TryParse<CorrectiveActionType>(request.ActionType, true, out _))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ActionType), Code = "INVALID_ACTION_TYPE", Message = "El tipo debe ser Corrective, Preventive o RecurrencePreventive." });
+        }
+
+        if (!Enum.TryParse<RcaResolutionScope>(request.ResolutionScope, true, out _))
+        {
+            errors.Add(new ApiError { Field = nameof(request.ResolutionScope), Code = "INVALID_RESOLUTION_SCOPE", Message = "El ambito debe ser RootCause o Escape." });
+        }
+
         return errors;
     }
 
@@ -1428,6 +1456,15 @@ public class EfRcaIncidentService : IRcaIncidentService
             {
                 errors.Add(new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas para validar el wizard." });
             }
+
+            var actions = await _dbContext.CorrectiveActions
+                .AsNoTracking()
+                .Where(x => x.RcaIncidentId == incidentId && !x.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            errors.AddRange(RcaResolutionPolicy
+                .GetResolutionBlockers(actions, HasEscapeAnalysis(actions))
+                .Select(x => new ApiError { Field = "CorrectiveActions", Code = "RESOLUTION_ACTIONS_REQUIRED", Message = x }));
         }
 
         if (step == RcaWizardStep.Closed && incident.Status != RcaIncidentStatus.Closed)
@@ -1458,6 +1495,20 @@ public class EfRcaIncidentService : IRcaIncidentService
         return Enum.TryParse<CorrectiveActionStatus>(status, true, out var parsed)
             ? parsed
             : CorrectiveActionStatus.Open;
+    }
+
+    private static CorrectiveActionType ParseCorrectiveActionType(string actionType)
+    {
+        return Enum.TryParse<CorrectiveActionType>(actionType, true, out var parsed)
+            ? parsed
+            : CorrectiveActionType.Corrective;
+    }
+
+    private static RcaResolutionScope ParseResolutionScope(string resolutionScope)
+    {
+        return Enum.TryParse<RcaResolutionScope>(resolutionScope, true, out var parsed)
+            ? parsed
+            : RcaResolutionScope.RootCause;
     }
 
     private static RcaWizardStep ParseWizardStep(string step)
@@ -1628,6 +1679,8 @@ public class EfRcaIncidentService : IRcaIncidentService
             CauseId = action.CauseId,
             Title = action.Title,
             Description = action.Description,
+            ActionType = action.ActionType.ToString(),
+            ResolutionScope = action.ResolutionScope.ToString(),
             Status = action.Status.ToString(),
             AssignedToUserId = action.AssignedToUserId,
             DueDate = action.DueDate,
@@ -1867,6 +1920,11 @@ public class EfRcaIncidentService : IRcaIncidentService
             blockers.Add("Hay acciones correctivas abiertas.");
         }
 
+        if (step >= RcaWizardStep.Validation)
+        {
+            blockers.AddRange(RcaResolutionPolicy.GetResolutionBlockers(actions, HasEscapeAnalysis(actions)));
+        }
+
         if (step >= RcaWizardStep.Validation &&
             !evidence.Any(x => string.Equals(x.ValidationStatus, "Validated", StringComparison.OrdinalIgnoreCase)))
         {
@@ -2048,6 +2106,11 @@ public class EfRcaIncidentService : IRcaIncidentService
                 evidence.Select(x => x.UpdatedAt ?? x.CreatedAt).DefaultIfEmpty(incident.CreatedAt).Max()
             }
             .Max();
+    }
+
+    private static bool HasEscapeAnalysis(IReadOnlyCollection<CorrectiveAction> actions)
+    {
+        return actions.Any(x => x.ResolutionScope == RcaResolutionScope.Escape && !x.IsDeleted);
     }
 
     private static ApiResult<IshikawaCanvasDto> NotFoundCanvas(Guid incidentId)
