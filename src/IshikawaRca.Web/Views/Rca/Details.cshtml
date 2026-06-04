@@ -327,9 +327,23 @@
                             <div class="evidence-chip-row">
                                 <span class="source-chip">@evidence.EvidenceType</span>
                                 <span class="source-chip">@evidence.Source</span>
+                                <span class="validation-chip validation-chip-@evidence.ValidationStatus.ToLowerInvariant()">@GetEvidenceValidationLabel(evidence.ValidationStatus)</span>
                             </div>
                             <strong>@evidence.Title</strong>
                             <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                            @if (!string.IsNullOrWhiteSpace(evidence.SourceDetail))
+                            {
+                                <small>Fuente: @evidence.SourceDetail</small>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(evidence.Tags))
+                            {
+                                <div class="evidence-tag-row" aria-label="Tags de evidencia">
+                                    @foreach (var tag in SplitEvidenceTags(evidence.Tags))
+                                    {
+                                        <span>#@tag</span>
+                                    }
+                                </div>
+                            }
                             @if (!string.IsNullOrWhiteSpace(evidence.Summary))
                             {
                                 <small>@evidence.Summary</small>
@@ -356,6 +370,20 @@
                                 </div>
                             }
                             <small>@evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</small>
+                            @if (!string.Equals(evidence.ValidationStatus, "PendingReview", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <small>
+                                    Validacion: @(evidence.ValidatedByUserId ?? "-")
+                                    @if (evidence.ValidatedAt.HasValue)
+                                    {
+                                        <text> | @evidence.ValidatedAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</text>
+                                    }
+                                </small>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(evidence.ValidationNotes))
+                            {
+                                <small>@evidence.ValidationNotes</small>
+                            }
                             <details class="evidence-manage">
                                 <summary>Gestionar evidencia</summary>
                                 <form class="evidence-edit-form" asp-controller="Rca" asp-action="UpdateEvidence" asp-route-id="@incident.Id" method="post">
@@ -393,10 +421,35 @@
                                                 }
                                             </select>
                                         </label>
+                                        <label>
+                                            <span>Fuente detallada</span>
+                                            <input class="form-control" name="EvidenceEdit.SourceDetail" value="@evidence.SourceDetail" maxlength="220" />
+                                        </label>
+                                        <label>
+                                            <span>Tags</span>
+                                            <input class="form-control" name="EvidenceEdit.Tags" value="@evidence.Tags" maxlength="500" />
+                                        </label>
+                                        <label>
+                                            <span>Validacion</span>
+                                            <select class="form-select" name="EvidenceEdit.ValidationStatus">
+                                                @foreach (var option in GetEvidenceValidationStatusOptions())
+                                                {
+                                                    <option value="@option.Value" selected="@(option.Value == evidence.ValidationStatus ? "selected" : null)">@option.Text</option>
+                                                }
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Validador</span>
+                                            <input class="form-control" name="EvidenceEdit.ValidatedByUserId" value="@evidence.ValidatedByUserId" maxlength="160" />
+                                        </label>
                                     </div>
                                     <label>
                                         <span>Resumen</span>
                                         <textarea class="form-control" name="EvidenceEdit.Summary" rows="3" maxlength="4000">@evidence.Summary</textarea>
+                                    </label>
+                                    <label>
+                                        <span>Nota de validacion</span>
+                                        <textarea class="form-control" name="EvidenceEdit.ValidationNotes" rows="2" maxlength="2000">@evidence.ValidationNotes</textarea>
                                     </label>
                                     <label>
                                         <span>Referencia / URL</span>
@@ -480,8 +533,39 @@
             </div>
 
             <div class="mb-3 mt-3">
+                <label asp-for="EvidenceForm.SourceDetail" class="form-label">Fuente detallada</label>
+                <input asp-for="EvidenceForm.SourceDetail" class="form-control" placeholder="Equipo, lote, cliente, proveedor, sensor o documento origen" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.Tags" class="form-label">Tags</label>
+                <input asp-for="EvidenceForm.Tags" class="form-control" placeholder="calidad, cliente, linea-2" />
+                <small class="form-help">Separar por comas. Se guardan hasta 12 tags normalizados.</small>
+            </div>
+
+            <div class="score-grid">
+                <div>
+                    <label asp-for="EvidenceForm.ValidationStatus" class="form-label">Validacion</label>
+                    <select asp-for="EvidenceForm.ValidationStatus" asp-items="GetEvidenceValidationStatusOptions()" class="form-select"></select>
+                </div>
+                <div>
+                    <label asp-for="EvidenceForm.ValidatedByUserId" class="form-label">Validador</label>
+                    <input asp-for="EvidenceForm.ValidatedByUserId" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="EvidenceForm.ValidatedAt" class="form-label">Fecha validacion</label>
+                    <input asp-for="EvidenceForm.ValidatedAt" class="form-control" type="datetime-local" />
+                </div>
+            </div>
+
+            <div class="mb-3 mt-3">
                 <label asp-for="EvidenceForm.Summary" class="form-label">Resumen</label>
                 <textarea asp-for="EvidenceForm.Summary" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="EvidenceForm.ValidationNotes" class="form-label">Nota de validacion</label>
+                <textarea asp-for="EvidenceForm.ValidationNotes" class="form-control" rows="2"></textarea>
             </div>
 
             <div class="mb-3">
@@ -1092,5 +1176,35 @@
             new SelectListItem("OEE", "OEE"),
             new SelectListItem("Gantt", "GANTT")
         ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetEvidenceValidationStatusOptions()
+    {
+        return
+        [
+            new SelectListItem("Pendiente", "PendingReview"),
+            new SelectListItem("Validada", "Validated"),
+            new SelectListItem("Rechazada", "Rejected"),
+            new SelectListItem("Vencida", "Expired")
+        ];
+    }
+
+    private static string GetEvidenceValidationLabel(string status)
+    {
+        return status switch
+        {
+            "Validated" => "Validada",
+            "Rejected" => "Rechazada",
+            "Expired" => "Vencida",
+            _ => "Pendiente"
+        };
+    }
+
+    private static IEnumerable<string> SplitEvidenceTags(string tags)
+    {
+        return tags
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Trim().TrimStart('#'))
+            .Where(x => !string.IsNullOrWhiteSpace(x));
     }
 }

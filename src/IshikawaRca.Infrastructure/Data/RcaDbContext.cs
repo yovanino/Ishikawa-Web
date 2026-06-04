@@ -158,6 +158,8 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.Title).HasMaxLength(220).IsRequired();
         entity.Property(x => x.EvidenceType).HasMaxLength(64).IsRequired();
         entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.SourceDetail).HasMaxLength(220);
+        entity.Property(x => x.Tags).HasMaxLength(500);
         entity.Property(x => x.Summary).HasMaxLength(4000);
         entity.Property(x => x.ReferenceUri).HasMaxLength(1000);
         entity.Property(x => x.AttachmentFileName).HasMaxLength(260);
@@ -166,10 +168,14 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.AttachmentStorageKey).HasMaxLength(500);
         entity.Property(x => x.AttachmentSha256).HasMaxLength(64);
         entity.Property(x => x.CapturedByUserId).HasMaxLength(160);
+        entity.Property(x => x.ValidationStatus).HasMaxLength(32).IsRequired();
+        entity.Property(x => x.ValidatedByUserId).HasMaxLength(160);
+        entity.Property(x => x.ValidationNotes).HasMaxLength(2000);
 
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.CapturedAt });
         entity.HasIndex(x => new { x.TenantId, x.CauseId });
         entity.HasIndex(x => new { x.TenantId, x.ExternalIntakeId });
+        entity.HasIndex(x => new { x.TenantId, x.ValidationStatus });
     }
 
     private static void ConfigureRcaExternalIntakeRequest(ModelBuilder modelBuilder)

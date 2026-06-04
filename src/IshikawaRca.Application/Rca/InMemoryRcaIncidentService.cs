@@ -8,6 +8,14 @@ namespace IshikawaRca.Application.Rca;
 
 public class InMemoryRcaIncidentService : IRcaIncidentService
 {
+    private static readonly HashSet<string> EvidenceValidationStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PendingReview",
+        "Validated",
+        "Rejected",
+        "Expired"
+    };
+
     private readonly ConcurrentDictionary<Guid, RcaIncident> _incidents = new();
 
     public Task<ApiResult<RcaIncidentDto>> CreateAsync(CreateRcaIncidentRequest request, CancellationToken cancellationToken = default)
@@ -298,6 +306,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Title = request.Title.Trim(),
             EvidenceType = Normalize(request.EvidenceType) ?? "Observation",
             Source = Normalize(request.Source) ?? "Manual",
+            SourceDetail = Normalize(request.SourceDetail),
+            Tags = NormalizeTags(request.Tags),
             Summary = Normalize(request.Summary),
             ReferenceUri = Normalize(request.ReferenceUri),
             AttachmentFileName = Normalize(request.AttachmentFileName),
@@ -307,7 +317,11 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             AttachmentStorageKey = Normalize(request.AttachmentStorageKey),
             AttachmentSha256 = Normalize(request.AttachmentSha256),
             CapturedAt = request.CapturedAt ?? DateTimeOffset.UtcNow,
-            CapturedByUserId = Normalize(request.CapturedByUserId)
+            CapturedByUserId = Normalize(request.CapturedByUserId),
+            ValidationStatus = NormalizeValidationStatus(request.ValidationStatus),
+            ValidatedAt = ResolveEvidenceValidatedAt(request.ValidationStatus, request.ValidatedAt),
+            ValidatedByUserId = Normalize(request.ValidatedByUserId),
+            ValidationNotes = Normalize(request.ValidationNotes)
         };
 
         incident.Evidence.Add(evidence);
@@ -342,10 +356,16 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         evidence.Title = request.Title.Trim();
         evidence.EvidenceType = Normalize(request.EvidenceType) ?? "Observation";
         evidence.Source = Normalize(request.Source) ?? "Manual";
+        evidence.SourceDetail = Normalize(request.SourceDetail);
+        evidence.Tags = NormalizeTags(request.Tags);
         evidence.Summary = Normalize(request.Summary);
         evidence.ReferenceUri = Normalize(request.ReferenceUri);
         evidence.CapturedAt = request.CapturedAt ?? evidence.CapturedAt;
         evidence.CapturedByUserId = Normalize(request.CapturedByUserId);
+        evidence.ValidationStatus = NormalizeValidationStatus(request.ValidationStatus);
+        evidence.ValidatedAt = ResolveEvidenceValidatedAt(request.ValidationStatus, request.ValidatedAt);
+        evidence.ValidatedByUserId = Normalize(request.ValidatedByUserId);
+        evidence.ValidationNotes = Normalize(request.ValidationNotes);
         evidence.UpdatedAt = DateTimeOffset.UtcNow;
 
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia actualizada."));
@@ -684,6 +704,12 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = nameof(request.Source), Code = "EVIDENCE_SOURCE_REQUIRED", Message = "El origen de la evidencia es obligatorio." });
         }
 
+        ValidateEvidenceValidationMetadata(
+            request.ValidationStatus,
+            request.ValidatedByUserId,
+            request.ValidationNotes,
+            errors);
+
         return errors;
     }
 
@@ -706,7 +732,37 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = nameof(request.Source), Code = "EVIDENCE_SOURCE_REQUIRED", Message = "El origen de la evidencia es obligatorio." });
         }
 
+        ValidateEvidenceValidationMetadata(
+            request.ValidationStatus,
+            request.ValidatedByUserId,
+            request.ValidationNotes,
+            errors);
+
         return errors;
+    }
+
+    private static void ValidateEvidenceValidationMetadata(string? status, string? validatedByUserId, string? validationNotes, List<ApiError> errors)
+    {
+        var requestedStatus = Normalize(status) ?? "PendingReview";
+        if (!EvidenceValidationStatuses.Contains(requestedStatus))
+        {
+            errors.Add(new ApiError { Field = nameof(status), Code = "INVALID_EVIDENCE_VALIDATION_STATUS", Message = "El estado de validacion debe ser PendingReview, Validated, Rejected o Expired." });
+            return;
+        }
+
+        var normalizedStatus = NormalizeValidationStatus(requestedStatus);
+        if (string.Equals(normalizedStatus, "Validated", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(validatedByUserId))
+        {
+            errors.Add(new ApiError { Field = nameof(validatedByUserId), Code = "EVIDENCE_VALIDATOR_REQUIRED", Message = "Para validar una evidencia debe indicar el usuario validador." });
+        }
+
+        if ((string.Equals(normalizedStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(normalizedStatus, "Expired", StringComparison.OrdinalIgnoreCase)) &&
+            string.IsNullOrWhiteSpace(validationNotes))
+        {
+            errors.Add(new ApiError { Field = nameof(validationNotes), Code = "EVIDENCE_VALIDATION_NOTES_REQUIRED", Message = "Para rechazar o vencer una evidencia debe cargar una nota." });
+        }
     }
 
     private static List<ApiError> ValidateReplaceEvidenceAttachmentRequest(ReplaceRcaEvidenceAttachmentRequest request)
@@ -864,6 +920,39 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
+    private static string NormalizeValidationStatus(string? value)
+    {
+        var normalized = Normalize(value);
+        return EvidenceValidationStatuses.FirstOrDefault(x => string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase))
+            ?? "PendingReview";
+    }
+
+    private static DateTimeOffset? ResolveEvidenceValidatedAt(string? status, DateTimeOffset? validatedAt)
+    {
+        var normalizedStatus = NormalizeValidationStatus(status);
+        return string.Equals(normalizedStatus, "PendingReview", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : validatedAt ?? DateTimeOffset.UtcNow;
+    }
+
+    private static string? NormalizeTags(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var tags = value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Trim().TrimStart('#'))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(12)
+            .ToList();
+
+        return tags.Count == 0 ? null : string.Join(", ", tags);
+    }
+
     private static void AddDefaultBranches(RcaIncident incident)
     {
         var branches = new[]
@@ -984,6 +1073,8 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Title = evidence.Title,
             EvidenceType = evidence.EvidenceType,
             Source = evidence.Source,
+            SourceDetail = evidence.SourceDetail,
+            Tags = evidence.Tags,
             Summary = evidence.Summary,
             ReferenceUri = evidence.ReferenceUri,
             AttachmentFileName = evidence.AttachmentFileName,
@@ -994,6 +1085,10 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             AttachmentSha256 = evidence.AttachmentSha256,
             CapturedAt = evidence.CapturedAt,
             CapturedByUserId = evidence.CapturedByUserId,
+            ValidationStatus = evidence.ValidationStatus,
+            ValidatedAt = evidence.ValidatedAt,
+            ValidatedByUserId = evidence.ValidatedByUserId,
+            ValidationNotes = evidence.ValidationNotes,
             CreatedAt = evidence.CreatedAt
         };
     }
@@ -1201,6 +1296,10 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["title"] = evidence.Title,
                     ["evidenceType"] = evidence.EvidenceType,
                     ["source"] = evidence.Source,
+                    ["sourceDetail"] = evidence.SourceDetail,
+                    ["tags"] = evidence.Tags,
+                    ["validationStatus"] = evidence.ValidationStatus,
+                    ["validatedByUserId"] = evidence.ValidatedByUserId,
                     ["referenceUri"] = evidence.ReferenceUri,
                     ["attachmentFileName"] = evidence.AttachmentFileName,
                     ["attachmentContentType"] = evidence.AttachmentContentType,

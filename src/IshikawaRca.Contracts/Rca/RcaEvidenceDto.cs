@@ -16,6 +16,10 @@ public class RcaEvidenceDto
 
     public string Source { get; set; } = string.Empty;
 
+    public string? SourceDetail { get; set; }
+
+    public string? Tags { get; set; }
+
     public string? Summary { get; set; }
 
     public string? ReferenceUri { get; set; }
@@ -35,6 +39,14 @@ public class RcaEvidenceDto
     public DateTimeOffset CapturedAt { get; set; }
 
     public string? CapturedByUserId { get; set; }
+
+    public string ValidationStatus { get; set; } = string.Empty;
+
+    public DateTimeOffset? ValidatedAt { get; set; }
+
+    public string? ValidatedByUserId { get; set; }
+
+    public string? ValidationNotes { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 }

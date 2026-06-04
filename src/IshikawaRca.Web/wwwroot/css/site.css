@@ -540,6 +540,7 @@ a {
 }
 
 .source-chip,
+.validation-chip,
 .status-chip,
 .canvas-counter {
   background: #eef4f5;
@@ -551,6 +552,30 @@ a {
   font-weight: 820;
   line-height: 1;
   padding: 7px 10px;
+}
+
+.validation-chip-pendingreview {
+  background: #eef0f4;
+  border-color: #d8dee6;
+  color: #465366;
+}
+
+.validation-chip-validated {
+  background: var(--success-soft);
+  border-color: #b9ddce;
+  color: #176b4c;
+}
+
+.validation-chip-rejected {
+  background: var(--danger-soft);
+  border-color: #efc7bf;
+  color: var(--danger);
+}
+
+.validation-chip-expired {
+  background: var(--accent-soft);
+  border-color: #efcf88;
+  color: #835700;
 }
 
 .empty-state {
@@ -1193,6 +1218,26 @@ textarea.form-control {
   flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
+}
+
+.evidence-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.evidence-tag-row span {
+  background: #ffffff;
+  border: 1px solid #d9e2e8;
+  border-radius: 999px;
+  color: #3e5264;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 820;
+  line-height: 1;
+  max-width: 100%;
+  padding: 6px 8px;
 }
 
 .evidence-thumb {

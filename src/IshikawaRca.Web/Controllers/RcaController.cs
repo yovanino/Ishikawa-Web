@@ -239,6 +239,8 @@ public class RcaController : Controller
             Title = model.Title,
             EvidenceType = model.EvidenceType,
             Source = model.Source,
+            SourceDetail = model.SourceDetail,
+            Tags = model.Tags,
             Summary = model.Summary,
             ReferenceUri = model.ReferenceUri,
             AttachmentFileName = attachment?.FileName,
@@ -248,7 +250,11 @@ public class RcaController : Controller
             AttachmentStorageKey = attachment?.StorageKey,
             AttachmentSha256 = attachment?.Sha256,
             CapturedAt = model.CapturedAt,
-            CapturedByUserId = model.CapturedByUserId
+            CapturedByUserId = model.CapturedByUserId,
+            ValidationStatus = model.ValidationStatus,
+            ValidatedAt = model.ValidatedAt,
+            ValidatedByUserId = model.ValidatedByUserId,
+            ValidationNotes = model.ValidationNotes
         };
 
         var result = await _rcaIncidentService.AddEvidenceAsync(id, request, cancellationToken);
@@ -290,10 +296,16 @@ public class RcaController : Controller
             Title = model.Title,
             EvidenceType = model.EvidenceType,
             Source = model.Source,
+            SourceDetail = model.SourceDetail,
+            Tags = model.Tags,
             Summary = model.Summary,
             ReferenceUri = model.ReferenceUri,
             CapturedAt = model.CapturedAt,
-            CapturedByUserId = model.CapturedByUserId
+            CapturedByUserId = model.CapturedByUserId,
+            ValidationStatus = model.ValidationStatus,
+            ValidatedAt = model.ValidatedAt,
+            ValidatedByUserId = model.ValidatedByUserId,
+            ValidationNotes = model.ValidationNotes
         };
 
         var result = await _rcaIncidentService.UpdateEvidenceAsync(id, model.EvidenceId, request, cancellationToken);
