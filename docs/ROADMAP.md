@@ -2,7 +2,7 @@
 
 ## Estado Actual
 
-El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, evidencias RCA por metadatos/referencia, contratos de integracion y stub de AI Gateway. El siguiente objetivo es seguir endureciendo workflow, permisos, auditoria y almacenamiento documental real.
+El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacional, evidencias con adjuntos y validacion, wizard guiado, exportacion PDF, contratos de integracion y stub de AI Gateway. El siguiente objetivo es endurecer tests, permisos, auditoria, storage documental productivo y conexion real con AI Gateway/plataforma global.
 
 ## Fase 0 - Base del Repositorio
 
@@ -25,6 +25,9 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Escalamiento a 8D.
 - [x] Cierre formal de RCA.
 - [x] Evidencias RCA iniciales por metadatos y referencia.
+- [x] Evidencias con adjuntos, previews, acciones de gestion, tags y validacion.
+- [x] Wizard guiado con progreso, bloqueos y checklist por etapa.
+- [x] Exportacion PDF RCA con cierre y manifiesto de evidencias.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
 - [x] Contexto basico de reclamo interno/externo.
@@ -41,6 +44,9 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Auto-layout inicial.
 - [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
 - [x] Adjuntos binarios/documentales iniciales para evidencias.
+- [x] Miniaturas/previews compactos de evidencias.
+- [x] Gestion visual de evidencias: editar, reemplazar adjunto y eliminar.
+- [x] Wizard visual guiado con porcentaje, metricas y bloqueos.
 - Comentarios.
 
 ## Fase 3 - Integracion Operacional
@@ -59,6 +65,8 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - [x] Rechazo formal de intake externo con motivo.
 - Auditoria ampliada de intake externo.
 - [x] Evidencia RCA inicial vinculable a causa o intake externo.
+- [x] Endpoint de progreso de wizard para consumidores externos.
+- [x] Exportacion PDF controlada desde detalle RCA.
 - Adjuntos binarios/documentales en intake externo.
 
 ## Fase 4 - Inteligencia Asistida
@@ -66,6 +74,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA inicial, 
 - Consumo de AI Gateway.
 - Sugerencia de causas.
 - Sugerencia de acciones.
+- Sugerencia de evidencias faltantes y riesgos de cierre.
 - Deteccion de recurrencia.
 - Resumen del analisis.
 - Borrador de 8D.

@@ -1,6 +1,6 @@
 # Estado y Pendientes
 
-Fecha de corte: 2026-06-01.
+Fecha de corte: 2026-06-04.
 
 ## Cerrado
 
@@ -29,11 +29,17 @@ Fecha de corte: 2026-06-01.
    - Escalamiento formal a 8D con fecha, usuario y motivo.
    - Registro inicial de evidencias RCA con tipo, fuente, resumen, URI/referencia y relacion opcional a causa o intake externo.
    - Adjuntos reales de evidencia: documentos, imagenes, PDF y videos con metadata, descarga controlada y SHA-256.
+   - Miniaturas/previews compactos para imagenes, video, PDF, Office, texto/CSV/JSON/XML y archivo generico.
+   - Acciones de evidencia: editar metadata, reemplazar adjunto y eliminar evidencia.
+   - Evidencias reforzadas con tags, fuente detallada, estado de validacion, validador, fecha y notas.
+   - Wizard guiado con checklist, porcentaje, bloqueos, metricas por etapa y endpoint de progreso.
+   - Exportacion PDF del RCA con cierre, causa raiz, acciones, manifiesto de evidencias, validacion, SHA-256 y links controlados.
 
 4. Integracion externa
    - Endpoints versionados `/api/v1`.
    - Snapshots para Gantt, Gateway, OEE, Andon o app global.
    - `wizardStep` disponible en DTO de incidente y snapshot de integracion.
+   - `wizard/progress` disponible para app global, AI Gateway o dashboards externos.
    - Feed derivado de eventos RCA.
    - Conteo de evidencia en snapshots de integracion.
    - Eventos de accion correctiva creada y completada para integracion.
@@ -54,8 +60,6 @@ Fecha de corte: 2026-06-01.
 
 ## Pendientes Tecnicos Inmediatos
 
-- Aplicar migracion en MySQL con credenciales reales.
-- Ejecutar smoke test contra la app levantada.
 - Agregar autenticacion/autorizacion cuando se defina Identity global.
 - Agregar tenant real en lugar del tenant demo usado por la UI.
 - Agregar tests automatizados cuando el flujo se estabilice.
@@ -63,10 +67,12 @@ Fecha de corte: 2026-06-01.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
 - Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
+- Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
+- Evaluar storage documental productivo para evidencias y exportaciones generadas.
 
 ## Siguiente Corte Recomendado
 
 El proximo paso natural es elegir uno de estos dos caminos:
 
-- Endurecimiento tecnico: tests automatizados, validaciones, manejo de errores y tenant/auth.
-- Workflow RCA: evidencias adjuntas, CAPA, auditoria ampliada y permisos/roles.
+- Endurecimiento tecnico: tests automatizados, manejo de errores, tenant/auth, permisos y roles.
+- Workflow RCA avanzado: CAPA, auditoria ampliada, aprobaciones, versionado PDF y adjuntos externos.
