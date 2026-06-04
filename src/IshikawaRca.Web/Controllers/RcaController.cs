@@ -13,15 +13,18 @@ public class RcaController : Controller
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaExternalIntakeService _externalIntakeService;
     private readonly IEvidenceFileStorage _evidenceFileStorage;
+    private readonly IRcaPdfReportService _pdfReportService;
 
     public RcaController(
         IRcaIncidentService rcaIncidentService,
         IRcaExternalIntakeService externalIntakeService,
-        IEvidenceFileStorage evidenceFileStorage)
+        IEvidenceFileStorage evidenceFileStorage,
+        IRcaPdfReportService pdfReportService)
     {
         _rcaIncidentService = rcaIncidentService;
         _externalIntakeService = externalIntakeService;
         _evidenceFileStorage = evidenceFileStorage;
+        _pdfReportService = pdfReportService;
     }
 
     [HttpGet]
@@ -456,6 +459,31 @@ public class RcaController : Controller
         {
             return NotFound();
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportPdf(Guid id, CancellationToken cancellationToken)
+    {
+        var model = await BuildDetailsViewModelAsync(id, cancellationToken);
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        var evidenceUrls = model.Evidence
+            .Where(x => !string.IsNullOrWhiteSpace(x.AttachmentStorageKey))
+            .ToDictionary(
+                x => x.Id,
+                x => Url.Action(
+                    nameof(DownloadEvidence),
+                    "Rca",
+                    new { id = model.Incident.Id, evidenceId = x.Id },
+                    Request.Scheme) ?? string.Empty);
+
+        var pdf = _pdfReportService.Build(model, evidenceUrls);
+        var fileName = $"rca-{model.Incident.Id:N}.pdf";
+
+        return File(pdf, "application/pdf", fileName);
     }
 
     [HttpPost]

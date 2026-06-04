@@ -94,6 +94,14 @@ Cierre formal RCA:
 
 Para cerrar un RCA debe existir causa raiz y no deben quedar acciones abiertas. El cierre actualiza `status = Closed`, `closedAt`, `closedByUserId`, `closureSummary` y publica `RcaClosed` en el feed de integracion.
 
+Exportacion PDF:
+
+```http
+GET /Rca/ExportPdf/{id}
+```
+
+Devuelve `application/pdf` con resumen ejecutivo, problema, cierre, causa raiz, causas, acciones correctivas, manifiesto de evidencias, metadatos de validacion, SHA-256 de adjuntos y links controlados de descarga. El PDF no embebe videos ni documentos Office; los referencia como evidencias trazables del repositorio del RCA.
+
 Validacion/cierre de accion correctiva:
 
 ```json

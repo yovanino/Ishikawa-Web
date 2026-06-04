@@ -14,6 +14,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
 builder.Services.Configure<EvidenceStorageOptions>(builder.Configuration.GetSection("EvidenceStorage"));
 builder.Services.AddSingleton<IEvidenceFileStorage, EvidenceFileStorage>();
+builder.Services.AddSingleton<IRcaPdfReportService, RcaPdfReportService>();
 
 var app = builder.Build();
 

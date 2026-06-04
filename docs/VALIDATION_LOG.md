@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-04 - RCA PDF export
+
+Scope: validate PDF export with RCA closure and evidence manifest.
+
+Environment:
+
+- `ASPNETCORE_ENVIRONMENT=Development`
+- Local web host: `http://127.0.0.1:5075`
+- Database-backed incident data
+
+API/UI smoke:
+
+- Created temporary closed RCA incident `2fc5ccb1-ab61-4ba2-8d8d-cc40ac5a7438` with root cause, validated evidence, completed corrective action and formal closure summary.
+- Downloaded `GET /Rca/ExportPdf/{id}`.
+- Confirmed `Content-Type: application/pdf`.
+- Confirmed PDF header `%PDF-`.
+- Confirmed generated file size `4329` bytes.
+- Confirmed detail page renders `Exportar PDF` link.
+
+Result: passed.
+
 ## 2026-06-04 - RCA guided wizard progress
 
 Scope: validate the deeper guided RCA wizard with API progress, stronger prerequisites, and UI checklist.

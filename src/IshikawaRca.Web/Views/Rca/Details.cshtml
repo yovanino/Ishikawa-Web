@@ -32,6 +32,7 @@
     </div>
     <div class="command-actions">
         <span class="status-chip">@incident.Status</span>
+        <a class="btn btn-primary" asp-controller="Rca" asp-action="ExportPdf" asp-route-id="@incident.Id">Exportar PDF</a>
         <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
     </div>
 </section>
