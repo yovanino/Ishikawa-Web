@@ -21,6 +21,7 @@
     };
     var currentWizardIndex = Array.FindIndex(wizardSteps, x => string.Equals(x.Key, incident.WizardStep, StringComparison.OrdinalIgnoreCase));
     currentWizardIndex = currentWizardIndex < 0 ? 0 : currentWizardIndex;
+    var wizardProgress = Model.WizardProgress;
 }
 
 <section class="rca-command-center">
@@ -87,7 +88,7 @@
             <h2>Wizard RCA</h2>
             <span>Flujo guiado independiente y listo para integrarse con Gantt, AI y la app global</span>
         </div>
-        <span class="canvas-counter">@wizardSteps[currentWizardIndex].Label</span>
+        <span class="canvas-counter">@wizardProgress.CompletionPercent%</span>
     </div>
 
     <ol class="wizard-rail" aria-label="Etapas del wizard RCA">
@@ -103,11 +104,62 @@
         }
     </ol>
 
+    @if (wizardProgress.Steps.Count > 0)
+    {
+        <div class="wizard-guidance-grid" aria-label="Checklist del wizard RCA">
+            <article class="wizard-summary-card">
+                <span class="wizard-summary-value">@wizardProgress.CompletionPercent%</span>
+                <strong>@wizardSteps[currentWizardIndex].Label</strong>
+                <small>Proxima: @GetWizardStepLabel(wizardProgress.NextRecommendedStep)</small>
+                <div class="wizard-progress-track">
+                    <span style="width: @wizardProgress.CompletionPercent%"></span>
+                </div>
+            </article>
+
+            <div class="wizard-checklist">
+                @foreach (var item in wizardProgress.Steps)
+                {
+                    <section class="wizard-check-card wizard-check-@item.Status.ToLowerInvariant()">
+                        <div class="wizard-check-heading">
+                            <span>@item.Label</span>
+                            <strong>@GetWizardStatusLabel(item.Status)</strong>
+                        </div>
+                        @if (item.Metrics.Count > 0)
+                        {
+                            <dl class="wizard-metrics">
+                                @foreach (var metric in item.Metrics)
+                                {
+                                    <div>
+                                        <dt>@metric.Key</dt>
+                                        <dd>@metric.Value</dd>
+                                    </div>
+                                }
+                            </dl>
+                        }
+                        @if (item.BlockingReasons.Count > 0)
+                        {
+                            <ul class="wizard-blockers">
+                                @foreach (var blocker in item.BlockingReasons)
+                                {
+                                    <li>@blocker</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <small class="wizard-clearance">Listo para avanzar.</small>
+                        }
+                    </section>
+                }
+            </div>
+        </div>
+    }
+
     <form asp-controller="Rca" asp-action="CompleteWizardStep" asp-route-id="@incident.Id" method="post" class="wizard-form">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="form-grid">
             <div>
-                <label asp-for="WizardForm.Step" class="form-label">Etapa a completar</label>
+                <label asp-for="WizardForm.Step" class="form-label">Siguiente etapa</label>
                 <select asp-for="WizardForm.Step" asp-items="Model.WizardStepOptions" class="form-select"></select>
                 <span asp-validation-for="WizardForm.Step" class="text-danger"></span>
             </div>
@@ -1151,6 +1203,32 @@
     private static string GetShortHash(string hash)
     {
         return hash.Length > 20 ? $"{hash[..12]}...{hash[^8..]}" : hash;
+    }
+
+    private static string GetWizardStepLabel(string step)
+    {
+        return step switch
+        {
+            "Problem" => "Problema",
+            "Causes" => "Causas",
+            "Evidence" => "Evidencias",
+            "Actions" => "Acciones",
+            "Validation" => "Validacion",
+            "Closed" => "Cierre",
+            _ => step
+        };
+    }
+
+    private static string GetWizardStatusLabel(string status)
+    {
+        return status switch
+        {
+            "Done" => "Completada",
+            "Current" => "Actual",
+            "Ready" => "Lista",
+            "Blocked" => "Bloqueada",
+            _ => status
+        };
     }
 
     private static IReadOnlyList<SelectListItem> GetEvidenceTypeOptions()

@@ -17,6 +17,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaDomainEventDto> TimelineEvents { get; set; } = [];
 
+    public RcaWizardProgressDto WizardProgress { get; set; } = new();
+
     public AddIshikawaCauseViewModel Cause { get; set; } = new();
 
     public AddCorrectiveActionViewModel Action { get; set; } = new();

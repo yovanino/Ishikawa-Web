@@ -428,4 +428,18 @@ public class RcaIncidentsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("{id:guid}/wizard/progress")]
+    [ProducesResponseType(typeof(ApiResult<RcaWizardProgressDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaWizardProgressDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaWizardProgressDto>>> GetWizardProgress(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
 }

@@ -1,5 +1,34 @@
 # Validation Log
 
+## 2026-06-04 - RCA guided wizard progress
+
+Scope: validate the deeper guided RCA wizard with API progress, stronger prerequisites, and UI checklist.
+
+Environment:
+
+- `ASPNETCORE_ENVIRONMENT=Development`
+- Local web host: `http://127.0.0.1:5075`
+- Database-backed incident data
+
+API smoke:
+
+- Created temporary RCA incident `6bb0a373-7f39-4899-84fb-9d91514a2eb8` with `SourceSystem=SMOKE`.
+- Confirmed initial wizard progress: `CurrentStep=Problem`.
+- Confirmed `POST /api/v1/rca/incidents/{id}/wizard/step` to `Actions` blocks without prerequisites.
+- Added root cause, validated evidence, corrective action, and completed the action.
+- Advanced wizard to `Validation`.
+- Confirmed progress response: `CurrentStep=Validation`, `NextRecommendedStep=Closed`, `CompletionPercent=80`, and `Closed` blocked until formal RCA closure.
+
+UI smoke:
+
+- Detail page returned `200`.
+- Wizard checklist rendered.
+- Completion `80%` rendered.
+- Closed-stage blocker rendered.
+- Validated evidence metric rendered.
+
+Result: passed.
+
 ## 2026-06-03 - RCA evidence thumbnail card
 
 Scope: validate the RCA evidence card after adding image thumbnails and overflow protection.

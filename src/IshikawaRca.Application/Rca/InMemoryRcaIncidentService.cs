@@ -552,6 +552,22 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Etapa del wizard RCA completada."));
     }
 
+    public Task<ApiResult<RcaWizardProgressDto>> GetWizardProgressAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaWizardProgressDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var causes = incident.Branches.SelectMany(x => x.Causes).Where(x => !x.IsDeleted).ToList();
+        var actions = incident.CorrectiveActions.Where(x => !x.IsDeleted).ToList();
+        var evidence = incident.Evidence.Where(x => !x.IsDeleted).ToList();
+
+        return Task.FromResult(ApiResult<RcaWizardProgressDto>.Ok(BuildWizardProgress(incident, causes, actions, evidence)));
+    }
+
     public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
@@ -849,10 +865,21 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             errors.Add(new ApiError { Field = "CorrectiveActions", Code = "ACTION_REQUIRED", Message = "Debe registrar al menos una accion correctiva para avanzar el wizard." });
         }
 
+        if (step >= RcaWizardStep.Actions && !causes.Any(x => x.IsRootCause))
+        {
+            errors.Add(new ApiError { Field = "RootCause", Code = "ROOT_CAUSE_REQUIRED", Message = "Debe marcar una causa raiz para avanzar a acciones." });
+        }
+
         if (step >= RcaWizardStep.Validation &&
             actions.Any(x => x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled))
         {
             errors.Add(new ApiError { Field = "CorrectiveActions", Code = "OPEN_ACTIONS_EXIST", Message = "Todas las acciones deben estar completadas o canceladas para validar el wizard." });
+        }
+
+        if (step >= RcaWizardStep.Validation &&
+            !evidence.Any(x => string.Equals(x.ValidationStatus, "Validated", StringComparison.OrdinalIgnoreCase)))
+        {
+            errors.Add(new ApiError { Field = "Evidence", Code = "VALIDATED_EVIDENCE_REQUIRED", Message = "Debe existir al menos una evidencia validada para avanzar a validacion." });
         }
 
         if (step == RcaWizardStep.Closed && incident.Status != RcaIncidentStatus.Closed)
@@ -1158,6 +1185,152 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             Status = action.Status.ToString(),
             AssignedToUserId = action.AssignedToUserId,
             DueDate = action.DueDate
+        };
+    }
+
+    private static RcaWizardProgressDto BuildWizardProgress(
+        RcaIncident incident,
+        IReadOnlyList<IshikawaCause> causes,
+        IReadOnlyList<CorrectiveAction> actions,
+        IReadOnlyList<RcaEvidence> evidence)
+    {
+        var steps = new[]
+        {
+            (Step: RcaWizardStep.Problem, Label: "Problema", Requirements: new[] { "Problema, alcance, severidad y origen definidos." }),
+            (Step: RcaWizardStep.Causes, Label: "Causas", Requirements: new[] { "Al menos una causa cargada en el Ishikawa." }),
+            (Step: RcaWizardStep.Evidence, Label: "Evidencias", Requirements: new[] { "Al menos una evidencia asociada al analisis." }),
+            (Step: RcaWizardStep.Actions, Label: "Acciones", Requirements: new[] { "Causa raiz marcada.", "Al menos una accion correctiva cargada." }),
+            (Step: RcaWizardStep.Validation, Label: "Validacion", Requirements: new[] { "Acciones completadas o canceladas.", "Al menos una evidencia validada." }),
+            (Step: RcaWizardStep.Closed, Label: "Cierre", Requirements: new[] { "RCA cerrado formalmente." })
+        };
+
+        var current = incident.WizardStep;
+        var currentIndex = Array.FindIndex(steps, x => x.Step == current);
+        currentIndex = currentIndex < 0 ? 0 : currentIndex;
+        var nextRecommended = current < RcaWizardStep.Closed
+            ? (RcaWizardStep)((int)current + 1)
+            : RcaWizardStep.Closed;
+
+        var checklist = steps.Select((step, index) =>
+        {
+            var blockers = GetWizardBlockingReasons(step.Step, incident, causes, actions, evidence);
+            var isCompleted = index < currentIndex;
+            var isCurrent = index == currentIndex;
+            var isBlocked = !isCompleted && blockers.Count > 0;
+
+            return new RcaWizardStepChecklistItemDto
+            {
+                Step = step.Step.ToString(),
+                Label = step.Label,
+                Status = isCompleted ? "Done" : isCurrent ? "Current" : isBlocked ? "Blocked" : "Ready",
+                IsCompleted = isCompleted,
+                IsCurrent = isCurrent,
+                IsBlocked = isBlocked,
+                Requirements = step.Requirements.ToList(),
+                BlockingReasons = blockers,
+                Metrics = BuildWizardStepMetrics(step.Step, incident, causes, actions, evidence)
+            };
+        }).ToList();
+
+        return new RcaWizardProgressDto
+        {
+            IncidentId = incident.Id,
+            CurrentStep = current.ToString(),
+            NextRecommendedStep = nextRecommended.ToString(),
+            CompletionPercent = (int)Math.Round(currentIndex / (double)(steps.Length - 1) * 100, MidpointRounding.AwayFromZero),
+            Steps = checklist
+        };
+    }
+
+    private static List<string> GetWizardBlockingReasons(
+        RcaWizardStep step,
+        RcaIncident incident,
+        IReadOnlyList<IshikawaCause> causes,
+        IReadOnlyList<CorrectiveAction> actions,
+        IReadOnlyList<RcaEvidence> evidence)
+    {
+        var blockers = new List<string>();
+
+        if (step >= RcaWizardStep.Causes && causes.Count == 0)
+        {
+            blockers.Add("Falta cargar al menos una causa.");
+        }
+
+        if (step >= RcaWizardStep.Evidence && evidence.Count == 0)
+        {
+            blockers.Add("Falta registrar evidencia.");
+        }
+
+        if (step >= RcaWizardStep.Actions && !causes.Any(x => x.IsRootCause))
+        {
+            blockers.Add("Falta marcar una causa raiz.");
+        }
+
+        if (step >= RcaWizardStep.Actions && actions.Count == 0)
+        {
+            blockers.Add("Falta cargar una accion correctiva.");
+        }
+
+        if (step >= RcaWizardStep.Validation &&
+            actions.Any(x => x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled))
+        {
+            blockers.Add("Hay acciones correctivas abiertas.");
+        }
+
+        if (step >= RcaWizardStep.Validation &&
+            !evidence.Any(x => string.Equals(x.ValidationStatus, "Validated", StringComparison.OrdinalIgnoreCase)))
+        {
+            blockers.Add("Falta evidencia validada.");
+        }
+
+        if (step == RcaWizardStep.Closed && incident.Status != RcaIncidentStatus.Closed)
+        {
+            blockers.Add("El RCA todavia no esta cerrado.");
+        }
+
+        return blockers;
+    }
+
+    private static Dictionary<string, string> BuildWizardStepMetrics(
+        RcaWizardStep step,
+        RcaIncident incident,
+        IReadOnlyList<IshikawaCause> causes,
+        IReadOnlyList<CorrectiveAction> actions,
+        IReadOnlyList<RcaEvidence> evidence)
+    {
+        return step switch
+        {
+            RcaWizardStep.Problem => new Dictionary<string, string>
+            {
+                ["Severidad"] = incident.Severity.ToString(),
+                ["Origen"] = incident.ClaimActorType.ToString()
+            },
+            RcaWizardStep.Causes => new Dictionary<string, string>
+            {
+                ["Causas"] = causes.Count.ToString(),
+                ["Raiz"] = causes.Count(x => x.IsRootCause).ToString()
+            },
+            RcaWizardStep.Evidence => new Dictionary<string, string>
+            {
+                ["Evidencias"] = evidence.Count.ToString(),
+                ["Validadas"] = evidence.Count(x => string.Equals(x.ValidationStatus, "Validated", StringComparison.OrdinalIgnoreCase)).ToString()
+            },
+            RcaWizardStep.Actions => new Dictionary<string, string>
+            {
+                ["Acciones"] = actions.Count.ToString(),
+                ["Abiertas"] = actions.Count(x => x.Status is not CorrectiveActionStatus.Completed and not CorrectiveActionStatus.Cancelled).ToString()
+            },
+            RcaWizardStep.Validation => new Dictionary<string, string>
+            {
+                ["Acciones cerradas"] = actions.Count(x => x.Status is CorrectiveActionStatus.Completed or CorrectiveActionStatus.Cancelled).ToString(),
+                ["Evidencias validadas"] = evidence.Count(x => string.Equals(x.ValidationStatus, "Validated", StringComparison.OrdinalIgnoreCase)).ToString()
+            },
+            RcaWizardStep.Closed => new Dictionary<string, string>
+            {
+                ["Estado"] = incident.Status.ToString(),
+                ["Cerrado"] = incident.ClosedAt.HasValue ? "Si" : "No"
+            },
+            _ => []
         };
     }
 

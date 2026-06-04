@@ -726,6 +726,7 @@ public class RcaController : Controller
         var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
+        var wizardProgressResult = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
 
         return new RcaIncidentDetailsViewModel
         {
@@ -738,10 +739,16 @@ public class RcaController : Controller
                 .OrderByDescending(x => x.OccurredAt)
                 .Take(20)
                 .ToList() ?? [],
+            WizardProgress = wizardProgressResult.Data ?? new RcaWizardProgressDto
+            {
+                IncidentId = id,
+                CurrentStep = incidentResult.Data.WizardStep,
+                NextRecommendedStep = GetNextWizardStep(incidentResult.Data.WizardStep)
+            },
             WizardStepOptions = GetWizardStepOptions(),
             WizardForm = new CompleteRcaWizardStepViewModel
             {
-                Step = GetNextWizardStep(incidentResult.Data.WizardStep)
+                Step = wizardProgressResult.Data?.NextRecommendedStep ?? GetNextWizardStep(incidentResult.Data.WizardStep)
             }
         };
     }

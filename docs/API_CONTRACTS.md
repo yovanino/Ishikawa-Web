@@ -29,6 +29,7 @@ POST /api/v1/rca/incidents
 GET  /api/v1/rca/incidents/{id}
 GET  /api/v1/rca/incidents?sourceSystem=&externalTaskId=&status=
 POST /api/v1/rca/incidents/{id}/wizard/step
+GET  /api/v1/rca/incidents/{id}/wizard/progress
 GET  /api/v1/rca/incidents/{id}/canvas
 PUT  /api/v1/rca/incidents/{id}/canvas
 POST /api/v1/rca/incidents/{id}/causes
@@ -52,7 +53,15 @@ Wizard RCA:
 }
 ```
 
-Etapas validas: `Problem`, `Causes`, `Evidence`, `Actions`, `Validation`, `Closed`. El endpoint valida prerequisitos minimos para avanzar: causas cargadas, evidencia cargada, acciones cargadas, acciones sin pendientes y RCA cerrado para la etapa `Closed`. El snapshot de integracion expone `wizardStep` para que Gantt, AI Gateway, app global u otros modulos consuman el avance sin acoplarse a la UI.
+Etapas validas: `Problem`, `Causes`, `Evidence`, `Actions`, `Validation`, `Closed`. El endpoint valida prerequisitos para avanzar: causas cargadas, evidencia cargada, causa raiz marcada, acciones cargadas, evidencia validada, acciones sin pendientes y RCA cerrado para la etapa `Closed`. El snapshot de integracion expone `wizardStep` para que Gantt, AI Gateway, app global u otros modulos consuman el avance sin acoplarse a la UI.
+
+Progreso guiado:
+
+```http
+GET /api/v1/rca/incidents/{id}/wizard/progress
+```
+
+Devuelve `currentStep`, `nextRecommendedStep`, `completionPercent` y una lista `steps` con estado (`Done`, `Current`, `Ready`, `Blocked`), requisitos, bloqueos y metricas por etapa. Este contrato permite que la app global, AI Gateway o un dashboard operacional muestren el avance del RCA sin depender de la vista MVC.
 
 Escalamiento a 8D:
 

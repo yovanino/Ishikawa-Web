@@ -37,6 +37,8 @@ public interface IRcaIncidentService
 
     Task<ApiResult<RcaIncidentDto>> CompleteWizardStepAsync(Guid incidentId, CompleteRcaWizardStepRequest request, CancellationToken cancellationToken = default);
 
+    Task<ApiResult<RcaWizardProgressDto>> GetWizardProgressAsync(Guid incidentId, CancellationToken cancellationToken = default);
+
     Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default);
 
     Task<ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>> ListIntegrationSnapshotsAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default);
