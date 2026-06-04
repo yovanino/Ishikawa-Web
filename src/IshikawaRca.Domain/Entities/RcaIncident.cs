@@ -68,4 +68,6 @@ public class RcaIncident : TenantEntity
     public ICollection<CorrectiveAction> CorrectiveActions { get; set; } = new List<CorrectiveAction>();
 
     public ICollection<RcaEvidence> Evidence { get; set; } = new List<RcaEvidence>();
+
+    public ICollection<RcaFact> Facts { get; set; } = new List<RcaFact>();
 }

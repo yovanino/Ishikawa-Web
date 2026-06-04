@@ -31,6 +31,10 @@ public interface IRcaIncidentService
 
     Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken = default);
 
+    Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default);
+
+    Task<ApiResult<RcaFactDto>> AddFactAsync(Guid incidentId, AddRcaFactRequest request, CancellationToken cancellationToken = default);
+
     Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default);
 
     Task<ApiResult<RcaIncidentDto>> EscalateTo8DAsync(Guid incidentId, EscalateRcaIncidentTo8DRequest request, CancellationToken cancellationToken = default);

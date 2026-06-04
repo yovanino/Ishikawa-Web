@@ -15,6 +15,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaEvidenceDto> Evidence { get; set; } = [];
 
+    public IReadOnlyList<RcaFactDto> Facts { get; set; } = [];
+
     public IReadOnlyList<RcaDomainEventDto> TimelineEvents { get; set; } = [];
 
     public RcaWizardProgressDto WizardProgress { get; set; } = new();
@@ -26,6 +28,8 @@ public class RcaIncidentDetailsViewModel
     public CreateExternalIntakeViewModel ExternalIntake { get; set; } = new();
 
     public AddRcaEvidenceViewModel EvidenceForm { get; set; } = new();
+
+    public AddRcaFactViewModel FactForm { get; set; } = new();
 
     public CloseRcaIncidentViewModel CloseForm { get; set; } = new();
 

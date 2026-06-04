@@ -397,6 +397,44 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddFact(Guid id, [Bind(Prefix = "FactForm")] AddRcaFactViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return await DetailsWithFactModel(id, model, cancellationToken);
+        }
+
+        var request = new AddRcaFactRequest
+        {
+            CauseId = model.CauseId,
+            EvidenceId = model.EvidenceId,
+            FactType = model.FactType,
+            Source = model.Source,
+            SourceDetail = model.SourceDetail,
+            Title = model.Title,
+            Description = model.Description,
+            OccurredAt = model.OccurredAt,
+            CapturedByUserId = model.CapturedByUserId
+        };
+
+        var result = await _rcaIncidentService.AddFactAsync(id, request, cancellationToken);
+        if (!result.Success)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError($"FactForm.{error.Field}", error.Message);
+            }
+
+            return await DetailsWithFactModel(id, model, cancellationToken);
+        }
+
+        TempData["StatusMessage"] = "Hecho agregado a la linea RCA.";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     [HttpGet]
     public async Task<IActionResult> DownloadEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
     {
@@ -736,6 +774,19 @@ public class RcaController : Controller
         return View(nameof(Details), details);
     }
 
+    private async Task<IActionResult> DetailsWithFactModel(Guid id, AddRcaFactViewModel fact, CancellationToken cancellationToken)
+    {
+        var details = await BuildDetailsViewModelAsync(id, cancellationToken);
+        if (details is null)
+        {
+            return NotFound();
+        }
+
+        details.FactForm = fact;
+
+        return View(nameof(Details), details);
+    }
+
     private async Task<RcaIncidentDetailsViewModel?> BuildDetailsViewModelAsync(Guid id, CancellationToken cancellationToken)
     {
         var incidentResult = await _rcaIncidentService.GetByIdAsync(id, cancellationToken);
@@ -750,6 +801,7 @@ public class RcaController : Controller
             return null;
         }
 
+        var factsResult = await _rcaIncidentService.ListFactsAsync(id, cancellationToken);
         var actionsResult = await _rcaIncidentService.ListCorrectiveActionsAsync(id, cancellationToken);
         var evidenceResult = await _rcaIncidentService.ListEvidenceAsync(id, cancellationToken);
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
@@ -760,6 +812,7 @@ public class RcaController : Controller
         {
             Incident = incidentResult.Data,
             Canvas = canvasResult.Data,
+            Facts = factsResult.Data ?? [],
             CorrectiveActions = actionsResult.Data ?? [],
             Evidence = evidenceResult.Data ?? [],
             ExternalIntakes = externalIntakesResult.Data ?? [],

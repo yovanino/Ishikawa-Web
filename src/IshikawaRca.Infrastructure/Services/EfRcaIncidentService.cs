@@ -523,6 +523,110 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia eliminada.");
     }
 
+    public async Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var incidentExists = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (!incidentExists)
+        {
+            return ApiResult<IReadOnlyList<RcaFactDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        var facts = await _dbContext.RcaFacts
+            .AsNoTracking()
+            .Where(x => x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .OrderBy(x => x.OccurredAt)
+            .ThenBy(x => x.CreatedAt)
+            .Select(x => ToFactDto(x))
+            .ToListAsync(cancellationToken);
+
+        return ApiResult<IReadOnlyList<RcaFactDto>>.Ok(facts);
+    }
+
+    public async Task<ApiResult<RcaFactDto>> AddFactAsync(Guid incidentId, AddRcaFactRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateAddFactRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return ApiResult<RcaFactDto>.Fail("No se pudo agregar el hecho.", validationErrors.ToArray());
+        }
+
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<RcaFactDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        if (request.CauseId.HasValue)
+        {
+            var causeExists = await _dbContext.IshikawaCauses
+                .AnyAsync(x => x.Id == request.CauseId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!causeExists)
+            {
+                return ApiResult<RcaFactDto>.Fail(
+                    "No se pudo agregar el hecho.",
+                    new ApiError { Field = nameof(request.CauseId), Code = "CAUSE_NOT_FOUND", Message = "La causa seleccionada no corresponde al incidente RCA." });
+            }
+        }
+
+        if (request.EvidenceId.HasValue)
+        {
+            var evidenceExists = await _dbContext.RcaEvidence
+                .AnyAsync(x => x.Id == request.EvidenceId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!evidenceExists)
+            {
+                return ApiResult<RcaFactDto>.Fail(
+                    "No se pudo agregar el hecho.",
+                    new ApiError { Field = nameof(request.EvidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia seleccionada no corresponde al incidente RCA." });
+            }
+        }
+
+        if (request.ExternalIntakeId.HasValue)
+        {
+            var intakeExists = await _dbContext.RcaExternalIntakeRequests
+                .AnyAsync(x => x.Id == request.ExternalIntakeId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!intakeExists)
+            {
+                return ApiResult<RcaFactDto>.Fail(
+                    "No se pudo agregar el hecho.",
+                    new ApiError { Field = nameof(request.ExternalIntakeId), Code = "INTAKE_NOT_FOUND", Message = "El intake externo no corresponde al incidente RCA." });
+            }
+        }
+
+        var fact = new RcaFact
+        {
+            TenantId = incident.TenantId,
+            RcaIncidentId = incident.Id,
+            CauseId = request.CauseId,
+            EvidenceId = request.EvidenceId,
+            ExternalIntakeId = request.ExternalIntakeId,
+            FactType = Normalize(request.FactType) ?? "Observation",
+            Source = Normalize(request.Source) ?? "Manual",
+            SourceDetail = Normalize(request.SourceDetail),
+            Title = request.Title.Trim(),
+            Description = Normalize(request.Description),
+            OccurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow,
+            CapturedByUserId = Normalize(request.CapturedByUserId)
+        };
+
+        _dbContext.RcaFacts.Add(fact);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaFactDto>.Ok(ToFactDto(fact), "Hecho agregado a la linea RCA.");
+    }
+
     public async Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateCloseRequest(request);
@@ -928,6 +1032,32 @@ public class EfRcaIncidentService : IRcaIncidentService
                     }));
             }
 
+            var facts = await _dbContext.RcaFacts
+                .AsNoTracking()
+                .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var fact in facts)
+            {
+                events.Add(CreateEvent(
+                    $"rca-fact-recorded:{fact.Id}",
+                    "RcaFactRecorded",
+                    fact.OccurredAt,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["factId"] = fact.Id.ToString(),
+                        ["causeId"] = fact.CauseId?.ToString(),
+                        ["evidenceId"] = fact.EvidenceId?.ToString(),
+                        ["externalIntakeId"] = fact.ExternalIntakeId?.ToString(),
+                        ["title"] = fact.Title,
+                        ["factType"] = fact.FactType,
+                        ["source"] = fact.Source,
+                        ["sourceDetail"] = fact.SourceDetail,
+                        ["capturedByUserId"] = fact.CapturedByUserId
+                    }));
+            }
+
             var externalIntakes = await _dbContext.RcaExternalIntakeRequests
                 .AsNoTracking()
                 .Where(x => x.RcaIncidentId == incident.Id && !x.IsDeleted)
@@ -1126,6 +1256,18 @@ public class EfRcaIncidentService : IRcaIncidentService
         if (request.AttachmentSizeBytes <= 0)
         {
             errors.Add(new ApiError { Field = nameof(request.AttachmentSizeBytes), Code = "ATTACHMENT_SIZE_REQUIRED", Message = "El adjunto debe tener contenido." });
+        }
+
+        return errors;
+    }
+
+    private static List<ApiError> ValidateAddFactRequest(AddRcaFactRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Title), Code = "FACT_TITLE_REQUIRED", Message = "El titulo del hecho es obligatorio." });
         }
 
         return errors;
@@ -1486,6 +1628,26 @@ public class EfRcaIncidentService : IRcaIncidentService
             ValidatedByUserId = evidence.ValidatedByUserId,
             ValidationNotes = evidence.ValidationNotes,
             CreatedAt = evidence.CreatedAt
+        };
+    }
+
+    private static RcaFactDto ToFactDto(RcaFact fact)
+    {
+        return new RcaFactDto
+        {
+            Id = fact.Id,
+            RcaIncidentId = fact.RcaIncidentId,
+            CauseId = fact.CauseId,
+            EvidenceId = fact.EvidenceId,
+            ExternalIntakeId = fact.ExternalIntakeId,
+            FactType = fact.FactType,
+            Source = fact.Source,
+            SourceDetail = fact.SourceDetail,
+            Title = fact.Title,
+            Description = fact.Description,
+            OccurredAt = fact.OccurredAt,
+            CapturedByUserId = fact.CapturedByUserId,
+            CreatedAt = fact.CreatedAt
         };
     }
 

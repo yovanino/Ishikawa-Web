@@ -50,6 +50,35 @@ public class RcaPdfReportService : IRcaPdfReportService
             document.AddParagraph("RCA is not formally closed yet.");
         }
 
+        document.AddSection("Fact Line");
+        if (model.Facts.Count == 0)
+        {
+            document.AddParagraph("No investigation facts recorded.");
+        }
+        else
+        {
+            foreach (var fact in model.Facts.OrderBy(x => x.OccurredAt).ThenBy(x => x.CreatedAt))
+            {
+                var cause = model.Canvas.Causes.FirstOrDefault(x => x.Id == fact.CauseId);
+                var evidence = model.Evidence.FirstOrDefault(x => x.Id == fact.EvidenceId);
+                document.AddBullet($"{FormatDate(fact.OccurredAt)} - {fact.Title}");
+                document.AddKeyValue("Type / Source", $"{fact.FactType} / {fact.Source}");
+                document.AddKeyValue("Cause", cause?.Title ?? "-");
+                document.AddKeyValue("Evidence", evidence?.Title ?? "-");
+                document.AddKeyValue("Captured by", fact.CapturedByUserId ?? "-");
+
+                if (!string.IsNullOrWhiteSpace(fact.SourceDetail))
+                {
+                    document.AddKeyValue("Source detail", fact.SourceDetail);
+                }
+
+                if (!string.IsNullOrWhiteSpace(fact.Description))
+                {
+                    document.AddParagraph(fact.Description);
+                }
+            }
+        }
+
         document.AddSection("Root Cause And Causes");
         if (model.Canvas.Causes.Count == 0)
         {

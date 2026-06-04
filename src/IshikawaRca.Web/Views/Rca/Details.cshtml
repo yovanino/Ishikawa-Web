@@ -291,6 +291,128 @@
     </section>
 }
 
+<section class="analysis-grid facts-grid">
+    <article class="analysis-panel timeline-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Linea de hechos</h2>
+                <span>Secuencia manual de observaciones, mediciones, alarmas y contexto operativo</span>
+            </div>
+            <span class="canvas-counter">@Model.Facts.Count hecho(s)</span>
+        </div>
+
+        @if (Model.Facts.Count == 0)
+        {
+            <p class="muted-text">Sin hechos cargados. Registra primero lo observado antes de concluir causas.</p>
+        }
+        else
+        {
+            <ol class="timeline-list fact-list">
+                @foreach (var fact in Model.Facts)
+                {
+                    var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == fact.CauseId);
+                    var linkedEvidence = Model.Evidence.FirstOrDefault(x => x.Id == fact.EvidenceId);
+
+                    <li>
+                        <span class="timeline-dot timeline-dot-fact"></span>
+                        <div>
+                            <strong>@fact.Title</strong>
+                            <span>@fact.OccurredAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") | @GetFactTypeLabel(fact.FactType) | @GetFactSourceLabel(fact.Source)</span>
+                            @if (!string.IsNullOrWhiteSpace(fact.Description))
+                            {
+                                <small>@fact.Description</small>
+                            }
+                            @if (linkedCause is not null || linkedEvidence is not null || !string.IsNullOrWhiteSpace(fact.SourceDetail))
+                            {
+                                <small>
+                                    @if (linkedCause is not null)
+                                    {
+                                        <text>Causa: @linkedCause.Title. </text>
+                                    }
+                                    @if (linkedEvidence is not null)
+                                    {
+                                        <text>Evidencia: @linkedEvidence.Title. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.SourceDetail))
+                                    {
+                                        <text>Fuente: @fact.SourceDetail.</text>
+                                    }
+                                </small>
+                            }
+                        </div>
+                    </li>
+                }
+            </ol>
+        }
+    </article>
+
+    <aside class="analysis-panel capture-panel">
+        <h2>Nuevo hecho</h2>
+        <form asp-controller="Rca" asp-action="AddFact" asp-route-id="@incident.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.Title" class="form-label">Hecho observado</label>
+                <input asp-for="FactForm.Title" class="form-control" />
+                <span asp-validation-for="FactForm.Title" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.Description" class="form-label">Detalle</label>
+                <textarea asp-for="FactForm.Description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="form-grid fact-form-grid">
+                <div>
+                    <label asp-for="FactForm.OccurredAt" class="form-label">Fecha / hora</label>
+                    <input asp-for="FactForm.OccurredAt" class="form-control" type="datetime-local" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.FactType" class="form-label">Tipo</label>
+                    <select asp-for="FactForm.FactType" asp-items="GetFactTypeOptions()" class="form-select"></select>
+                </div>
+                <div>
+                    <label asp-for="FactForm.Source" class="form-label">Fuente</label>
+                    <select asp-for="FactForm.Source" asp-items="GetFactSourceOptions()" class="form-select"></select>
+                </div>
+                <div>
+                    <label asp-for="FactForm.CapturedByUserId" class="form-label">Registrado por</label>
+                    <input asp-for="FactForm.CapturedByUserId" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.SourceDetail" class="form-label">Detalle fuente</label>
+                <input asp-for="FactForm.SourceDetail" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.CauseId" class="form-label">Causa relacionada</label>
+                <select asp-for="FactForm.CauseId" class="form-select">
+                    <option value="">Sin causa especifica</option>
+                    @foreach (var cause in Model.CauseOptions)
+                    {
+                        <option value="@cause.Value">@cause.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.EvidenceId" class="form-label">Evidencia relacionada</label>
+                <select asp-for="FactForm.EvidenceId" class="form-select">
+                    <option value="">Sin evidencia especifica</option>
+                    @foreach (var evidence in Model.Evidence.OrderByDescending(x => x.CapturedAt))
+                    {
+                        <option value="@evidence.Id">@evidence.Title</option>
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Agregar hecho</button>
+        </form>
+    </aside>
+</section>
+
 <section class="analysis-panel timeline-panel">
     <div class="panel-heading">
         <div>
@@ -989,6 +1111,11 @@
 @functions {
     private static string GetTimelineKind(string eventType)
     {
+        if (eventType.Contains("Fact", StringComparison.OrdinalIgnoreCase))
+        {
+            return "fact";
+        }
+
         if (eventType.Contains("ExternalIntake", StringComparison.OrdinalIgnoreCase))
         {
             return "external";
@@ -1030,6 +1157,7 @@
             "RcaEscalatedTo8D" => "RCA escalado a 8D",
             "RcaWizardStepCompleted" => "Etapa de wizard completada",
             "RcaEvidenceAttached" => "Evidencia agregada",
+            "RcaFactRecorded" => "Hecho registrado",
             "RcaExternalIntakeCreated" => "Link externo creado",
             "RcaExternalIntakeOpened" => "Link externo abierto",
             "RcaExternalIntakeSubmitted" => "Respuesta externa enviada",
@@ -1039,6 +1167,65 @@
             "RcaExternalIntakeExpired" => "Link externo expirado",
             "RcaClosed" => "Incidente RCA cerrado",
             _ => eventType
+        };
+    }
+
+    private static IReadOnlyList<SelectListItem> GetFactTypeOptions()
+    {
+        return
+        [
+            new SelectListItem("Observacion", "Observation"),
+            new SelectListItem("Alarma", "Alarm"),
+            new SelectListItem("Medicion", "Measurement"),
+            new SelectListItem("Parada", "Stop"),
+            new SelectListItem("Inspeccion", "Inspection"),
+            new SelectListItem("Cambio de turno", "ShiftChange"),
+            new SelectListItem("Material / lote", "Material"),
+            new SelectListItem("Orden de trabajo", "WorkOrder")
+        ];
+    }
+
+    private static IReadOnlyList<SelectListItem> GetFactSourceOptions()
+    {
+        return
+        [
+            new SelectListItem("Manual", "Manual"),
+            new SelectListItem("Operador", "Operator"),
+            new SelectListItem("Calidad", "Quality"),
+            new SelectListItem("Mantenimiento", "Maintenance"),
+            new SelectListItem("SCADA", "SCADA"),
+            new SelectListItem("OEE", "OEE"),
+            new SelectListItem("Gantt", "GANTT"),
+            new SelectListItem("Cliente", "Customer"),
+            new SelectListItem("Proveedor", "Supplier")
+        ];
+    }
+
+    private static string GetFactTypeLabel(string factType)
+    {
+        return factType switch
+        {
+            "Alarm" => "Alarma",
+            "Measurement" => "Medicion",
+            "Stop" => "Parada",
+            "Inspection" => "Inspeccion",
+            "ShiftChange" => "Cambio de turno",
+            "Material" => "Material / lote",
+            "WorkOrder" => "Orden de trabajo",
+            _ => "Observacion"
+        };
+    }
+
+    private static string GetFactSourceLabel(string source)
+    {
+        return source switch
+        {
+            "Operator" => "Operador",
+            "Quality" => "Calidad",
+            "Maintenance" => "Mantenimiento",
+            "Customer" => "Cliente",
+            "Supplier" => "Proveedor",
+            _ => source
         };
     }
 

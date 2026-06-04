@@ -428,6 +428,76 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia eliminada."));
     }
 
+    public Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<IReadOnlyList<RcaFactDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var facts = incident.Facts
+            .Where(x => !x.IsDeleted)
+            .OrderBy(x => x.OccurredAt)
+            .ThenBy(x => x.CreatedAt)
+            .Select(ToFactDto)
+            .ToList();
+
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaFactDto>>.Ok(facts));
+    }
+
+    public Task<ApiResult<RcaFactDto>> AddFactAsync(Guid incidentId, AddRcaFactRequest request, CancellationToken cancellationToken = default)
+    {
+        var validationErrors = ValidateAddFactRequest(request);
+        if (validationErrors.Count > 0)
+        {
+            return Task.FromResult(ApiResult<RcaFactDto>.Fail("No se pudo agregar el hecho.", validationErrors.ToArray()));
+        }
+
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<RcaFactDto>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var causes = incident.Branches.SelectMany(x => x.Causes).Where(x => !x.IsDeleted).ToList();
+        if (request.CauseId.HasValue && causes.All(x => x.Id != request.CauseId.Value))
+        {
+            return Task.FromResult(ApiResult<RcaFactDto>.Fail(
+                "No se pudo agregar el hecho.",
+                new ApiError { Field = nameof(request.CauseId), Code = "CAUSE_NOT_FOUND", Message = "La causa seleccionada no corresponde al incidente RCA." }));
+        }
+
+        if (request.EvidenceId.HasValue && incident.Evidence.All(x => x.Id != request.EvidenceId.Value || x.IsDeleted))
+        {
+            return Task.FromResult(ApiResult<RcaFactDto>.Fail(
+                "No se pudo agregar el hecho.",
+                new ApiError { Field = nameof(request.EvidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia seleccionada no corresponde al incidente RCA." }));
+        }
+
+        var fact = new RcaFact
+        {
+            TenantId = incident.TenantId,
+            RcaIncidentId = incident.Id,
+            CauseId = request.CauseId,
+            EvidenceId = request.EvidenceId,
+            ExternalIntakeId = request.ExternalIntakeId,
+            FactType = Normalize(request.FactType) ?? "Observation",
+            Source = Normalize(request.Source) ?? "Manual",
+            SourceDetail = Normalize(request.SourceDetail),
+            Title = request.Title.Trim(),
+            Description = Normalize(request.Description),
+            OccurredAt = request.OccurredAt ?? DateTimeOffset.UtcNow,
+            CapturedByUserId = Normalize(request.CapturedByUserId)
+        };
+
+        incident.Facts.Add(fact);
+
+        return Task.FromResult(ApiResult<RcaFactDto>.Ok(ToFactDto(fact), "Hecho agregado a la linea RCA."));
+    }
+
     public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateCloseRequest(request);
@@ -803,6 +873,18 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return errors;
     }
 
+    private static List<ApiError> ValidateAddFactRequest(AddRcaFactRequest request)
+    {
+        var errors = new List<ApiError>();
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            errors.Add(new ApiError { Field = nameof(request.Title), Code = "FACT_TITLE_REQUIRED", Message = "El titulo del hecho es obligatorio." });
+        }
+
+        return errors;
+    }
+
     private static List<ApiError> ValidateCloseRequest(CloseRcaIncidentRequest request)
     {
         var errors = new List<ApiError>();
@@ -1117,6 +1199,26 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             ValidatedByUserId = evidence.ValidatedByUserId,
             ValidationNotes = evidence.ValidationNotes,
             CreatedAt = evidence.CreatedAt
+        };
+    }
+
+    private static RcaFactDto ToFactDto(RcaFact fact)
+    {
+        return new RcaFactDto
+        {
+            Id = fact.Id,
+            RcaIncidentId = fact.RcaIncidentId,
+            CauseId = fact.CauseId,
+            EvidenceId = fact.EvidenceId,
+            ExternalIntakeId = fact.ExternalIntakeId,
+            FactType = fact.FactType,
+            Source = fact.Source,
+            SourceDetail = fact.SourceDetail,
+            Title = fact.Title,
+            Description = fact.Description,
+            OccurredAt = fact.OccurredAt,
+            CapturedByUserId = fact.CapturedByUserId,
+            CreatedAt = fact.CreatedAt
         };
     }
 
@@ -1479,6 +1581,27 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["attachmentSizeBytes"] = evidence.AttachmentSizeBytes?.ToString(),
                     ["attachmentStorageProvider"] = evidence.AttachmentStorageProvider,
                     ["attachmentSha256"] = evidence.AttachmentSha256
+                }));
+        }
+
+        foreach (var fact in incident.Facts.Where(x => !x.IsDeleted))
+        {
+            events.Add(CreateEvent(
+                $"rca-fact-recorded:{fact.Id}",
+                "RcaFactRecorded",
+                fact.OccurredAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["factId"] = fact.Id.ToString(),
+                    ["causeId"] = fact.CauseId?.ToString(),
+                    ["evidenceId"] = fact.EvidenceId?.ToString(),
+                    ["externalIntakeId"] = fact.ExternalIntakeId?.ToString(),
+                    ["title"] = fact.Title,
+                    ["factType"] = fact.FactType,
+                    ["source"] = fact.Source,
+                    ["sourceDetail"] = fact.SourceDetail,
+                    ["capturedByUserId"] = fact.CapturedByUserId
                 }));
         }
 

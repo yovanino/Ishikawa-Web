@@ -162,6 +162,37 @@ public class RcaIncidentsController : ControllerBase
         return CreatedAtAction(nameof(ListEvidence), new { id }, result);
     }
 
+    [HttpGet("{id:guid}/facts")]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaFactDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaFactDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<RcaFactDto>>>> ListFacts(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.ListFactsAsync(id, cancellationToken);
+        if (!result.Success)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/facts")]
+    [ProducesResponseType(typeof(ApiResult<RcaFactDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResult<RcaFactDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<RcaFactDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaFactDto>>> AddFact(Guid id, AddRcaFactRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.AddFactAsync(id, request, cancellationToken);
+        if (!result.Success || result.Data is null)
+        {
+            return result.Errors.Any(x => x.Code == "RCA_NOT_FOUND")
+                ? NotFound(result)
+                : BadRequest(result);
+        }
+
+        return CreatedAtAction(nameof(ListFacts), new { id }, result);
+    }
+
     [HttpPost("{id:guid}/evidence-files")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(104_857_600)]

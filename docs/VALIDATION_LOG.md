@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-04 - RCA manual fact line
+
+Scope: validate 3A, the manual RCA fact line for investigation facts.
+
+Checks:
+
+- Added `RcaFact` domain entity, DTO/request contracts, EF mapping and migration `20260604135559_AddRcaFacts`.
+- Added service methods to list and create facts.
+- Added MVC detail panel and form for manual facts.
+- Added API v1 endpoints `GET/POST /api/v1/rca/incidents/{id}/facts`.
+- Added fact line content to RCA PDF export.
+- Build passed with 0 errors.
+
+Database:
+
+- Migration generation passed.
+- Applying the migration to local MySQL was blocked by local credentials: `Access denied for user 'ishikawa_user'@'localhost'`.
+
+Result: code/build passed; database application pending local credential fix.
+
 ## 2026-06-04 - RCA PDF export
 
 Scope: validate PDF export with RCA closure and evidence manifest.

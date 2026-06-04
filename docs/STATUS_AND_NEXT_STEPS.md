@@ -34,6 +34,7 @@ Fecha de corte: 2026-06-04.
    - Evidencias reforzadas con tags, fuente detallada, estado de validacion, validador, fecha y notas.
    - Wizard guiado con checklist, porcentaje, bloqueos, metricas por etapa y endpoint de progreso.
    - Exportacion PDF del RCA con cierre, causa raiz, acciones, manifiesto de evidencias, validacion, SHA-256 y links controlados.
+   - Linea de hechos manual RCA con fecha/hora, tipo, fuente, causa/evidencia opcional, API y exportacion PDF.
 
 4. Integracion externa
    - Endpoints versionados `/api/v1`.
@@ -69,6 +70,7 @@ Fecha de corte: 2026-06-04.
 - Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
 - Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
 - Evaluar storage documental productivo para evidencias y exportaciones generadas.
+- Extender la linea de hechos con vinculos a acciones/intake, clasificacion industrial avanzada, timeline unificado y entrada por API desde modulos externos.
 
 ## Siguiente Corte Recomendado
 

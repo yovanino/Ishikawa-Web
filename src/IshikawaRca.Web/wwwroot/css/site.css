@@ -1211,6 +1211,19 @@ textarea.form-control {
   margin-bottom: 18px;
 }
 
+.facts-grid {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.55fr);
+}
+
+.fact-list li {
+  padding-bottom: 20px;
+}
+
+.fact-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .timeline-list {
   display: grid;
   gap: 0;
@@ -1269,6 +1282,10 @@ textarea.form-control {
 
 .timeline-dot-evidence {
   background: #6d5bd0;
+}
+
+.timeline-dot-fact {
+  background: #008a8a;
 }
 
 .timeline-dot-external {

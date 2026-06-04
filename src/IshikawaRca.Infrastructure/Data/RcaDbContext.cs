@@ -21,6 +21,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<RcaEvidence> RcaEvidence => Set<RcaEvidence>();
 
+    public DbSet<RcaFact> RcaFacts => Set<RcaFact>();
+
     public DbSet<RcaExternalIntakeRequest> RcaExternalIntakeRequests => Set<RcaExternalIntakeRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +34,7 @@ public class RcaDbContext : DbContext
         ConfigureIshikawaCause(modelBuilder);
         ConfigureCorrectiveAction(modelBuilder);
         ConfigureRcaEvidence(modelBuilder);
+        ConfigureRcaFact(modelBuilder);
         ConfigureRcaExternalIntakeRequest(modelBuilder);
     }
 
@@ -89,6 +92,12 @@ public class RcaDbContext : DbContext
             .WithOne()
             .HasForeignKey(x => x.RcaIncidentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        entity
+            .HasMany(x => x.Facts)
+            .WithOne()
+            .HasForeignKey(x => x.RcaIncidentId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureIshikawaBranch(ModelBuilder modelBuilder)
@@ -206,6 +215,27 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => x.TokenHash).IsUnique();
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.Status });
         entity.HasIndex(x => new { x.TenantId, x.ActorType, x.ActorName });
+    }
+
+    private static void ConfigureRcaFact(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaFact>();
+
+        entity.ToTable("rca_facts");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.FactType).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.SourceDetail).HasMaxLength(220);
+        entity.Property(x => x.Title).HasMaxLength(220).IsRequired();
+        entity.Property(x => x.Description).HasMaxLength(4000);
+        entity.Property(x => x.CapturedByUserId).HasMaxLength(160);
+
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.OccurredAt });
+        entity.HasIndex(x => new { x.TenantId, x.CauseId });
+        entity.HasIndex(x => new { x.TenantId, x.EvidenceId });
+        entity.HasIndex(x => new { x.TenantId, x.ExternalIntakeId });
+        entity.HasIndex(x => new { x.TenantId, x.FactType });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)
