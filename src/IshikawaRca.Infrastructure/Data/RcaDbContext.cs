@@ -234,6 +234,7 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.CauseId });
         entity.HasIndex(x => new { x.TenantId, x.EvidenceId });
+        entity.HasIndex(x => new { x.TenantId, x.CorrectiveActionId });
         entity.HasIndex(x => new { x.TenantId, x.ExternalIntakeId });
         entity.HasIndex(x => new { x.TenantId, x.FactType });
     }

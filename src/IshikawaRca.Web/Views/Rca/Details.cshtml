@@ -312,6 +312,8 @@
                 {
                     var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == fact.CauseId);
                     var linkedEvidence = Model.Evidence.FirstOrDefault(x => x.Id == fact.EvidenceId);
+                    var linkedAction = Model.CorrectiveActions.FirstOrDefault(x => x.Id == fact.CorrectiveActionId);
+                    var linkedIntake = Model.ExternalIntakes.FirstOrDefault(x => x.Id == fact.ExternalIntakeId);
 
                     <li>
                         <span class="timeline-dot timeline-dot-fact"></span>
@@ -322,7 +324,7 @@
                             {
                                 <small>@fact.Description</small>
                             }
-                            @if (linkedCause is not null || linkedEvidence is not null || !string.IsNullOrWhiteSpace(fact.SourceDetail))
+                            @if (linkedCause is not null || linkedEvidence is not null || linkedAction is not null || linkedIntake is not null || !string.IsNullOrWhiteSpace(fact.SourceDetail))
                             {
                                 <small>
                                     @if (linkedCause is not null)
@@ -332,6 +334,14 @@
                                     @if (linkedEvidence is not null)
                                     {
                                         <text>Evidencia: @linkedEvidence.Title. </text>
+                                    }
+                                    @if (linkedAction is not null)
+                                    {
+                                        <text>Accion: @linkedAction.Title. </text>
+                                    }
+                                    @if (linkedIntake is not null)
+                                    {
+                                        <text>Intake: @(linkedIntake.ActorName ?? linkedIntake.ActorType). </text>
                                     }
                                     @if (!string.IsNullOrWhiteSpace(fact.SourceDetail))
                                     {
@@ -404,6 +414,28 @@
                     @foreach (var evidence in Model.Evidence.OrderByDescending(x => x.CapturedAt))
                     {
                         <option value="@evidence.Id">@evidence.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.CorrectiveActionId" class="form-label">Accion relacionada</label>
+                <select asp-for="FactForm.CorrectiveActionId" class="form-select">
+                    <option value="">Sin accion especifica</option>
+                    @foreach (var action in Model.CorrectiveActions.OrderBy(x => x.Status).ThenBy(x => x.Title))
+                    {
+                        <option value="@action.Id">@action.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FactForm.ExternalIntakeId" class="form-label">Intake externo relacionado</label>
+                <select asp-for="FactForm.ExternalIntakeId" class="form-select">
+                    <option value="">Sin intake externo</option>
+                    @foreach (var intake in Model.ExternalIntakes.OrderByDescending(x => x.CreatedAt))
+                    {
+                        <option value="@intake.Id">@intake.ActorType / @(intake.ActorName ?? intake.ContactEmail ?? "Sin nombre")</option>
                     }
                 </select>
             </div>

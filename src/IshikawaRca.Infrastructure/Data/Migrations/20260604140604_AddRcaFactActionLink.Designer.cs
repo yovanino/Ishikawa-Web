@@ -4,6 +4,7 @@ using IshikawaRca.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IshikawaRca.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(RcaDbContext))]
-    partial class RcaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604140604_AddRcaFactActionLink")]
+    partial class AddRcaFactActionLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -539,9 +542,6 @@ namespace IshikawaRca.Infrastructure.Data.Migrations
                     b.Property<Guid?>("CauseId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("CorrectiveActionId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -605,8 +605,6 @@ namespace IshikawaRca.Infrastructure.Data.Migrations
                     b.HasIndex("RcaIncidentId");
 
                     b.HasIndex("TenantId", "CauseId");
-
-                    b.HasIndex("TenantId", "CorrectiveActionId");
 
                     b.HasIndex("TenantId", "EvidenceId");
 

@@ -410,6 +410,8 @@ public class RcaController : Controller
         {
             CauseId = model.CauseId,
             EvidenceId = model.EvidenceId,
+            CorrectiveActionId = model.CorrectiveActionId,
+            ExternalIntakeId = model.ExternalIntakeId,
             FactType = model.FactType,
             Source = model.Source,
             SourceDetail = model.SourceDetail,

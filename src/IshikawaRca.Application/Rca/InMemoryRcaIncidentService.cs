@@ -477,12 +477,20 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                 new ApiError { Field = nameof(request.EvidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia seleccionada no corresponde al incidente RCA." }));
         }
 
+        if (request.CorrectiveActionId.HasValue && incident.CorrectiveActions.All(x => x.Id != request.CorrectiveActionId.Value || x.IsDeleted))
+        {
+            return Task.FromResult(ApiResult<RcaFactDto>.Fail(
+                "No se pudo agregar el hecho.",
+                new ApiError { Field = nameof(request.CorrectiveActionId), Code = "ACTION_NOT_FOUND", Message = "La accion seleccionada no corresponde al incidente RCA." }));
+        }
+
         var fact = new RcaFact
         {
             TenantId = incident.TenantId,
             RcaIncidentId = incident.Id,
             CauseId = request.CauseId,
             EvidenceId = request.EvidenceId,
+            CorrectiveActionId = request.CorrectiveActionId,
             ExternalIntakeId = request.ExternalIntakeId,
             FactType = Normalize(request.FactType) ?? "Observation",
             Source = Normalize(request.Source) ?? "Manual",
@@ -1210,6 +1218,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             RcaIncidentId = fact.RcaIncidentId,
             CauseId = fact.CauseId,
             EvidenceId = fact.EvidenceId,
+            CorrectiveActionId = fact.CorrectiveActionId,
             ExternalIntakeId = fact.ExternalIntakeId,
             FactType = fact.FactType,
             Source = fact.Source,
@@ -1596,6 +1605,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
                     ["factId"] = fact.Id.ToString(),
                     ["causeId"] = fact.CauseId?.ToString(),
                     ["evidenceId"] = fact.EvidenceId?.ToString(),
+                    ["correctiveActionId"] = fact.CorrectiveActionId?.ToString(),
                     ["externalIntakeId"] = fact.ExternalIntakeId?.ToString(),
                     ["title"] = fact.Title,
                     ["factType"] = fact.FactType,

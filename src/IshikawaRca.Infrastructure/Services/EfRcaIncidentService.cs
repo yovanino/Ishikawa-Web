@@ -592,6 +592,19 @@ public class EfRcaIncidentService : IRcaIncidentService
             }
         }
 
+        if (request.CorrectiveActionId.HasValue)
+        {
+            var actionExists = await _dbContext.CorrectiveActions
+                .AnyAsync(x => x.Id == request.CorrectiveActionId.Value && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (!actionExists)
+            {
+                return ApiResult<RcaFactDto>.Fail(
+                    "No se pudo agregar el hecho.",
+                    new ApiError { Field = nameof(request.CorrectiveActionId), Code = "ACTION_NOT_FOUND", Message = "La accion seleccionada no corresponde al incidente RCA." });
+            }
+        }
+
         if (request.ExternalIntakeId.HasValue)
         {
             var intakeExists = await _dbContext.RcaExternalIntakeRequests
@@ -611,6 +624,7 @@ public class EfRcaIncidentService : IRcaIncidentService
             RcaIncidentId = incident.Id,
             CauseId = request.CauseId,
             EvidenceId = request.EvidenceId,
+            CorrectiveActionId = request.CorrectiveActionId,
             ExternalIntakeId = request.ExternalIntakeId,
             FactType = Normalize(request.FactType) ?? "Observation",
             Source = Normalize(request.Source) ?? "Manual",
@@ -1049,6 +1063,7 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["factId"] = fact.Id.ToString(),
                         ["causeId"] = fact.CauseId?.ToString(),
                         ["evidenceId"] = fact.EvidenceId?.ToString(),
+                        ["correctiveActionId"] = fact.CorrectiveActionId?.ToString(),
                         ["externalIntakeId"] = fact.ExternalIntakeId?.ToString(),
                         ["title"] = fact.Title,
                         ["factType"] = fact.FactType,
@@ -1639,6 +1654,7 @@ public class EfRcaIncidentService : IRcaIncidentService
             RcaIncidentId = fact.RcaIncidentId,
             CauseId = fact.CauseId,
             EvidenceId = fact.EvidenceId,
+            CorrectiveActionId = fact.CorrectiveActionId,
             ExternalIntakeId = fact.ExternalIntakeId,
             FactType = fact.FactType,
             Source = fact.Source,

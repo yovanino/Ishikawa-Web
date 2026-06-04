@@ -29,6 +29,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacion
 - [x] Wizard guiado con progreso, bloqueos y checklist por etapa.
 - [x] Exportacion PDF RCA con cierre y manifiesto de evidencias.
 - [x] Linea de hechos manual RCA para registrar observaciones, mediciones, alarmas y contexto.
+- [x] Hechos vinculables a causa, evidencia, accion correctiva e intake externo.
 - [x] Persistencia en MySQL.
 - [x] API para crear incidentes desde sistemas externos.
 - [x] Contexto basico de reclamo interno/externo.
@@ -44,6 +45,7 @@ El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacion
 - Context menu industrial.
 - Auto-layout inicial.
 - [x] Linea de hechos manual visible en detalle RCA.
+- [x] Vinculos visuales de hechos con causa, evidencia, accion e intake externo.
 - [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
 - [x] Adjuntos binarios/documentales iniciales para evidencias.
 - [x] Miniaturas/previews compactos de evidencias.

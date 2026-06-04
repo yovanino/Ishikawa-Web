@@ -10,6 +10,8 @@ public class RcaFactDto
 
     public Guid? EvidenceId { get; set; }
 
+    public Guid? CorrectiveActionId { get; set; }
+
     public Guid? ExternalIntakeId { get; set; }
 
     public string FactType { get; set; } = "Observation";

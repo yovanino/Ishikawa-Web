@@ -20,6 +20,27 @@ Database:
 
 Result: code/build passed; database application pending local credential fix.
 
+## 2026-06-04 - RCA fact linked records
+
+Scope: validate 3B, facts linked to causes, evidence, corrective actions and external intake.
+
+Checks:
+
+- Added `CorrectiveActionId` to `RcaFact`, request/DTO contracts and service mappings.
+- Added validation that linked corrective actions belong to the same RCA incident.
+- Extended MVC fact form and fact list with action and external intake links.
+- Extended PDF fact line with action and external intake references.
+- Build passed with 0 errors.
+- EF reports no pending model changes after migration.
+
+Database:
+
+- Migration `20260604140604_AddRcaFactActionLink` is a no-op generated before rebuilding; it was applied to local MySQL and preserved for migration history consistency.
+- Migration `20260604140741_AddRcaFactCorrectiveActionId` added `CorrectiveActionId` and index `IX_rca_facts_TenantId_CorrectiveActionId`.
+- Database update completed successfully using the local development connection string through `ISHIKAWA_RCA_CONNECTION`.
+
+Result: passed.
+
 ## 2026-06-04 - RCA PDF export
 
 Scope: validate PDF export with RCA closure and evidence manifest.

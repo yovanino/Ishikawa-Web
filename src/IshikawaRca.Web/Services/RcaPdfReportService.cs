@@ -61,10 +61,14 @@ public class RcaPdfReportService : IRcaPdfReportService
             {
                 var cause = model.Canvas.Causes.FirstOrDefault(x => x.Id == fact.CauseId);
                 var evidence = model.Evidence.FirstOrDefault(x => x.Id == fact.EvidenceId);
+                var action = model.CorrectiveActions.FirstOrDefault(x => x.Id == fact.CorrectiveActionId);
+                var intake = model.ExternalIntakes.FirstOrDefault(x => x.Id == fact.ExternalIntakeId);
                 document.AddBullet($"{FormatDate(fact.OccurredAt)} - {fact.Title}");
                 document.AddKeyValue("Type / Source", $"{fact.FactType} / {fact.Source}");
                 document.AddKeyValue("Cause", cause?.Title ?? "-");
                 document.AddKeyValue("Evidence", evidence?.Title ?? "-");
+                document.AddKeyValue("Action", action?.Title ?? "-");
+                document.AddKeyValue("External intake", intake is null ? "-" : $"{intake.ActorType} / {intake.ActorName ?? intake.ContactEmail ?? "-"}");
                 document.AddKeyValue("Captured by", fact.CapturedByUserId ?? "-");
 
                 if (!string.IsNullOrWhiteSpace(fact.SourceDetail))
