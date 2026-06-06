@@ -417,6 +417,9 @@ public class RcaController : Controller
             FactType = model.FactType,
             Source = model.Source,
             SourceDetail = model.SourceDetail,
+            ExternalSourceSystem = model.ExternalSourceSystem,
+            ExternalEventId = model.ExternalEventId,
+            ExternalRecordUri = model.ExternalRecordUri,
             FactSeverity = model.FactSeverity,
             ShiftCode = model.ShiftCode,
             MachineCode = model.MachineCode,
@@ -962,6 +965,9 @@ public class RcaController : Controller
         AddReference(references, "Intake", GetData(data, "intakeId"), intakesById);
         AddReference(references, "Intake", GetData(data, "externalIntakeId"), intakesById);
         AddIfNotEmpty(references, Prefix("Fuente", GetData(data, "sourceDetail")));
+        AddIfNotEmpty(references, Prefix("Sistema externo", GetData(data, "externalSourceSystem")));
+        AddIfNotEmpty(references, Prefix("Evento externo", GetData(data, "externalEventId")));
+        AddIfNotEmpty(references, Prefix("Registro externo", GetData(data, "externalRecordUri")));
         AddIfNotEmpty(references, Prefix("Referencia", GetData(data, "referenceUri")));
         AddIfNotEmpty(references, Prefix("Adjunto", GetData(data, "attachmentFileName")));
         AddIfNotEmpty(references, Prefix("Usuario", GetData(data, "completedByUserId") ?? GetData(data, "reviewedByUserId") ?? GetData(data, "rejectedByUserId") ?? GetData(data, "capturedByUserId")));

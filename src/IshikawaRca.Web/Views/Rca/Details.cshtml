@@ -403,6 +403,25 @@
                                     }
                                 </small>
                             }
+                            @if (!string.IsNullOrWhiteSpace(fact.ExternalSourceSystem) ||
+                                 !string.IsNullOrWhiteSpace(fact.ExternalEventId) ||
+                                 !string.IsNullOrWhiteSpace(fact.ExternalRecordUri))
+                            {
+                                <small>
+                                    @if (!string.IsNullOrWhiteSpace(fact.ExternalSourceSystem))
+                                    {
+                                        <text>Sistema externo: @fact.ExternalSourceSystem. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.ExternalEventId))
+                                    {
+                                        <text>Evento: @fact.ExternalEventId. </text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(fact.ExternalRecordUri))
+                                    {
+                                        <text>Registro: @fact.ExternalRecordUri.</text>
+                                    }
+                                </small>
+                            }
                         </div>
                     </li>
                 }
@@ -452,6 +471,21 @@
             <div class="mb-3">
                 <label asp-for="FactForm.SourceDetail" class="form-label">Detalle fuente</label>
                 <input asp-for="FactForm.SourceDetail" class="form-control" />
+            </div>
+
+            <div class="form-grid fact-form-grid">
+                <div>
+                    <label asp-for="FactForm.ExternalSourceSystem" class="form-label">Sistema externo</label>
+                    <input asp-for="FactForm.ExternalSourceSystem" class="form-control" placeholder="SCADA / OEE / Gantt" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.ExternalEventId" class="form-label">ID evento externo</label>
+                    <input asp-for="FactForm.ExternalEventId" class="form-control" />
+                </div>
+                <div>
+                    <label asp-for="FactForm.ExternalRecordUri" class="form-label">URI registro externo</label>
+                    <input asp-for="FactForm.ExternalRecordUri" class="form-control" />
+                </div>
             </div>
 
             <div class="form-grid fact-form-grid">

@@ -231,6 +231,9 @@ public class RcaDbContext : DbContext
         entity.Property(x => x.FactType).HasMaxLength(64).IsRequired();
         entity.Property(x => x.Source).HasMaxLength(64).IsRequired();
         entity.Property(x => x.SourceDetail).HasMaxLength(220);
+        entity.Property(x => x.ExternalSourceSystem).HasMaxLength(80);
+        entity.Property(x => x.ExternalEventId).HasMaxLength(160);
+        entity.Property(x => x.ExternalRecordUri).HasMaxLength(500);
         entity.Property(x => x.FactSeverity).HasMaxLength(32).HasDefaultValue("Info").IsRequired();
         entity.Property(x => x.ShiftCode).HasMaxLength(80);
         entity.Property(x => x.MachineCode).HasMaxLength(80);
@@ -256,6 +259,7 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.MachineCode, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.ShiftCode, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.AlarmCode });
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.ExternalSourceSystem, x.ExternalEventId }).IsUnique();
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

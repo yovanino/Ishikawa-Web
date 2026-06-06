@@ -621,6 +621,26 @@ public class EfRcaIncidentService : IRcaIncidentService
             }
         }
 
+        var externalSourceSystem = Normalize(request.ExternalSourceSystem);
+        var externalEventId = Normalize(request.ExternalEventId);
+        if (!string.IsNullOrWhiteSpace(externalSourceSystem) && !string.IsNullOrWhiteSpace(externalEventId))
+        {
+            var existingExternalFact = await _dbContext.RcaFacts
+                .AsNoTracking()
+                .Where(x =>
+                    x.RcaIncidentId == incidentId &&
+                    x.ExternalSourceSystem == externalSourceSystem &&
+                    x.ExternalEventId == externalEventId &&
+                    !x.IsDeleted)
+                .Select(x => ToFactDto(x))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (existingExternalFact is not null)
+            {
+                return ApiResult<RcaFactDto>.Ok(existingExternalFact, "Hecho externo existente.");
+            }
+        }
+
         var fact = new RcaFact
         {
             TenantId = incident.TenantId,
@@ -632,6 +652,9 @@ public class EfRcaIncidentService : IRcaIncidentService
             FactType = Normalize(request.FactType) ?? "Observation",
             Source = Normalize(request.Source) ?? "Manual",
             SourceDetail = Normalize(request.SourceDetail),
+            ExternalSourceSystem = externalSourceSystem,
+            ExternalEventId = externalEventId,
+            ExternalRecordUri = Normalize(request.ExternalRecordUri),
             FactSeverity = Normalize(request.FactSeverity) ?? "Info",
             ShiftCode = Normalize(request.ShiftCode),
             MachineCode = Normalize(request.MachineCode),
@@ -1098,6 +1121,9 @@ public class EfRcaIncidentService : IRcaIncidentService
                         ["factType"] = fact.FactType,
                         ["source"] = fact.Source,
                         ["sourceDetail"] = fact.SourceDetail,
+                        ["externalSourceSystem"] = fact.ExternalSourceSystem,
+                        ["externalEventId"] = fact.ExternalEventId,
+                        ["externalRecordUri"] = fact.ExternalRecordUri,
                         ["factSeverity"] = fact.FactSeverity,
                         ["shiftCode"] = fact.ShiftCode,
                         ["machineCode"] = fact.MachineCode,
@@ -1333,6 +1359,13 @@ public class EfRcaIncidentService : IRcaIncidentService
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             errors.Add(new ApiError { Field = nameof(request.Title), Code = "FACT_TITLE_REQUIRED", Message = "El titulo del hecho es obligatorio." });
+        }
+
+        var hasExternalSource = !string.IsNullOrWhiteSpace(request.ExternalSourceSystem);
+        var hasExternalEvent = !string.IsNullOrWhiteSpace(request.ExternalEventId);
+        if (hasExternalSource != hasExternalEvent)
+        {
+            errors.Add(new ApiError { Field = nameof(request.ExternalEventId), Code = "EXTERNAL_FACT_CORRELATION_INCOMPLETE", Message = "Para hechos externos se requieren ExternalSourceSystem y ExternalEventId." });
         }
 
         return errors;
@@ -1734,6 +1767,9 @@ public class EfRcaIncidentService : IRcaIncidentService
             FactType = fact.FactType,
             Source = fact.Source,
             SourceDetail = fact.SourceDetail,
+            ExternalSourceSystem = fact.ExternalSourceSystem,
+            ExternalEventId = fact.ExternalEventId,
+            ExternalRecordUri = fact.ExternalRecordUri,
             FactSeverity = fact.FactSeverity,
             ShiftCode = fact.ShiftCode,
             MachineCode = fact.MachineCode,

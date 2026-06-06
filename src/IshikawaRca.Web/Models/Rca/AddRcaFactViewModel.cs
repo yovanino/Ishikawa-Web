@@ -19,6 +19,15 @@ public class AddRcaFactViewModel
     [StringLength(220)]
     public string? SourceDetail { get; set; }
 
+    [StringLength(80)]
+    public string? ExternalSourceSystem { get; set; }
+
+    [StringLength(160)]
+    public string? ExternalEventId { get; set; }
+
+    [StringLength(500)]
+    public string? ExternalRecordUri { get; set; }
+
     public string FactSeverity { get; set; } = "Info";
 
     [StringLength(80)]

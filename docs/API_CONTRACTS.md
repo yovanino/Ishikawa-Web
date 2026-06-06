@@ -132,6 +132,34 @@ Evidencia RCA inicial:
 
 En esta fase se registran metadatos, resumen y URI/referencia de evidencia. Los adjuntos binarios iniciales se almacenan en el repositorio configurado por `EvidenceStorage:RootPath` y quedan disponibles por endpoint de descarga controlada.
 
+Hechos RCA desde UI o modulos externos:
+
+```http
+GET  /api/v1/rca/incidents/{id}/facts
+POST /api/v1/rca/incidents/{id}/facts
+```
+
+```json
+{
+  "title": "Alarma de presion fuera de rango",
+  "description": "SCADA detecto presion alta durante el ciclo.",
+  "factType": "Alarm",
+  "source": "SCADA",
+  "sourceDetail": "Linea L2 / PLC prensa 4",
+  "factSeverity": "High",
+  "externalSourceSystem": "SCADA",
+  "externalEventId": "PLC4-ALM-20260606-001",
+  "externalRecordUri": "scada://linea-2/prensa-4/events/PLC4-ALM-20260606-001",
+  "machineCode": "PRENSA-4",
+  "lineCode": "L2",
+  "workOrderCode": "OT-10244",
+  "alarmCode": "PRES-HIGH",
+  "occurredAt": "2026-06-06T09:14:00-03:00"
+}
+```
+
+`externalSourceSystem` y `externalEventId` deben enviarse juntos. La combinacion por RCA es idempotente: si el mismo modulo reintenta el mismo evento, el API devuelve el hecho existente en lugar de duplicarlo.
+
 Causas y subcausas:
 
 ```json

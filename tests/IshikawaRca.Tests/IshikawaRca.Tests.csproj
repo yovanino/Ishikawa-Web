@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\IshikawaRca.Application\IshikawaRca.Application.csproj" />
+    <ProjectReference Include="..\..\src\IshikawaRca.Contracts\IshikawaRca.Contracts.csproj" />
     <ProjectReference Include="..\..\src\IshikawaRca.Domain\IshikawaRca.Domain.csproj" />
   </ItemGroup>
 

@@ -190,6 +190,11 @@ public class RcaIncidentsController : ControllerBase
                 : BadRequest(result);
         }
 
+        if (string.Equals(result.Message, "Hecho externo existente.", StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(result);
+        }
+
         return CreatedAtAction(nameof(ListFacts), new { id }, result);
     }
 

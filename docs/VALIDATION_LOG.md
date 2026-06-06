@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-06 - RCA external fact API correlation
+
+Scope: validate 3E, external module fact ingestion through the existing RCA fact API.
+
+Checks:
+
+- Added `ExternalSourceSystem`, `ExternalEventId` and `ExternalRecordUri` to RCA facts.
+- Added idempotency for `POST /api/v1/rca/incidents/{id}/facts` when the same RCA receives the same external system/event pair.
+- Extended fact DTO/request, EF and in-memory services, MVC form, fact line, unified timeline references and PDF export.
+- Added EF migration `20260606112613_AddRcaFactExternalCorrelation`.
+- Added regression coverage for external fact idempotency and incomplete correlation validation.
+- Documented the external fact payload in `docs/API_CONTRACTS.md`.
+- Build passed with 0 errors.
+- EF reports no pending model changes after migration.
+
+Database:
+
+- Migration `20260606112613_AddRcaFactExternalCorrelation` applied successfully to local MySQL.
+
+Result: passed.
+
 ## 2026-06-04 - RCA unified timeline and resolution policy
 
 Scope: validate the unified investigation timeline and RCA resolution classification.

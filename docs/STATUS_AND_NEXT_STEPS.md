@@ -35,6 +35,7 @@ Fecha de corte: 2026-06-04.
    - Wizard guiado con checklist, porcentaje, bloqueos, metricas por etapa y endpoint de progreso.
    - Exportacion PDF del RCA con cierre, causa raiz, acciones, manifiesto de evidencias, validacion, SHA-256 y links controlados.
    - Linea de hechos manual RCA con fecha/hora, tipo, fuente, clasificacion industrial, causa/evidencia/accion/intake opcional, API y exportacion PDF.
+   - Hechos RCA por API con correlacion externa, URI de registro e idempotencia por sistema/evento.
    - Timeline unificado en detalle RCA para hechos, evidencias, acciones, wizard, eventos externos y contexto industrial.
    - Acciones clasificadas por tipo correctiva/preventiva/preventiva de recurrencia y por ambito causa raiz/FUGA.
    - Politica de resolucion que exige accion preventiva de recurrencia para causa raiz y set completo si existe FUGA.
@@ -73,7 +74,7 @@ Fecha de corte: 2026-06-04.
 - Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
 - Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
 - Evaluar storage documental productivo para evidencias y exportaciones generadas.
-- Extender la linea de hechos con entrada por API desde modulos externos.
+- Crear smoke automatizado API para ingreso de hechos externos cuando se estabilice el entorno de ejecucion local.
 
 ## Siguiente Corte Recomendado
 

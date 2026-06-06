@@ -74,6 +74,7 @@ public class RcaPdfReportService : IRcaPdfReportService
                 document.AddKeyValue("Action", action?.Title ?? "-");
                 document.AddKeyValue("External intake", intake is null ? "-" : $"{intake.ActorType} / {intake.ActorName ?? intake.ContactEmail ?? "-"}");
                 document.AddKeyValue("Captured by", fact.CapturedByUserId ?? "-");
+                document.AddKeyValue("External correlation", FormatExternalFactCorrelation(fact));
 
                 if (!string.IsNullOrWhiteSpace(fact.SourceDetail))
                 {
@@ -231,6 +232,23 @@ public class RcaPdfReportService : IRcaPdfReportService
         }
 
         return $"{value} B";
+    }
+
+    private static string FormatExternalFactCorrelation(RcaFactDto fact)
+    {
+        if (string.IsNullOrWhiteSpace(fact.ExternalSourceSystem) &&
+            string.IsNullOrWhiteSpace(fact.ExternalEventId) &&
+            string.IsNullOrWhiteSpace(fact.ExternalRecordUri))
+        {
+            return "-";
+        }
+
+        return string.Join(" / ", new[]
+        {
+            fact.ExternalSourceSystem,
+            fact.ExternalEventId,
+            fact.ExternalRecordUri
+        }.Where(x => !string.IsNullOrWhiteSpace(x)));
     }
 
     private sealed record PdfTextLine(string Text, int FontSize, bool Bold);

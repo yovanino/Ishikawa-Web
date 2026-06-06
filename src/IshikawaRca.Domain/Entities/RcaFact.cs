@@ -20,6 +20,12 @@ public class RcaFact : TenantEntity
 
     public string? SourceDetail { get; set; }
 
+    public string? ExternalSourceSystem { get; set; }
+
+    public string? ExternalEventId { get; set; }
+
+    public string? ExternalRecordUri { get; set; }
+
     public string FactSeverity { get; set; } = "Info";
 
     public string? ShiftCode { get; set; }
