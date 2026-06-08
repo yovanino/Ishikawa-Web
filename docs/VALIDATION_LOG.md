@@ -57,9 +57,12 @@ Validation:
 
 Database:
 
-- Migration generated but not applied in this turn.
+- Initial attempts without `ISHIKAWA_RCA_CONNECTION` used the placeholder
+  `ishikawa_user` connection and failed with `Access denied`.
+- Migration `20260608140016_AddRcaAuditRecords` applied successfully after
+  setting `ISHIKAWA_RCA_CONNECTION` from local development configuration.
 
-Result: code/build/tests passed; database application pending.
+Result: passed.
 
 ## 2026-06-06 - RCA external fact API correlation
 

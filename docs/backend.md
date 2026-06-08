@@ -125,3 +125,5 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   estado de acciones, actualizacion/reemplazo/eliminacion de evidencias y
   revision/rechazo/revocacion de intake externo.
 - Validado nuevamente con build y tests livianos.
+- Aplicada la migracion `20260608140016_AddRcaAuditRecords` en la base local
+  usando `ISHIKAWA_RCA_CONNECTION`.

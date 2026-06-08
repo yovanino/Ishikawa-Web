@@ -68,8 +68,8 @@ standalone.
 - Relevar `Program.cs`, controllers API, servicios EF, entidades y DbContext.
 - Definir siguiente paso de tenant productivo: resolver tenant desde Identity o
   proveedor corporativo cuando exista.
-- Aplicar migracion `AddRcaAuditRecords` en la base local/productiva cuando se
-  haga el siguiente corte DB.
+- Aplicar migracion `AddRcaAuditRecords` en ambientes no locales cuando se haga
+  el siguiente corte DB/deploy.
 - Extender consulta/UI/API de auditoria cuando se defina el consumidor.
 - Normalizar errores backend.
 - Agregar tests de politicas y servicios.
@@ -96,6 +96,10 @@ standalone.
 - `dotnet ef migrations add AddRcaAuditRecords --project
   src/IshikawaRca.Infrastructure/IshikawaRca.Infrastructure.csproj
   --startup-project src/IshikawaRca.Web/IshikawaRca.Web.csproj`: correcto.
+- `dotnet ef database update --project
+  src/IshikawaRca.Infrastructure/IshikawaRca.Infrastructure.csproj
+  --startup-project src/IshikawaRca.Web/IshikawaRca.Web.csproj`: aplicado
+  correctamente usando `ISHIKAWA_RCA_CONNECTION` local.
 
 ## Ultimo Cierre
 
