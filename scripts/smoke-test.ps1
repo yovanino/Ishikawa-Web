@@ -6,6 +6,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$Headers = @{
+    "X-RCA-TenantId" = $TenantId
+    "X-RCA-UserId" = "quality"
+    "X-RCA-Roles" = "Quality,Supervisor,Maintenance,Administrator"
+}
+
 function Invoke-JsonPost {
     param(
         [string]$Uri,
@@ -16,6 +22,7 @@ function Invoke-JsonPost {
         -Method Post `
         -Uri $Uri `
         -TimeoutSec $RequestTimeoutSeconds `
+        -Headers $Headers `
         -ContentType "application/json" `
         -Body ($Body | ConvertTo-Json -Depth 10)
 }
@@ -28,6 +35,7 @@ function Invoke-JsonGet {
     Invoke-RestMethod `
         -Method Get `
         -Uri $Uri `
+        -Headers $Headers `
         -TimeoutSec $RequestTimeoutSeconds
 }
 
@@ -44,6 +52,10 @@ function Invoke-MultipartPost {
 
     $client = [System.Net.Http.HttpClient]::new()
     $client.Timeout = [TimeSpan]::FromSeconds($RequestTimeoutSeconds)
+    foreach ($key in $Headers.Keys) {
+        $client.DefaultRequestHeaders.Add($key, [string]$Headers[$key])
+    }
+
     $content = [System.Net.Http.MultipartFormDataContent]::new()
     $stream = $null
 
@@ -175,6 +187,9 @@ $evidenceBody = @{
     summary = "Registro de evidencia creado por smoke test."
     referenceUri = "https://example.com/evidence/smoke"
     capturedByUserId = "quality"
+    validationStatus = "Validated"
+    validatedByUserId = "quality"
+    validationNotes = "Evidencia validada por smoke test."
 }
 
 $evidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/evidence" $evidenceBody
@@ -197,6 +212,9 @@ $fileEvidence = Invoke-MultipartPost `
         Summary = "Archivo adjunto creado por smoke test."
         CauseId = $cause.data.id
         CapturedByUserId = "quality"
+        ValidationStatus = "Validated"
+        ValidatedByUserId = "quality"
+        ValidationNotes = "Adjunto validado por smoke test."
     } `
     -FilePath $evidenceFilePath `
     -FileContentType "text/plain"
@@ -209,6 +227,7 @@ $downloadPath = Join-Path $artifactDir "smoke-evidence-download-$timestamp.txt"
 Invoke-WebRequest `
     -Method Get `
     -Uri "$base/api/v1/rca/incidents/$incidentId/evidence/$($fileEvidence.data.id)/attachment" `
+    -Headers $Headers `
     -TimeoutSec $RequestTimeoutSeconds `
     -OutFile $downloadPath
 if (-not (Test-Path $downloadPath)) {
@@ -233,6 +252,8 @@ $actionBody = @{
     causeId = $cause.data.id
     title = "Smoke corrective action"
     description = "Accion creada por smoke test."
+    actionType = "Corrective"
+    resolutionScope = "RootCause"
     assignedToUserId = "maintenance"
     dueDate = (Get-Date).AddDays(2).ToString("o")
 }
@@ -240,6 +261,20 @@ $actionBody = @{
 $action = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions" $actionBody
 Assert-Success $action "Add corrective action"
 Write-Host "Added action: $($action.data.id)"
+
+$recurrenceActionBody = @{
+    causeId = $cause.data.id
+    title = "Smoke recurrence prevention"
+    description = "Accion preventiva de recurrencia creada por smoke test."
+    actionType = "RecurrencePreventive"
+    resolutionScope = "RootCause"
+    assignedToUserId = "quality"
+    dueDate = (Get-Date).AddDays(3).ToString("o")
+}
+
+$recurrenceAction = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions" $recurrenceActionBody
+Assert-Success $recurrenceAction "Add recurrence preventive action"
+Write-Host "Added recurrence action: $($recurrenceAction.data.id)"
 
 $wizardActions = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
     step = "Actions"
@@ -260,6 +295,19 @@ if ($actionStatus.data.status -ne "Completed") {
     throw "Complete corrective action failed: expected Completed status"
 }
 Write-Host "Completed action: $($actionStatus.data.id)"
+
+$recurrenceActionStatusBody = @{
+    status = "Completed"
+    completedByUserId = "quality"
+    validationNotes = "Validacion smoke: prevencion de recurrencia completada."
+}
+
+$recurrenceActionStatus = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/actions/$($recurrenceAction.data.id)/status" $recurrenceActionStatusBody
+Assert-Success $recurrenceActionStatus "Complete recurrence preventive action"
+if ($recurrenceActionStatus.data.status -ne "Completed") {
+    throw "Complete recurrence preventive action failed: expected Completed status"
+}
+Write-Host "Completed recurrence action: $($recurrenceActionStatus.data.id)"
 
 $wizardValidation = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
     step = "Validation"

@@ -11,8 +11,11 @@ $webProject = Join-Path $repoRoot "src\IshikawaRca.Web\IshikawaRca.Web.csproj"
 $webDir = Join-Path $repoRoot "src\IshikawaRca.Web"
 $webDll = Join-Path $webDir "bin\Debug\net9.0\IshikawaRca.Web.dll"
 $pidFile = Join-Path $repoRoot "artifacts\ishikawa-web.pid"
+$stdoutLog = Join-Path $repoRoot "artifacts\ishikawa-web.stdout.log"
+$stderrLog = Join-Path $repoRoot "artifacts\ishikawa-web.stderr.log"
 
 & (Join-Path $PSScriptRoot "normalize-session-env.ps1")
+$env:ASPNETCORE_ENVIRONMENT = "Development"
 
 if ($Build) {
     & dotnet build (Join-Path $repoRoot "IshikawaRca.sln") /m:1 --no-restore
@@ -25,6 +28,8 @@ if (-not (Test-Path $webDll)) {
 if (-not (Test-Path (Split-Path $pidFile))) {
     New-Item -ItemType Directory -Path (Split-Path $pidFile) | Out-Null
 }
+
+Remove-Item $stdoutLog, $stderrLog -ErrorAction SilentlyContinue
 
 $uri = [System.Uri]$BaseUrl
 $port = $uri.Port
@@ -40,8 +45,10 @@ if ($existing) {
 
 $process = Start-Process `
     -FilePath "C:\Program Files\dotnet\dotnet.exe" `
-    -ArgumentList @($webDll, "--urls", $BaseUrl) `
+    -ArgumentList @("`"$webDll`"", "--urls", $BaseUrl) `
     -WorkingDirectory $webDir `
+    -RedirectStandardOutput $stdoutLog `
+    -RedirectStandardError $stderrLog `
     -PassThru `
     -WindowStyle Hidden
 
@@ -52,6 +59,16 @@ try {
     & (Join-Path $PSScriptRoot "test-port.ps1") -HostName "127.0.0.1" -Port $port -TimeoutSeconds $StartupTimeoutSeconds
 }
 catch {
+    Write-Host "--- web stdout ---"
+    if (Test-Path $stdoutLog) {
+        Get-Content $stdoutLog
+    }
+
+    Write-Host "--- web stderr ---"
+    if (Test-Path $stderrLog) {
+        Get-Content $stderrLog
+    }
+
     if (-not $process.HasExited) {
         Stop-Process -Id $process.Id -Force
     }

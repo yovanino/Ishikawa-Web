@@ -110,6 +110,33 @@ Validation:
 
 Result: passed.
 
+## 2026-06-08 - Backend critical smoke API + DB
+
+Scope: validate the P0 critical API smoke flow against local DB.
+
+Checks:
+
+- Updated `scripts/start-web.ps1` to start the compiled Web DLL correctly when
+  the repository path contains spaces, force `ASPNETCORE_ENVIRONMENT=Development`
+  for local validation and emit stdout/stderr logs on startup failure.
+- Updated `scripts/smoke-test.ps1` to send standalone auth headers.
+- Smoke flow now creates an RCA, adds root cause and subcause, records validated
+  evidence and validated evidence file, creates/completes corrective and
+  recurrence-preventive root-cause actions, escalates to 8D, closes the RCA,
+  completes wizard closed step, validates snapshot/events and calls AI summary.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 errors and 4 `NU1900`
+  warnings because package vulnerability metadata could not be fetched from
+  `https://api.nuget.org/v3/index.json` in the restricted environment.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed.
+
+Result: passed.
+
 ## 2026-06-06 - RCA external fact API correlation
 
 Scope: validate 3E, external module fact ingestion through the existing RCA fact API.

@@ -63,6 +63,11 @@ Usar `/m:1` porque en esta instalacion local se observo un fallo silencioso con 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-web.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20
 ```
 
+El script fuerza `ASPNETCORE_ENVIRONMENT=Development` para validacion local y
+guarda logs de arranque en `artifacts/ishikawa-web.stdout.log` y
+`artifacts/ishikawa-web.stderr.log` si el proceso falla antes de abrir el
+puerto.
+
 UI:
 
 ```text
@@ -78,7 +83,10 @@ Con la app corriendo y la DB migrada:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
 ```
 
-El script crea un incidente demo, agrega una causa, agrega una accion, consulta snapshots de integracion y valida los endpoints de IA en modo stub.
+El script crea un incidente demo, agrega causa raiz y subcausa, registra
+evidencia validada con adjunto, agrega y completa accion correctiva y accion
+preventiva de recurrencia, escala a 8D, cierra el RCA, valida wizard/snapshot,
+consulta eventos de integracion y valida los endpoints de IA en modo stub.
 
 Validacion local completa:
 

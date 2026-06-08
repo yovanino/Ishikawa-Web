@@ -68,6 +68,8 @@ standalone.
 - Agregadas pruebas livianas de storage de evidencias.
 - Normalizadas validaciones automaticas y excepciones no controladas de API
   para devolver `ApiResult`.
+- Actualizado smoke local API + DB para cubrir flujo critico P0 completo y
+  endpoints protegidos por roles.
 
 ## Pendientes
 
@@ -82,7 +84,7 @@ standalone.
 - Agregar tests de politicas y servicios.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
   defina politica documental productiva.
-- Agregar smoke API + DB.
+- Mantener smoke API + DB en cada corte backend significativo.
 - Registrar validaciones en `docs/VALIDATION_LOG.md` cuando se ejecuten.
 
 ## Riesgos
@@ -113,11 +115,16 @@ standalone.
   red restringida contra NuGet.
 - `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
   correcto, incluye pruebas de hardening de adjuntos.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; smoke API + DB crea, valida, escala y cierra RCA.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-08.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
-  operaciones sensibles; aplicado hardening inicial de adjuntos.
-- Commit sugerido: `fix(backend): harden evidence storage bounds`.
+  operaciones sensibles; aplicado hardening inicial de adjuntos y smoke API +
+  DB critico.
+- Commit sugerido: `test(backend): expand critical smoke flow`.

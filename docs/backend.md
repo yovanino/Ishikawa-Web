@@ -146,3 +146,14 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
 - Las excepciones no controladas bajo `/api` devuelven HTTP 500 con
   `UNHANDLED_API_ERROR` y `correlationId`, sin exponer detalles internos al
   consumidor.
+
+### 2026-06-08 - Smoke API + DB P0
+
+- `scripts/smoke-test.ps1` ahora envia headers standalone de tenant, usuario y
+  roles para cubrir endpoints protegidos.
+- El smoke cubre cierre critico real: causa raiz, subcausa, evidencia validada,
+  adjunto validado, accion correctiva, accion preventiva de recurrencia,
+  escalamiento 8D, cierre formal, wizard cerrado, snapshot, eventos e IA stub.
+- `scripts/start-web.ps1` arranca correctamente cuando el path del repo contiene
+  espacios y guarda logs de stdout/stderr ante fallos de startup.
+- Validado con `run-local-validation.ps1` contra DB local.
