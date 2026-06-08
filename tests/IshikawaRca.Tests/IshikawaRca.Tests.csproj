@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\src\IshikawaRca.Application\IshikawaRca.Application.csproj" />
     <ProjectReference Include="..\..\src\IshikawaRca.Contracts\IshikawaRca.Contracts.csproj" />
     <ProjectReference Include="..\..\src\IshikawaRca.Domain\IshikawaRca.Domain.csproj" />
+    <ProjectReference Include="..\..\src\IshikawaRca.Web\IshikawaRca.Web.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

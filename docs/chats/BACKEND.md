@@ -62,6 +62,10 @@ standalone.
 - Generada migracion EF `AddRcaAuditRecords`.
 - Registrada auditoria para operaciones sensibles: cierre, escalamiento 8D,
   cambios de estado de acciones, evidencias e intake externo interno.
+- Endurecido storage local de evidencias con limite configurable
+  `EvidenceStorage:MaxFileSizeMb` y validacion reforzada de rutas dentro del
+  root.
+- Agregadas pruebas livianas de storage de evidencias.
 
 ## Pendientes
 
@@ -73,6 +77,8 @@ standalone.
 - Extender consulta/UI/API de auditoria cuando se defina el consumidor.
 - Normalizar errores backend.
 - Agregar tests de politicas y servicios.
+- Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
+  defina politica documental productiva.
 - Agregar smoke API + DB.
 - Registrar validaciones en `docs/VALIDATION_LOG.md` cuando se ejecuten.
 
@@ -100,11 +106,15 @@ standalone.
   src/IshikawaRca.Infrastructure/IshikawaRca.Infrastructure.csproj
   --startup-project src/IshikawaRca.Web/IshikawaRca.Web.csproj`: aplicado
   correctamente usando `ISHIKAWA_RCA_CONNECTION` local.
+- `dotnet build IshikawaRca.sln`: correcto, 0 errores; warnings `NU1900` por
+  red restringida contra NuGet.
+- `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
+  correcto, incluye pruebas de hardening de adjuntos.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-08.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
-  operaciones sensibles.
-- Commit sugerido: `feat(backend): add standalone auth and audit context`.
+  operaciones sensibles; aplicado hardening inicial de adjuntos.
+- Commit sugerido: `fix(backend): harden evidence storage bounds`.

@@ -127,3 +127,14 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
 - Validado nuevamente con build y tests livianos.
 - Aplicada la migracion `20260608140016_AddRcaAuditRecords` en la base local
   usando `ISHIKAWA_RCA_CONNECTION`.
+
+### 2026-06-08 - Hardening de adjuntos
+
+- `EvidenceStorage:MaxFileSizeMb` permite configurar el limite de adjuntos,
+  manteniendo 100 MB como default.
+- La resolucion y eliminacion de adjuntos ahora validan pertenencia al root con
+  `Path.GetRelativePath`, evitando falsos positivos por prefijos de ruta.
+- Agregadas pruebas livianas para limite configurable y rechazo de storage keys
+  inseguras.
+- Validado con `dotnet build IshikawaRca.sln` y `dotnet run --project
+  tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`.

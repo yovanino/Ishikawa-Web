@@ -3,6 +3,11 @@ using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
+using IshikawaRca.Web.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 
 var rootOnlyActions = new[]
 {
@@ -39,6 +44,8 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
+await AssertEvidenceStorageRejectsOversizedFilesAsync();
+AssertEvidenceStorageRejectsUnsafeKeys();
 
 static CorrectiveAction NewAction(CorrectiveActionType type, RcaResolutionScope scope)
 {
@@ -114,6 +121,46 @@ static async Task AssertIncompleteExternalFactCorrelationFailsAsync()
         "EXTERNAL_FACT_CORRELATION_INCOMPLETE");
 }
 
+static async Task AssertEvidenceStorageRejectsOversizedFilesAsync()
+{
+    var root = CreateTempDirectory();
+    try
+    {
+        var storage = new EvidenceFileStorage(
+            new TestWebHostEnvironment(root),
+            Options.Create(new EvidenceStorageOptions { RootPath = "evidence", MaxFileSizeMb = 1 }));
+        await using var stream = new MemoryStream(new byte[(1024 * 1024) + 1]);
+        var file = new FormFile(stream, 0, stream.Length, "Attachment", "oversized.pdf")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/pdf"
+        };
+
+        await AssertThrowsAsync<InvalidOperationException>(() => storage.SaveAsync(Guid.NewGuid(), file, CancellationToken.None));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void AssertEvidenceStorageRejectsUnsafeKeys()
+{
+    var root = CreateTempDirectory();
+    try
+    {
+        var storage = new EvidenceFileStorage(
+            new TestWebHostEnvironment(root),
+            Options.Create(new EvidenceStorageOptions { RootPath = "evidence" }));
+
+        AssertThrows<InvalidOperationException>(() => storage.Resolve("../outside.pdf", "outside.pdf", "application/pdf"));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
 static void AssertContains(IReadOnlyList<string> values, string expected)
 {
     if (!values.Contains(expected, StringComparer.Ordinal))
@@ -128,4 +175,65 @@ static void AssertEmpty(IReadOnlyList<string> values)
     {
         throw new InvalidOperationException($"Expected no blockers. Actual: {string.Join(" | ", values)}");
     }
+}
+
+static async Task AssertThrowsAsync<TException>(Func<Task> action)
+    where TException : Exception
+{
+    try
+    {
+        await action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+
+    throw new InvalidOperationException($"Expected exception {typeof(TException).Name}.");
+}
+
+static void AssertThrows<TException>(Action action)
+    where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+
+    throw new InvalidOperationException($"Expected exception {typeof(TException).Name}.");
+}
+
+static string CreateTempDirectory()
+{
+    var path = Path.Combine(Path.GetTempPath(), "ishikawa-rca-tests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(path);
+
+    return path;
+}
+
+internal sealed class TestWebHostEnvironment : IWebHostEnvironment
+{
+    public TestWebHostEnvironment(string contentRootPath)
+    {
+        ContentRootPath = contentRootPath;
+        WebRootPath = contentRootPath;
+        ContentRootFileProvider = new PhysicalFileProvider(contentRootPath);
+        WebRootFileProvider = ContentRootFileProvider;
+    }
+
+    public string ApplicationName { get; set; } = "IshikawaRca.Tests";
+
+    public IFileProvider ContentRootFileProvider { get; set; }
+
+    public string ContentRootPath { get; set; }
+
+    public string EnvironmentName { get; set; } = "Development";
+
+    public string WebRootPath { get; set; }
+
+    public IFileProvider WebRootFileProvider { get; set; }
 }

@@ -64,6 +64,29 @@ Database:
 
 Result: passed.
 
+## 2026-06-08 - Evidence storage hardening
+
+Scope: validate local evidence attachment storage hardening.
+
+Checks:
+
+- Added configurable `EvidenceStorage:MaxFileSizeMb`, defaulting to 100 MB.
+- Preserved allowed extension validation.
+- Hardened storage key resolution/deletion with `Path.GetRelativePath` to
+  ensure resolved files stay inside the configured storage root.
+- Added lightweight tests for oversized attachment rejection and unsafe storage
+  key rejection.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln`: passed with 0 errors and 4 `NU1900`
+  warnings because package vulnerability metadata could not be fetched from
+  `https://api.nuget.org/v3/index.json` in the restricted environment.
+- `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
+  passed.
+
+Result: passed.
+
 ## 2026-06-06 - RCA external fact API correlation
 
 Scope: validate 3E, external module fact ingestion through the existing RCA fact API.

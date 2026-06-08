@@ -6,6 +6,8 @@ namespace IshikawaRca.Web.Services;
 public class EvidenceStorageOptions
 {
     public string RootPath { get; set; } = "App_Data";
+
+    public int MaxFileSizeMb { get; set; } = 100;
 }
 
 public record StoredEvidenceFile(
@@ -64,7 +66,9 @@ public class EvidenceFileStorage : IEvidenceFileStorage
         _options = options.Value;
     }
 
-    public long MaxFileSizeBytes => 100L * 1024L * 1024L;
+    public long MaxFileSizeBytes => EffectiveMaxFileSizeMb * 1024L * 1024L;
+
+    private int EffectiveMaxFileSizeMb => Math.Max(1, _options.MaxFileSizeMb);
 
     public async Task<StoredEvidenceFile> SaveAsync(Guid incidentId, IFormFile file, CancellationToken cancellationToken)
     {
@@ -75,7 +79,7 @@ public class EvidenceFileStorage : IEvidenceFileStorage
 
         if (file.Length > MaxFileSizeBytes)
         {
-            throw new InvalidOperationException("El archivo supera el limite de 100 MB.");
+            throw new InvalidOperationException($"El archivo supera el limite de {EffectiveMaxFileSizeMb} MB.");
         }
 
         var originalFileName = Path.GetFileName(file.FileName);
@@ -127,7 +131,7 @@ public class EvidenceFileStorage : IEvidenceFileStorage
         var normalizedKey = storageKey.Replace('/', Path.DirectorySeparatorChar);
         var physicalPath = Path.GetFullPath(Path.Combine(GetStorageRoot(), normalizedKey));
         var root = Path.GetFullPath(GetStorageRoot());
-        if (!physicalPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(physicalPath))
+        if (!IsInsideStorageRoot(root, physicalPath) || !File.Exists(physicalPath))
         {
             throw new FileNotFoundException("No se encontro el archivo de evidencia.");
         }
@@ -150,7 +154,7 @@ public class EvidenceFileStorage : IEvidenceFileStorage
         var normalizedKey = storageKey.Replace('/', Path.DirectorySeparatorChar);
         var physicalPath = Path.GetFullPath(Path.Combine(GetStorageRoot(), normalizedKey));
         var root = Path.GetFullPath(GetStorageRoot());
-        if (!physicalPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(physicalPath))
+        if (!IsInsideStorageRoot(root, physicalPath) || !File.Exists(physicalPath))
         {
             return;
         }
@@ -175,5 +179,13 @@ public class EvidenceFileStorage : IEvidenceFileStorage
         var hash = await SHA256.HashDataAsync(stream, cancellationToken);
 
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static bool IsInsideStorageRoot(string root, string physicalPath)
+    {
+        var relativePath = Path.GetRelativePath(root, physicalPath);
+
+        return !relativePath.StartsWith("..", StringComparison.Ordinal) &&
+               !Path.IsPathRooted(relativePath);
     }
 }
