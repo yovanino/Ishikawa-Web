@@ -1,7 +1,9 @@
 using IshikawaRca.Infrastructure;
+using IshikawaRca.Web.Api;
 using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,10 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = ApiErrorResponseFactory.ValidationProblem;
+});
 builder.Services.Configure<StandaloneRcaAuthenticationOptions>(builder.Configuration.GetSection("RcaSecurity"));
 builder.Services
     .AddAuthentication(StandaloneRcaAuthenticationHandler.SchemeName)
@@ -38,6 +44,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ApiExceptionHandlingMiddleware>();
 app.UseRouting();
 
 app.UseAuthentication();

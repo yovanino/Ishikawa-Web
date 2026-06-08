@@ -22,6 +22,12 @@ public class ApiError
 }
 ```
 
+Las validaciones automaticas de modelos en controllers API tambien devuelven
+`ApiResult<object>` con errores `MODEL_VALIDATION_ERROR` y `correlationId`. Las
+excepciones no controladas bajo `/api` se traducen a HTTP 500 con
+`UNHANDLED_API_ERROR`, registrando el detalle en logs y exponiendo solo el
+`correlationId` al consumidor.
+
 ## Seguridad y Tenant
 
 El modulo usa una autenticacion standalone configurable hasta que exista

@@ -87,6 +87,29 @@ Validation:
 
 Result: passed.
 
+## 2026-06-08 - API error normalization
+
+Scope: validate consistent API error responses for model validation and
+unhandled exceptions.
+
+Checks:
+
+- Added `ApiErrorResponseFactory` for automatic model-state failures in API
+  controllers.
+- Added `/api` exception middleware returning `ApiResult<object>` with
+  `UNHANDLED_API_ERROR` and `correlationId`.
+- Documented the behavior in `docs/API_CONTRACTS.md`.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln`: passed with 0 errors and 4 `NU1900`
+  warnings because package vulnerability metadata could not be fetched from
+  `https://api.nuget.org/v3/index.json` in the restricted environment.
+- `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
+  passed.
+
+Result: passed.
+
 ## 2026-06-06 - RCA external fact API correlation
 
 Scope: validate 3E, external module fact ingestion through the existing RCA fact API.

@@ -66,6 +66,8 @@ standalone.
   `EvidenceStorage:MaxFileSizeMb` y validacion reforzada de rutas dentro del
   root.
 - Agregadas pruebas livianas de storage de evidencias.
+- Normalizadas validaciones automaticas y excepciones no controladas de API
+  para devolver `ApiResult`.
 
 ## Pendientes
 
@@ -75,7 +77,8 @@ standalone.
 - Aplicar migracion `AddRcaAuditRecords` en ambientes no locales cuando se haga
   el siguiente corte DB/deploy.
 - Extender consulta/UI/API de auditoria cuando se defina el consumidor.
-- Normalizar errores backend.
+- Ampliar normalizacion de errores a codigos 401/403 si se requiere contrato
+  explicito para consumidores externos.
 - Agregar tests de politicas y servicios.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
   defina politica documental productiva.

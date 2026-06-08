@@ -138,3 +138,11 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   inseguras.
 - Validado con `dotnet build IshikawaRca.sln` y `dotnet run --project
   tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`.
+
+### 2026-06-08 - Errores API consistentes
+
+- Las validaciones automaticas de modelo en API devuelven `ApiResult<object>`
+  con codigo `MODEL_VALIDATION_ERROR`.
+- Las excepciones no controladas bajo `/api` devuelven HTTP 500 con
+  `UNHANDLED_API_ERROR` y `correlationId`, sin exponer detalles internos al
+  consumidor.
