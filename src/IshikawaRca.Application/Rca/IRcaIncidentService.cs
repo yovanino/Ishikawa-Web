@@ -27,9 +27,9 @@ public interface IRcaIncidentService
 
     Task<ApiResult<RcaEvidenceDto>> UpdateEvidenceAsync(Guid incidentId, Guid evidenceId, UpdateRcaEvidenceRequest request, CancellationToken cancellationToken = default);
 
-    Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, string? replacedByUserId = null, CancellationToken cancellationToken = default);
 
-    Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken = default);
+    Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, string? deletedByUserId = null, CancellationToken cancellationToken = default);
 
     Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default);
 

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
@@ -265,6 +266,22 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         intake.ReviewedAt = DateTimeOffset.UtcNow;
         intake.ReviewedByUserId = Normalize(request.ReviewedByUserId);
         intake.UpdatedAt = DateTimeOffset.UtcNow;
+        intake.UpdatedByUserId = intake.ReviewedByUserId;
+
+        AddAuditRecord(
+            intake.TenantId,
+            intake.RcaIncidentId,
+            intake.Id,
+            "RcaExternalIntakeReviewed",
+            intake.ReviewedByUserId,
+            "Respuesta externa revisada internamente.",
+            new
+            {
+                request.ImportCause,
+                request.MarkCauseAsRoot,
+                request.ImportCorrectiveAction,
+                importedCauseId = importedCause?.Id
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -314,13 +331,27 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         intake.RejectedByUserId = Normalize(request.RejectedByUserId);
         intake.RejectionReason = TrimToMax(request.RejectionReason.Trim(), 1000);
         intake.UpdatedAt = DateTimeOffset.UtcNow;
+        intake.UpdatedByUserId = intake.RejectedByUserId;
+
+        AddAuditRecord(
+            intake.TenantId,
+            intake.RcaIncidentId,
+            intake.Id,
+            "RcaExternalIntakeRejected",
+            intake.RejectedByUserId,
+            "Respuesta externa rechazada internamente.",
+            new
+            {
+                intake.RejectedAt,
+                intake.RejectionReason
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Respuesta externa rechazada.");
     }
 
-    public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, string? revokedByUserId = null, CancellationToken cancellationToken = default)
     {
         var intake = await _dbContext.RcaExternalIntakeRequests
             .FirstOrDefaultAsync(x => x.Id == intakeId && !x.IsDeleted, cancellationToken);
@@ -345,8 +376,24 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 new ApiError { Field = nameof(intake.Status), Code = "INTAKE_CLOSED", Message = "Usa revision o rechazo formal para respuestas enviadas." });
         }
 
+        var previousStatus = intake.Status;
         intake.Status = RcaExternalIntakeStatus.Revoked;
         intake.UpdatedAt = DateTimeOffset.UtcNow;
+        intake.UpdatedByUserId = Normalize(revokedByUserId);
+
+        AddAuditRecord(
+            intake.TenantId,
+            intake.RcaIncidentId,
+            intake.Id,
+            "RcaExternalIntakeRevoked",
+            intake.UpdatedByUserId,
+            "Link externo revocado internamente.",
+            new
+            {
+                intake.ExpiresAt,
+                previousStatus = previousStatus.ToString()
+            });
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Link externo revocado.");
@@ -384,6 +431,29 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         }
 
         return (true, intake, incidentTitle, new ApiError());
+    }
+
+    private void AddAuditRecord(
+        Guid tenantId,
+        Guid incidentId,
+        Guid intakeId,
+        string action,
+        string? userId,
+        string summary,
+        object? data)
+    {
+        _dbContext.RcaAuditRecords.Add(new RcaAuditRecord
+        {
+            TenantId = tenantId,
+            RcaIncidentId = incidentId,
+            EntityType = nameof(RcaExternalIntakeRequest),
+            EntityId = intakeId,
+            Action = action,
+            UserId = Normalize(userId),
+            OccurredAt = DateTimeOffset.UtcNow,
+            Summary = summary,
+            DataJson = data is null ? null : JsonSerializer.Serialize(data)
+        });
     }
 
     private static List<ApiError> ValidateCreate(CreateExternalIntakeRequest request)

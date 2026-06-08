@@ -1,5 +1,7 @@
 using IshikawaRca.Infrastructure;
+using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,15 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<StandaloneRcaAuthenticationOptions>(builder.Configuration.GetSection("RcaSecurity"));
+builder.Services
+    .AddAuthentication(StandaloneRcaAuthenticationHandler.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, StandaloneRcaAuthenticationHandler>(
+        StandaloneRcaAuthenticationHandler.SchemeName,
+        _ => { });
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentRcaUserContext, CurrentRcaUserContext>();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
 builder.Services.Configure<EvidenceStorageOptions>(builder.Configuration.GetSection("EvidenceStorage"));
 builder.Services.AddSingleton<IEvidenceFileStorage, EvidenceFileStorage>();
@@ -29,6 +40,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

@@ -26,6 +26,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<RcaExternalIntakeRequest> RcaExternalIntakeRequests => Set<RcaExternalIntakeRequest>();
 
+    public DbSet<RcaAuditRecord> RcaAuditRecords => Set<RcaAuditRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -37,6 +39,7 @@ public class RcaDbContext : DbContext
         ConfigureRcaEvidence(modelBuilder);
         ConfigureRcaFact(modelBuilder);
         ConfigureRcaExternalIntakeRequest(modelBuilder);
+        ConfigureRcaAuditRecord(modelBuilder);
     }
 
     private static void ConfigureRcaIncident(ModelBuilder modelBuilder)
@@ -260,6 +263,24 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.ShiftCode, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.AlarmCode });
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.ExternalSourceSystem, x.ExternalEventId }).IsUnique();
+    }
+
+    private static void ConfigureRcaAuditRecord(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaAuditRecord>();
+
+        entity.ToTable("rca_audit_records");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.EntityType).HasMaxLength(80).IsRequired();
+        entity.Property(x => x.Action).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.UserId).HasMaxLength(160);
+        entity.Property(x => x.Summary).HasMaxLength(1000).IsRequired();
+        entity.Property(x => x.DataJson).HasColumnType("json");
+
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.OccurredAt });
+        entity.HasIndex(x => new { x.TenantId, x.EntityType, x.EntityId });
+        entity.HasIndex(x => new { x.TenantId, x.Action, x.OccurredAt });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

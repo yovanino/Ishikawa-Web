@@ -2,7 +2,9 @@ using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Web.Models.Rca;
+using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IshikawaRca.Web.Controllers.Api;
@@ -13,11 +15,16 @@ public class RcaIncidentsController : ControllerBase
 {
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IEvidenceFileStorage _evidenceFileStorage;
+    private readonly ICurrentRcaUserContext _currentUserContext;
 
-    public RcaIncidentsController(IRcaIncidentService rcaIncidentService, IEvidenceFileStorage evidenceFileStorage)
+    public RcaIncidentsController(
+        IRcaIncidentService rcaIncidentService,
+        IEvidenceFileStorage evidenceFileStorage,
+        ICurrentRcaUserContext currentUserContext)
     {
         _rcaIncidentService = rcaIncidentService;
         _evidenceFileStorage = evidenceFileStorage;
+        _currentUserContext = currentUserContext;
     }
 
     [HttpPost]
@@ -25,6 +32,15 @@ public class RcaIncidentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResult<RcaIncidentDto>>> Create(CreateRcaIncidentRequest request, CancellationToken cancellationToken)
     {
+        if (request.TenantId == Guid.Empty)
+        {
+            request.TenantId = _currentUserContext.TenantId;
+        }
+
+        request.ReportedBy = string.IsNullOrWhiteSpace(request.ReportedBy)
+            ? _currentUserContext.UserId
+            : request.ReportedBy;
+
         var result = await _rcaIncidentService.CreateAsync(request, cancellationToken);
         if (!result.Success || result.Data is null)
         {
@@ -118,11 +134,16 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/actions/{actionId:guid}/status")]
+    [Authorize(Roles = RcaRoleNames.SensitiveOperations)]
     [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResult<CorrectiveActionDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<CorrectiveActionDto>>> UpdateCorrectiveActionStatus(Guid id, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken)
     {
+        request.CompletedByUserId = string.IsNullOrWhiteSpace(request.CompletedByUserId)
+            ? _currentUserContext.UserId
+            : request.CompletedByUserId;
+
         var result = await _rcaIncidentService.UpdateCorrectiveActionStatusAsync(id, actionId, request, cancellationToken);
         if (!result.Success || result.Data is null)
         {
@@ -262,6 +283,7 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/evidence/{evidenceId:guid}")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status404NotFound)]
@@ -271,6 +293,10 @@ public class RcaIncidentsController : ControllerBase
         UpdateRcaEvidenceRequest request,
         CancellationToken cancellationToken)
     {
+        request.ValidatedByUserId = string.IsNullOrWhiteSpace(request.ValidatedByUserId)
+            ? _currentUserContext.UserId
+            : request.ValidatedByUserId;
+
         var result = await _rcaIncidentService.UpdateEvidenceAsync(id, evidenceId, request, cancellationToken);
         if (!result.Success)
         {
@@ -283,6 +309,7 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/evidence/{evidenceId:guid}/attachment")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(104_857_600)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status200OK)]
@@ -337,7 +364,7 @@ public class RcaIncidentsController : ControllerBase
             AttachmentSha256 = attachment.Sha256
         };
 
-        var result = await _rcaIncidentService.ReplaceEvidenceAttachmentAsync(id, evidenceId, request, cancellationToken);
+        var result = await _rcaIncidentService.ReplaceEvidenceAttachmentAsync(id, evidenceId, request, _currentUserContext.UserId, cancellationToken);
         if (!result.Success)
         {
             _evidenceFileStorage.Delete(attachment.StorageKey);
@@ -353,6 +380,7 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}/evidence/{evidenceId:guid}")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaEvidenceDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<RcaEvidenceDto>>> DeleteEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
@@ -371,7 +399,7 @@ public class RcaIncidentsController : ControllerBase
                 new ApiError { Field = nameof(evidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia no corresponde al incidente RCA." }));
         }
 
-        var result = await _rcaIncidentService.DeleteEvidenceAsync(id, evidenceId, cancellationToken);
+        var result = await _rcaIncidentService.DeleteEvidenceAsync(id, evidenceId, _currentUserContext.UserId, cancellationToken);
         if (!result.Success)
         {
             return NotFound(result);
@@ -415,11 +443,16 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/close")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<RcaIncidentDto>>> Close(Guid id, CloseRcaIncidentRequest request, CancellationToken cancellationToken)
     {
+        request.ClosedByUserId = string.IsNullOrWhiteSpace(request.ClosedByUserId)
+            ? _currentUserContext.UserId
+            : request.ClosedByUserId;
+
         var result = await _rcaIncidentService.CloseAsync(id, request, cancellationToken);
         if (!result.Success || result.Data is null)
         {
@@ -432,11 +465,16 @@ public class RcaIncidentsController : ControllerBase
     }
 
     [HttpPost("{id:guid}/escalate-8d")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResult<RcaIncidentDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<RcaIncidentDto>>> EscalateTo8D(Guid id, EscalateRcaIncidentTo8DRequest request, CancellationToken cancellationToken)
     {
+        request.EscalatedByUserId = string.IsNullOrWhiteSpace(request.EscalatedByUserId)
+            ? _currentUserContext.UserId
+            : request.EscalatedByUserId;
+
         var result = await _rcaIncidentService.EscalateTo8DAsync(id, request, cancellationToken);
         if (!result.Success || result.Data is null)
         {

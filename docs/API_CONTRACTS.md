@@ -22,6 +22,31 @@ public class ApiError
 }
 ```
 
+## Seguridad y Tenant
+
+El modulo usa una autenticacion standalone configurable hasta que exista
+Identity global. En esta etapa, el backend puede resolver tenant y usuario
+desde `RcaSecurity` y, solo si `AllowHeaderOverrides = true`, desde headers de
+desarrollo:
+
+```http
+X-RCA-TenantId: 11111111-1111-1111-1111-111111111111
+X-RCA-UserId: calidad.dev
+X-RCA-Roles: Quality,Supervisor
+```
+
+Los endpoints que crean incidentes pueden recibir `tenantId` como antes. Si no
+se informa, el backend usa el tenant del contexto autenticado/configurado.
+Operaciones sensibles requieren roles internos:
+
+- Cierre RCA y escalamiento 8D: `Quality`, `Supervisor` o `Administrator`.
+- Validacion/edicion sensible de evidencias, reemplazo y eliminacion de
+  adjuntos: `Quality`, `Supervisor` o `Administrator`.
+- Cambios de estado de acciones: `Supervisor`, `Quality`, `Maintenance` o
+  `Administrator`.
+
+El intake externo por token sigue separado del acceso completo al modulo.
+
 ## APIs Iniciales
 
 ```http

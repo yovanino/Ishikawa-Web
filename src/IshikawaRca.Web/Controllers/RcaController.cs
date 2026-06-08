@@ -1,7 +1,9 @@
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Web.Models.Rca;
+using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -9,22 +11,24 @@ namespace IshikawaRca.Web.Controllers;
 
 public class RcaController : Controller
 {
-    private static readonly Guid DemoTenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaExternalIntakeService _externalIntakeService;
     private readonly IEvidenceFileStorage _evidenceFileStorage;
     private readonly IRcaPdfReportService _pdfReportService;
+    private readonly ICurrentRcaUserContext _currentUserContext;
 
     public RcaController(
         IRcaIncidentService rcaIncidentService,
         IRcaExternalIntakeService externalIntakeService,
         IEvidenceFileStorage evidenceFileStorage,
-        IRcaPdfReportService pdfReportService)
+        IRcaPdfReportService pdfReportService,
+        ICurrentRcaUserContext currentUserContext)
     {
         _rcaIncidentService = rcaIncidentService;
         _externalIntakeService = externalIntakeService;
         _evidenceFileStorage = evidenceFileStorage;
         _pdfReportService = pdfReportService;
+        _currentUserContext = currentUserContext;
     }
 
     [HttpGet]
@@ -57,7 +61,7 @@ public class RcaController : Controller
 
         var request = new CreateRcaIncidentRequest
         {
-            TenantId = DemoTenantId,
+            TenantId = _currentUserContext.TenantId,
             Title = model.Title,
             ProblemDescription = model.ProblemDescription,
             Severity = model.Severity,
@@ -68,7 +72,7 @@ public class RcaController : Controller
             MachineCode = model.MachineCode,
             LineCode = model.LineCode,
             WorkOrderCode = model.WorkOrderCode,
-            ReportedBy = model.ReportedBy
+            ReportedBy = string.IsNullOrWhiteSpace(model.ReportedBy) ? _currentUserContext.UserId : model.ReportedBy
         };
 
         var result = await _rcaIncidentService.CreateAsync(request, cancellationToken);
@@ -177,6 +181,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.SensitiveOperations)]
     public async Task<IActionResult> UpdateActionStatus(Guid id, UpdateCorrectiveActionStatusViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -188,7 +193,7 @@ public class RcaController : Controller
         var request = new UpdateCorrectiveActionStatusRequest
         {
             Status = model.Status,
-            CompletedByUserId = model.CompletedByUserId,
+            CompletedByUserId = string.IsNullOrWhiteSpace(model.CompletedByUserId) ? _currentUserContext.UserId : model.CompletedByUserId,
             ValidationNotes = model.ValidationNotes
         };
 
@@ -287,6 +292,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> UpdateEvidence(Guid id, [Bind(Prefix = "EvidenceEdit")] UpdateRcaEvidenceViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -309,7 +315,7 @@ public class RcaController : Controller
             CapturedByUserId = model.CapturedByUserId,
             ValidationStatus = model.ValidationStatus,
             ValidatedAt = model.ValidatedAt,
-            ValidatedByUserId = model.ValidatedByUserId,
+            ValidatedByUserId = string.IsNullOrWhiteSpace(model.ValidatedByUserId) ? _currentUserContext.UserId : model.ValidatedByUserId,
             ValidationNotes = model.ValidationNotes
         };
 
@@ -323,6 +329,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     [RequestSizeLimit(104_857_600)]
     public async Task<IActionResult> ReplaceEvidenceAttachment(Guid id, [Bind(Prefix = "EvidenceAttachment")] ReplaceRcaEvidenceAttachmentViewModel model, CancellationToken cancellationToken)
     {
@@ -359,7 +366,7 @@ public class RcaController : Controller
             AttachmentSha256 = attachment.Sha256
         };
 
-        var result = await _rcaIncidentService.ReplaceEvidenceAttachmentAsync(id, model.EvidenceId, request, cancellationToken);
+        var result = await _rcaIncidentService.ReplaceEvidenceAttachmentAsync(id, model.EvidenceId, request, _currentUserContext.UserId, cancellationToken);
         if (result.Success)
         {
             _evidenceFileStorage.Delete(existingEvidence.AttachmentStorageKey);
@@ -378,6 +385,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> DeleteEvidence(Guid id, Guid evidenceId, CancellationToken cancellationToken)
     {
         var existingEvidence = await FindEvidenceAsync(id, evidenceId, cancellationToken);
@@ -386,7 +394,7 @@ public class RcaController : Controller
             return NotFound();
         }
 
-        var result = await _rcaIncidentService.DeleteEvidenceAsync(id, evidenceId, cancellationToken);
+        var result = await _rcaIncidentService.DeleteEvidenceAsync(id, evidenceId, _currentUserContext.UserId, cancellationToken);
         if (result.Success)
         {
             _evidenceFileStorage.Delete(existingEvidence.AttachmentStorageKey);
@@ -544,6 +552,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> Close(Guid id, [Bind(Prefix = "CloseForm")] CloseRcaIncidentViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -560,7 +569,7 @@ public class RcaController : Controller
 
         var request = new CloseRcaIncidentRequest
         {
-            ClosedByUserId = model.ClosedByUserId,
+            ClosedByUserId = string.IsNullOrWhiteSpace(model.ClosedByUserId) ? _currentUserContext.UserId : model.ClosedByUserId,
             ClosureSummary = model.ClosureSummary
         };
 
@@ -574,6 +583,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> EscalateTo8D(Guid id, [Bind(Prefix = "EscalateForm")] EscalateRcaIncidentTo8DViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -590,7 +600,7 @@ public class RcaController : Controller
 
         var request = new EscalateRcaIncidentTo8DRequest
         {
-            EscalatedByUserId = model.EscalatedByUserId,
+            EscalatedByUserId = string.IsNullOrWhiteSpace(model.EscalatedByUserId) ? _currentUserContext.UserId : model.EscalatedByUserId,
             EscalationReason = model.EscalationReason
         };
 
@@ -635,6 +645,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> CreateExternalIntake(Guid id, [Bind(Prefix = "ExternalIntake")] CreateExternalIntakeViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -685,9 +696,10 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> RevokeExternalIntake(Guid id, Guid intakeId, CancellationToken cancellationToken)
     {
-        var result = await _externalIntakeService.RevokeAsync(intakeId, cancellationToken);
+        var result = await _externalIntakeService.RevokeAsync(intakeId, _currentUserContext.UserId, cancellationToken);
         TempData["StatusMessage"] = result.Success ? "Link externo revocado." : "No se pudo revocar el link externo.";
 
         return RedirectToAction(nameof(Details), new { id });
@@ -695,6 +707,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> ReviewExternalIntake(
         Guid id,
         Guid intakeId,
@@ -711,7 +724,7 @@ public class RcaController : Controller
             ImportCause = importCause,
             MarkCauseAsRoot = markCauseAsRoot,
             ImportCorrectiveAction = importCorrectiveAction,
-            ReviewedByUserId = reviewedByUserId
+            ReviewedByUserId = string.IsNullOrWhiteSpace(reviewedByUserId) ? _currentUserContext.UserId : reviewedByUserId
         };
 
         var result = await _externalIntakeService.ReviewAsync(intakeId, request, cancellationToken);
@@ -724,6 +737,7 @@ public class RcaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
     public async Task<IActionResult> RejectExternalIntake(
         Guid id,
         Guid intakeId,
@@ -734,7 +748,7 @@ public class RcaController : Controller
         var request = new RejectExternalIntakeRequest
         {
             RejectionReason = rejectionReason,
-            RejectedByUserId = rejectedByUserId
+            RejectedByUserId = string.IsNullOrWhiteSpace(rejectedByUserId) ? _currentUserContext.UserId : rejectedByUserId
         };
 
         var result = await _externalIntakeService.RejectAsync(intakeId, request, cancellationToken);

@@ -6,6 +6,7 @@ using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
 using IshikawaRca.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace IshikawaRca.Infrastructure.Services;
 
@@ -299,6 +300,7 @@ public class EfRcaIncidentService : IRcaIncidentService
 
         var status = ParseCorrectiveActionStatus(request.Status);
         var now = DateTimeOffset.UtcNow;
+        var previousStatus = action.Status;
 
         action.Status = status;
         action.ValidationNotes = Normalize(request.ValidationNotes);
@@ -315,6 +317,22 @@ public class EfRcaIncidentService : IRcaIncidentService
             action.CompletedAt = null;
             action.CompletedByUserId = null;
         }
+
+        AddAuditRecord(
+            action.TenantId,
+            incidentId,
+            nameof(CorrectiveAction),
+            action.Id,
+            "CorrectiveActionStatusChanged",
+            action.UpdatedByUserId,
+            $"Estado de accion cambiado de {previousStatus} a {status}.",
+            new
+            {
+                previousStatus = previousStatus.ToString(),
+                newStatus = status.ToString(),
+                action.CompletedByUserId,
+                action.ValidationNotes
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -454,6 +472,9 @@ public class EfRcaIncidentService : IRcaIncidentService
             }
         }
 
+        var previousValidationStatus = evidence.ValidationStatus;
+        var previousValidatedByUserId = evidence.ValidatedByUserId;
+
         evidence.CauseId = request.CauseId;
         evidence.Title = request.Title.Trim();
         evidence.EvidenceType = Normalize(request.EvidenceType) ?? "Observation";
@@ -469,13 +490,31 @@ public class EfRcaIncidentService : IRcaIncidentService
         evidence.ValidatedByUserId = Normalize(request.ValidatedByUserId);
         evidence.ValidationNotes = Normalize(request.ValidationNotes);
         evidence.UpdatedAt = DateTimeOffset.UtcNow;
+        evidence.UpdatedByUserId = evidence.ValidatedByUserId;
+
+        AddAuditRecord(
+            evidence.TenantId,
+            incidentId,
+            nameof(RcaEvidence),
+            evidence.Id,
+            "RcaEvidenceUpdated",
+            evidence.UpdatedByUserId,
+            $"Evidencia actualizada: {evidence.Title}.",
+            new
+            {
+                previousValidationStatus,
+                newValidationStatus = evidence.ValidationStatus,
+                previousValidatedByUserId,
+                evidence.ValidatedByUserId,
+                evidence.ValidatedAt
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia actualizada.");
     }
 
-    public async Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, string? replacedByUserId = null, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateReplaceEvidenceAttachmentRequest(request);
         if (validationErrors.Count > 0)
@@ -493,6 +532,9 @@ public class EfRcaIncidentService : IRcaIncidentService
                 new ApiError { Field = nameof(evidenceId), Code = "EVIDENCE_NOT_FOUND", Message = "La evidencia no corresponde al incidente RCA." });
         }
 
+        var previousAttachmentFileName = evidence.AttachmentFileName;
+        var previousAttachmentSha256 = evidence.AttachmentSha256;
+
         evidence.AttachmentFileName = Normalize(request.AttachmentFileName);
         evidence.AttachmentContentType = Normalize(request.AttachmentContentType);
         evidence.AttachmentSizeBytes = request.AttachmentSizeBytes;
@@ -500,13 +542,30 @@ public class EfRcaIncidentService : IRcaIncidentService
         evidence.AttachmentStorageKey = Normalize(request.AttachmentStorageKey);
         evidence.AttachmentSha256 = Normalize(request.AttachmentSha256);
         evidence.UpdatedAt = DateTimeOffset.UtcNow;
+        evidence.UpdatedByUserId = Normalize(replacedByUserId);
+
+        AddAuditRecord(
+            evidence.TenantId,
+            incidentId,
+            nameof(RcaEvidence),
+            evidence.Id,
+            "RcaEvidenceAttachmentReplaced",
+            evidence.UpdatedByUserId,
+            $"Adjunto de evidencia reemplazado: {evidence.Title}.",
+            new
+            {
+                previousAttachmentFileName,
+                previousAttachmentSha256,
+                newAttachmentFileName = evidence.AttachmentFileName,
+                newAttachmentSha256 = evidence.AttachmentSha256
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Adjunto reemplazado.");
     }
 
-    public async Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, string? deletedByUserId = null, CancellationToken cancellationToken = default)
     {
         var evidence = await _dbContext.RcaEvidence
             .FirstOrDefaultAsync(x => x.Id == evidenceId && x.RcaIncidentId == incidentId && !x.IsDeleted, cancellationToken);
@@ -520,6 +579,22 @@ public class EfRcaIncidentService : IRcaIncidentService
 
         evidence.IsDeleted = true;
         evidence.UpdatedAt = DateTimeOffset.UtcNow;
+        evidence.UpdatedByUserId = Normalize(deletedByUserId);
+
+        AddAuditRecord(
+            evidence.TenantId,
+            incidentId,
+            nameof(RcaEvidence),
+            evidence.Id,
+            "RcaEvidenceDeleted",
+            evidence.UpdatedByUserId,
+            $"Evidencia eliminada: {evidence.Title}.",
+            new
+            {
+                evidence.Title,
+                evidence.AttachmentFileName,
+                evidence.AttachmentSha256
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -751,6 +826,21 @@ public class EfRcaIncidentService : IRcaIncidentService
         incident.UpdatedAt = now;
         incident.UpdatedByUserId = Normalize(request.ClosedByUserId);
 
+        AddAuditRecord(
+            incident.TenantId,
+            incident.Id,
+            nameof(RcaIncident),
+            incident.Id,
+            "RcaClosed",
+            incident.ClosedByUserId,
+            "Incidente RCA cerrado formalmente.",
+            new
+            {
+                incident.ClosedAt,
+                incident.ClosedByUserId,
+                incident.ClosureSummary
+            });
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA cerrado.");
@@ -789,6 +879,21 @@ public class EfRcaIncidentService : IRcaIncidentService
         incident.Status = RcaIncidentStatus.EscalatedTo8D;
         incident.UpdatedAt = now;
         incident.UpdatedByUserId = Normalize(request.EscalatedByUserId);
+
+        AddAuditRecord(
+            incident.TenantId,
+            incident.Id,
+            nameof(RcaIncident),
+            incident.Id,
+            "RcaEscalatedTo8D",
+            incident.EscalatedTo8DByUserId,
+            "Incidente RCA escalado formalmente a 8D.",
+            new
+            {
+                incident.EscalatedTo8DAt,
+                incident.EscalatedTo8DByUserId,
+                incident.EscalationReason
+            });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -1634,6 +1739,30 @@ public class EfRcaIncidentService : IRcaIncidentService
                 Order = i + 1
             });
         }
+    }
+
+    private void AddAuditRecord(
+        Guid tenantId,
+        Guid incidentId,
+        string entityType,
+        Guid entityId,
+        string action,
+        string? userId,
+        string summary,
+        object? data)
+    {
+        _dbContext.RcaAuditRecords.Add(new RcaAuditRecord
+        {
+            TenantId = tenantId,
+            RcaIncidentId = incidentId,
+            EntityType = entityType,
+            EntityId = entityId,
+            Action = action,
+            UserId = Normalize(userId),
+            OccurredAt = DateTimeOffset.UtcNow,
+            Summary = summary,
+            DataJson = data is null ? null : JsonSerializer.Serialize(data)
+        });
     }
 
     private static RcaIncidentDto ToDto(RcaIncident incident)

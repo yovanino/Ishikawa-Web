@@ -374,7 +374,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia actualizada."));
     }
 
-    public Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, CancellationToken cancellationToken = default)
+    public Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, string? replacedByUserId = null, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateReplaceEvidenceAttachmentRequest(request);
         if (validationErrors.Count > 0)
@@ -408,7 +408,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         return Task.FromResult(ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Adjunto reemplazado."));
     }
 
-    public Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, CancellationToken cancellationToken = default)
+    public Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, string? deletedByUserId = null, CancellationToken cancellationToken = default)
     {
         if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
         {

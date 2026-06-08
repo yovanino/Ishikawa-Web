@@ -1,5 +1,66 @@
 # Validation Log
 
+## 2026-06-08 - Backend standalone auth context
+
+Scope: validate the first P0 backend security increment.
+
+Checks:
+
+- Added standalone authentication configuration through `RcaSecurity`.
+- Added current RCA user context for tenant/user resolution.
+- Replaced MVC hardcoded `DemoTenantId` with configured/authenticated tenant.
+- Added role protection for sensitive MVC/API operations: action status,
+  evidence validation/update, evidence attachment replacement/deletion, RCA
+  closure, 8D escalation and internal external-intake management.
+- API incident creation now uses the authenticated/configured tenant when the
+  request omits `tenantId`.
+- Build passed with 0 errors.
+- Lightweight tests passed.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln`: passed with 0 errors and 4 `NU1900`
+  warnings because package vulnerability metadata could not be fetched from
+  `https://api.nuget.org/v3/index.json` in the restricted environment.
+- `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
+  passed.
+
+Result: passed.
+
+## 2026-06-08 - Backend sensitive operation audit records
+
+Scope: validate the first P0 backend audit increment.
+
+Checks:
+
+- Added domain entity `RcaAuditRecord`.
+- Added EF mapping and `RcaDbContext.RcaAuditRecords`.
+- Generated EF migration `AddRcaAuditRecords` with table
+  `rca_audit_records` and indexes by tenant/incident/time, entity and action.
+- Added audit writes for corrective action status changes.
+- Added audit writes for evidence update, attachment replacement and logical
+  deletion.
+- Added audit writes for RCA closure and 8D escalation.
+- Added audit writes for internal external-intake review, rejection and
+  revocation.
+
+Validation:
+
+- `dotnet ef migrations add AddRcaAuditRecords --project
+  src/IshikawaRca.Infrastructure/IshikawaRca.Infrastructure.csproj
+  --startup-project src/IshikawaRca.Web/IshikawaRca.Web.csproj`: passed.
+- `dotnet build IshikawaRca.sln`: passed with 0 errors and 4 `NU1900`
+  warnings because package vulnerability metadata could not be fetched from
+  `https://api.nuget.org/v3/index.json` in the restricted environment.
+- `dotnet run --project tests/IshikawaRca.Tests/IshikawaRca.Tests.csproj`:
+  passed.
+
+Database:
+
+- Migration generated but not applied in this turn.
+
+Result: code/build/tests passed; database application pending.
+
 ## 2026-06-06 - RCA external fact API correlation
 
 Scope: validate 3E, external module fact ingestion through the existing RCA fact API.
