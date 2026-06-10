@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-10 - P0 backend status documentation
+
+Scope: align current project status with the validated backend P0 increments.
+
+Checks:
+
+- Updated `docs/STATUS_AND_NEXT_STEPS.md` to include completed standalone auth,
+  tenant context, roles, initial audit, API error normalization, attachment
+  hardening and local smoke coverage.
+- Updated immediate technical pending items to focus on Identity/tenant
+  integration, formal tests, audit consumers, storage policy and future
+  platform integrations.
+
+Validation:
+
+- Documentation-only change; based on validated commits and smoke runs already
+  recorded in this log.
+
+Result: passed.
+
 ## 2026-06-10 - API model validation smoke
 
 Scope: make automatic API model-state errors repeatable in local validation.

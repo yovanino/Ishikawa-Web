@@ -85,6 +85,8 @@ standalone.
   `externalEventId` y validacion de correlacion incompleta.
 - Aclarada la guia local: runtime/smokes usan `ConnectionStrings__IshikawaRca`;
   `ISHIKAWA_RCA_CONNECTION` queda para EF design-time.
+- Actualizado `docs/STATUS_AND_NEXT_STEPS.md` para reflejar el estado P0
+  alcanzado y los pendientes inmediatos vigentes.
 
 ## Pendientes
 
@@ -175,6 +177,8 @@ standalone.
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; incluye smoke API de model validation con
   `MODEL_VALIDATION_ERROR` y `correlationId`.
+- `docs/STATUS_AND_NEXT_STEPS.md` alineado con P0 actual: auth/tenant/roles,
+  auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
 
 ## Ultimo Cierre
 
@@ -184,5 +188,5 @@ standalone.
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
   local, smoke repetible para errores API de modelo y autorizacion, smoke de
-  facts externos y aclaracion de configuracion local.
-- Commit sugerido: `test(api): add model validation smoke`.
+  facts externos, aclaracion de configuracion local y estado P0 actualizado.
+- Commit sugerido: `docs(status): update p0 backend state`.

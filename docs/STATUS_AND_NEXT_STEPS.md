@@ -63,22 +63,41 @@ Fecha de corte: 2026-06-04.
    - Cliente AI Gateway abstracto.
    - Implementacion stub local para probar sin IA real.
 
+6. Endurecimiento P0 standalone
+   - Autenticacion/autorizacion standalone configurable.
+   - Tenant configurable desde contexto autenticado/configurado.
+   - Roles base para operaciones sensibles.
+   - Auditoria inicial persistida para cierre, escalamiento 8D, acciones,
+     evidencias e intake externo interno.
+   - Errores API normalizados con `ApiResult` para validaciones, 401/403 y
+     excepciones no controladas bajo `/api`.
+   - Hardening inicial de adjuntos con limite configurable y validacion de ruta
+     dentro del storage root.
+   - Smoke local API + DB con flujo critico de cierre, evidencias, acciones,
+     escalamiento 8D, cierre, eventos, IA stub, errores API y facts externos.
+
 ## Pendientes Tecnicos Inmediatos
 
-- Agregar autenticacion/autorizacion cuando se defina Identity global.
-- Agregar tenant real en lugar del tenant demo usado por la UI.
-- Agregar tests automatizados cuando el flujo se estabilice.
+- Definir integracion futura con Identity global y tenant corporativo real.
+- Agregar suite formal de tests unitarios/integracion sobre la base de smokes
+  y pruebas livianas actuales.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
-- Separar auditoria fina de aprobacion/rechazo, historial completo de cambios de estado y adjuntos reales.
+- Extender consulta/UI/API de auditoria fina y reportes cuando se defina el
+  consumidor.
 - Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
 - Evaluar storage documental productivo para evidencias y exportaciones generadas.
-- Crear smoke automatizado API para ingreso de hechos externos cuando se estabilice el entorno de ejecucion local.
+- Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
+  defina politica documental productiva.
+- Mantener `run-local-validation.ps1 -Build` como validacion P0 por corte
+  backend significativo.
 
 ## Siguiente Corte Recomendado
 
 El proximo paso natural es elegir uno de estos dos caminos:
 
-- Endurecimiento tecnico: tests automatizados, manejo de errores, tenant/auth, permisos y roles.
+- Endurecimiento tecnico: suite formal de tests, auditoria consultable,
+  permisos productivos refinados e integracion futura con Identity/tenant
+  corporativo.
 - Workflow RCA avanzado: CAPA, auditoria ampliada, aprobaciones, versionado PDF y adjuntos externos.
