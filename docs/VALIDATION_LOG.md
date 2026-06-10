@@ -8,7 +8,8 @@ Scope: validate that local smoke/build scripts fail fast when the required
 Checks:
 
 - Added `scripts/check-dotnet-sdk.ps1` to read `global.json` and verify a
-  registered matching .NET SDK.
+  registered matching .NET SDK, accepting patch-compatible SDKs in the same
+  feature band.
 - Added `-Build` to `scripts/run-local-validation.ps1` and pass-through to
   `start-web.ps1`.
 - `scripts/start-web.ps1` now checks SDK availability before build, and before
@@ -24,9 +25,13 @@ Validation:
   .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
   -StartupTimeoutSeconds 5 -RequestTimeoutSeconds 5 -ShutdownTimeoutSeconds 5`:
   failed fast through the same preflight and reported no PID file to stop.
+- After installing `Microsoft.DotNet.SDK.10` version `10.0.301`,
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\check-dotnet-sdk.ps1`: passed with compatible SDK for
+  `global.json` `10.0.300`.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
 
-Result: passed for the SDK-preflight behavior; full build/smoke remains blocked
-until SDK `10.0.300` is installed or `global.json` is aligned.
+Result: passed.
 
 ## 2026-06-10 - API authorization error normalization
 
@@ -44,17 +49,23 @@ Checks:
 
 Validation:
 
-- `dotnet build IshikawaRca.sln /m:1`: blocked because the local `dotnet`
-  host reports no installed SDKs and `global.json` requests SDK `10.0.300`.
-- `dotnet --info`: blocked for build purposes; only .NET runtimes are
-  registered, no SDKs.
-- Visual Studio MSBuild fallback: blocked because `Microsoft.NET.Sdk` and
-  `Microsoft.NET.Sdk.Web` cannot be resolved without a registered SDK.
-- Static diff/reference review completed for the new authorization handler,
-  DI registration and API contract documentation.
+- Initial build attempts were blocked because the local `dotnet` host had no
+  SDK registered and `global.json` requests SDK `10.0.300`.
+- After installing `Microsoft.DotNet.SDK.10` version `10.0.301`,
+  `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed when `ConnectionStrings__IshikawaRca` was supplied from local
+  development configuration with `AllowPublicKeyRetrieval=True`.
+- Targeted API authorization check against
+  `POST /api/v1/rca/incidents/{id}/close`: passed for HTTP 403 with
+  `FORBIDDEN` using insufficient role `Operator`, and HTTP 401 with
+  `AUTHENTICATION_REQUIRED` using an invalid tenant header.
 
-Result: code change prepared; runtime/build validation blocked by missing local
-.NET SDK.
+Result: passed.
 
 ## 2026-06-08 - Backend standalone auth context
 

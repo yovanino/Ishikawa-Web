@@ -3,7 +3,7 @@ using IshikawaRca.Web.Api;
 using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);

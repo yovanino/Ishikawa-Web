@@ -126,6 +126,8 @@ standalone.
   MSBuild quedaron bloqueados porque el entorno local no tiene SDK .NET
   registrado; `dotnet --info` lista runtimes, pero no SDKs. Se completo
   revision estatica de diff/referencias.
+- Instalado `Microsoft.DotNet.SDK.10` version `10.0.301` mediante `winget` para
+  satisfacer `global.json` `10.0.300` por patch compatible.
 - `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
   .\scripts\check-dotnet-sdk.ps1`: falla rapido con mensaje claro porque no hay
   SDKs registrados y `global.json` pide `10.0.300`.
@@ -133,6 +135,17 @@ standalone.
   .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
   -StartupTimeoutSeconds 5 -RequestTimeoutSeconds 5 -ShutdownTimeoutSeconds 5`:
   falla rapido por el mismo preflight y no deja proceso web vivo.
+- `dotnet build IshikawaRca.sln /m:1`: correcto, 0 warnings y 0 errores.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  correcto.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto usando `ConnectionStrings__IshikawaRca` local con
+  `AllowPublicKeyRetrieval=True`.
+- Validado contrato 401/403 en
+  `POST /api/v1/rca/incidents/{id}/close`: rol `Operator` devuelve
+  `FORBIDDEN`; tenant invalido devuelve `AUTHENTICATION_REQUIRED`.
 
 ## Ultimo Cierre
 

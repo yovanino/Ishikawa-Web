@@ -31,8 +31,27 @@ if ($installedSdks.Count -eq 0) {
     throw "No .NET SDKs are registered. Install SDK $requiredSdk or update global.json to an installed SDK."
 }
 
-if ($requiredSdk -and ($installedSdks -notcontains $requiredSdk)) {
-    throw "Required .NET SDK $requiredSdk was not found. Installed SDKs: $($installedSdks -join ', ')."
+if ($requiredSdk) {
+    $requiredVersion = [version]$requiredSdk
+    $requiredFeatureBand = $requiredVersion.Build - ($requiredVersion.Build % 100)
+    $hasCompatibleSdk = $false
+
+    foreach ($installedSdk in $installedSdks) {
+        $installedVersion = [version]$installedSdk
+        $installedFeatureBand = $installedVersion.Build - ($installedVersion.Build % 100)
+
+        if ($installedVersion.Major -eq $requiredVersion.Major `
+                -and $installedVersion.Minor -eq $requiredVersion.Minor `
+                -and $installedFeatureBand -eq $requiredFeatureBand `
+                -and $installedVersion -ge $requiredVersion) {
+            $hasCompatibleSdk = $true
+            break
+        }
+    }
+
+    if (-not $hasCompatibleSdk) {
+        throw "Required .NET SDK $requiredSdk compatible feature band was not found. Installed SDKs: $($installedSdks -join ', ')."
+    }
 }
 
-Write-Host "Found required .NET SDK $requiredSdk."
+Write-Host "Found compatible .NET SDK for global.json $requiredSdk."

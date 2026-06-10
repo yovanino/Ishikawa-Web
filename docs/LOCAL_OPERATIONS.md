@@ -51,7 +51,9 @@ Si Visual Studio corta una request mientras EF esta abriendo MySQL, puede verse 
 
 ## Compilacion
 
-Validar primero que el SDK pedido por `global.json` este registrado:
+Validar primero que haya un SDK compatible con `global.json` registrado. El
+preflight acepta versiones patch superiores dentro del mismo feature band, por
+ejemplo `10.0.301` para `10.0.300`.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-dotnet-sdk.ps1
