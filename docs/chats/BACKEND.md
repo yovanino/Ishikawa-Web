@@ -78,6 +78,8 @@ standalone.
 - Agregado smoke repetible `scripts/smoke-api-auth-errors.ps1` para cubrir
   contrato 401/403 de endpoints API protegidos; `run-local-validation.ps1` lo
   ejecuta despues del smoke funcional DB.
+- Agregado smoke repetible `scripts/smoke-api-model-validation.ps1` para cubrir
+  `MODEL_VALIDATION_ERROR` y `correlationId` en errores de model binding API.
 - Agregado smoke repetible `scripts/smoke-external-facts.ps1` para cubrir
   ingestion de facts externos, idempotencia por `externalSourceSystem` +
   `externalEventId` y validacion de correlacion incompleta.
@@ -168,6 +170,11 @@ standalone.
 - `docs/LOCAL_OPERATIONS.md` actualizado para distinguir la variable runtime
   `ConnectionStrings__IshikawaRca` de `ISHIKAWA_RCA_CONNECTION` para EF
   design-time.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye smoke API de model validation con
+  `MODEL_VALIDATION_ERROR` y `correlationId`.
 
 ## Ultimo Cierre
 
@@ -176,6 +183,6 @@ standalone.
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
-  local, smoke repetible para errores API de autorizacion, smoke de facts
-  externos y aclaracion de configuracion local.
-- Commit sugerido: `docs(ops): clarify runtime connection string`.
+  local, smoke repetible para errores API de modelo y autorizacion, smoke de
+  facts externos y aclaracion de configuracion local.
+- Commit sugerido: `test(api): add model validation smoke`.

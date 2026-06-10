@@ -112,6 +112,15 @@ El script valida que operaciones API protegidas devuelvan `ApiResult` con
 HTTP 403 `FORBIDDEN` para rol insuficiente y HTTP 401
 `AUTHENTICATION_REQUIRED` para contexto de autenticacion invalido.
 
+Contrato de validacion de modelos API:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-api-model-validation.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
+```
+
+El script valida que errores de model binding devuelvan `ApiResult` con HTTP
+400, `MODEL_VALIDATION_ERROR` y `correlationId`.
+
 Hechos externos por API:
 
 ```powershell
@@ -130,9 +139,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 
 Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
 `-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
-smoke test funcional, valida errores API 401/403, facts externos e idempotencia
-y detiene el proceso aunque el test falle. Omitir `-Build` solo cuando se
-quiera probar un DLL ya compilado.
+smoke test funcional, valida errores API de modelo, 401/403, facts externos e
+idempotencia y detiene el proceso aunque el test falle. Omitir `-Build` solo
+cuando se quiera probar un DLL ya compilado.
 
 ## Timeouts Operativos
 

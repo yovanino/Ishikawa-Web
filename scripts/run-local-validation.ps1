@@ -18,6 +18,10 @@ try {
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
 
+    & (Join-Path $PSScriptRoot "smoke-api-model-validation.ps1") `
+        -BaseUrl $BaseUrl `
+        -RequestTimeoutSeconds $RequestTimeoutSeconds
+
     & (Join-Path $PSScriptRoot "smoke-api-auth-errors.ps1") `
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
