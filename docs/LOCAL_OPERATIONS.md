@@ -31,10 +31,16 @@ Crear `src/IshikawaRca.Web/appsettings.Local.json` o usar variable de entorno. E
 
 `EvidenceStorage:RootPath` define el repositorio fisico de adjuntos de evidencia. Puede ser relativo al proyecto Web, como `App_Data`, o absoluto, como `D:\IndustrialOps\EvidenceRepository`. En produccion tambien puede configurarse con la variable de entorno `EvidenceStorage__RootPath`.
 
-Alternativa por terminal:
+Alternativa por terminal para levantar la app o ejecutar smokes:
 
 ```powershell
-$env:ISHIKAWA_RCA_CONNECTION="Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;"
+$env:ConnectionStrings__IshikawaRca="Server=localhost;Port=3306;Database=ishikawa_rca;User=<user>;Password=<password>;TreatTinyAsBoolean=true;SslMode=None;AllowPublicKeyRetrieval=True;Connection Timeout=5;Default Command Timeout=15;"
+```
+
+Para comandos EF design-time tambien se puede usar:
+
+```powershell
+$env:ISHIKAWA_RCA_CONNECTION=$env:ConnectionStrings__IshikawaRca
 ```
 
 ## Base de Datos

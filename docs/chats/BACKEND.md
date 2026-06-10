@@ -81,6 +81,8 @@ standalone.
 - Agregado smoke repetible `scripts/smoke-external-facts.ps1` para cubrir
   ingestion de facts externos, idempotencia por `externalSourceSystem` +
   `externalEventId` y validacion de correlacion incompleta.
+- Aclarada la guia local: runtime/smokes usan `ConnectionStrings__IshikawaRca`;
+  `ISHIKAWA_RCA_CONNECTION` queda para EF design-time.
 
 ## Pendientes
 
@@ -163,6 +165,9 @@ standalone.
   10`: correcto; incluye smoke de facts externos con idempotencia por
   `externalSourceSystem` + `externalEventId` y rechazo de correlacion
   incompleta.
+- `docs/LOCAL_OPERATIONS.md` actualizado para distinguir la variable runtime
+  `ConnectionStrings__IshikawaRca` de `ISHIKAWA_RCA_CONNECTION` para EF
+  design-time.
 
 ## Ultimo Cierre
 
@@ -171,6 +176,6 @@ standalone.
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
-  local, smoke repetible para errores API de autorizacion y smoke de facts
-  externos.
-- Commit sugerido: `test(api): add external facts smoke`.
+  local, smoke repetible para errores API de autorizacion, smoke de facts
+  externos y aclaracion de configuracion local.
+- Commit sugerido: `docs(ops): clarify runtime connection string`.

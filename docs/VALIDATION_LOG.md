@@ -1,5 +1,23 @@
 # Validation Log
 
+## 2026-06-10 - Runtime connection string documentation
+
+Scope: document the correct environment variables for runtime validation and
+EF design-time commands.
+
+Checks:
+
+- `ConnectionStrings__IshikawaRca` documented as the runtime/smoke connection
+  string override.
+- `ISHIKAWA_RCA_CONNECTION` documented as the EF design-time helper variable.
+
+Validation:
+
+- Documentation-only change based on the validated runtime command used by
+  local smoke tests.
+
+Result: passed.
+
 ## 2026-06-10 - External facts API smoke
 
 Scope: make external fact ingestion and idempotency repeatable in local
