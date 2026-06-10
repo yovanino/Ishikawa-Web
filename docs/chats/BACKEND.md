@@ -78,6 +78,9 @@ standalone.
 - Agregado smoke repetible `scripts/smoke-api-auth-errors.ps1` para cubrir
   contrato 401/403 de endpoints API protegidos; `run-local-validation.ps1` lo
   ejecuta despues del smoke funcional DB.
+- Agregado smoke repetible `scripts/smoke-external-facts.ps1` para cubrir
+  ingestion de facts externos, idempotencia por `externalSourceSystem` +
+  `externalEventId` y validacion de correlacion incompleta.
 
 ## Pendientes
 
@@ -154,6 +157,12 @@ standalone.
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; incluye smoke funcional API + DB y smoke API de errores
   401/403.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye smoke de facts externos con idempotencia por
+  `externalSourceSystem` + `externalEventId` y rechazo de correlacion
+  incompleta.
 
 ## Ultimo Cierre
 
@@ -162,5 +171,6 @@ standalone.
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
-  local y smoke repetible para errores API de autorizacion.
-- Commit sugerido: `test(api): add authorization error smoke`.
+  local, smoke repetible para errores API de autorizacion y smoke de facts
+  externos.
+- Commit sugerido: `test(api): add external facts smoke`.

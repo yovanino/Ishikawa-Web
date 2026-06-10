@@ -106,6 +106,16 @@ El script valida que operaciones API protegidas devuelvan `ApiResult` con
 HTTP 403 `FORBIDDEN` para rol insuficiente y HTTP 401
 `AUTHENTICATION_REQUIRED` para contexto de autenticacion invalido.
 
+Hechos externos por API:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-external-facts.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
+```
+
+El script crea un RCA minimo, registra un hecho externo con correlacion
+`externalSourceSystem` + `externalEventId`, valida idempotencia por reintento,
+lista facts y verifica rechazo `EXTERNAL_FACT_CORRELATION_INCOMPLETE`.
+
 Validacion local completa:
 
 ```powershell
@@ -114,8 +124,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 
 Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
 `-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
-smoke test funcional, valida errores API 401/403 y detiene el proceso aunque el
-test falle. Omitir `-Build` solo cuando se quiera probar un DLL ya compilado.
+smoke test funcional, valida errores API 401/403, facts externos e idempotencia
+y detiene el proceso aunque el test falle. Omitir `-Build` solo cuando se
+quiera probar un DLL ya compilado.
 
 ## Timeouts Operativos
 

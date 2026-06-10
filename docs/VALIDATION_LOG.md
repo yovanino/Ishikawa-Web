@@ -1,5 +1,37 @@
 # Validation Log
 
+## 2026-06-10 - External facts API smoke
+
+Scope: make external fact ingestion and idempotency repeatable in local
+validation.
+
+Checks:
+
+- Added `scripts/smoke-external-facts.ps1`.
+- The script creates a minimal RCA incident through `/api/v1/rca/incidents`.
+- The script records an external fact with `externalSourceSystem` and
+  `externalEventId`.
+- The script retries the same external fact and validates idempotency by
+  matching the returned fact id and message `Hecho externo existente.`.
+- The script verifies listing facts returns exactly one correlated event.
+- The script verifies incomplete external correlation is rejected with
+  `EXTERNAL_FACT_CORRELATION_INCOMPLETE`.
+- `scripts/run-local-validation.ps1` now runs the external-facts smoke after
+  the auth-error smoke.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed when `ConnectionStrings__IshikawaRca` was supplied from local
+  development configuration with `AllowPublicKeyRetrieval=True`.
+
+Result: passed.
+
 ## 2026-06-10 - API authorization error smoke
 
 Scope: make the API 401/403 authorization error contract repeatable in local
