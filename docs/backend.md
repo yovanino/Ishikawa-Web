@@ -76,6 +76,8 @@ El backend ya cuenta con:
 - Respuestas API consistentes con `ApiResult` para validaciones, errores 500 y
   fallas 401/403 de autenticacion/autorizacion.
 - Tabla `rca_audit_records` para auditoria inicial de operaciones sensibles.
+- Endpoint protegido `GET /api/v1/rca/incidents/{id}/audit` para consultar la
+  auditoria persistida de un RCA.
 
 ## Prioridad Backend P0
 
@@ -173,6 +175,8 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   model binding con `MODEL_VALIDATION_ERROR` y `correlationId`.
 - `scripts/smoke-evidence-attachment-validation.ps1` valida rechazo API de
   adjuntos de evidencia con extension no permitida.
+- `scripts/smoke-audit-records.ps1` valida la consulta protegida de auditoria
+  del incidente y queda incluido en `run-local-validation.ps1`.
 - `scripts/smoke-external-facts.ps1` valida ingestion de facts externos por API,
   idempotencia por sistema/evento y rechazo de correlacion incompleta.
 - Validado con `run-local-validation.ps1` contra DB local.

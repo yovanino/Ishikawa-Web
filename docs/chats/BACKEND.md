@@ -84,6 +84,10 @@ standalone.
   `MODEL_VALIDATION_ERROR` y `correlationId` en errores de model binding API.
 - Agregado smoke repetible `scripts/smoke-evidence-attachment-validation.ps1`
   para cubrir rechazo de adjuntos de evidencia con extension no permitida.
+- Agregado endpoint protegido `GET /api/v1/rca/incidents/{id}/audit` para
+  consultar registros de auditoria del RCA.
+- Agregado smoke repetible `scripts/smoke-audit-records.ps1` para validar que
+  operaciones sensibles escriben auditoria consultable.
 - Agregado smoke repetible `scripts/smoke-external-facts.ps1` para cubrir
   ingestion de facts externos, idempotencia por `externalSourceSystem` +
   `externalEventId` y validacion de correlacion incompleta.
@@ -200,6 +204,14 @@ standalone.
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; incluye descarga controlada con bytes, content-type y
   content-disposition.
+- `dotnet build IshikawaRca.sln /m:1`: correcto, 0 warnings y 0 errores, para
+  el ajuste de consulta de auditoria.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  correcto; incluye auditoria in-memory de cambio de estado de acciones.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye `smoke-audit-records.ps1`.
 - `docs/STATUS_AND_NEXT_STEPS.md` alineado con P0 actual: auth/tenant/roles,
   auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
 
@@ -211,7 +223,7 @@ standalone.
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
   local, smoke repetible para errores API de modelo y autorizacion, smoke de
-  adjuntos de evidencia, smoke de facts externos, aclaracion de configuracion
-  local, estado P0 actualizado y validacion estricta de descarga controlada
-  de adjuntos dentro del smoke funcional.
-- Commit sugerido: `test(api): verify evidence attachment download`.
+  adjuntos de evidencia, smoke de auditoria, smoke de facts externos,
+  aclaracion de configuracion local, estado P0 actualizado, validacion estricta
+  de descarga controlada de adjuntos y consulta protegida de auditoria.
+- Commit sugerido: `feat(api): expose incident audit records`.

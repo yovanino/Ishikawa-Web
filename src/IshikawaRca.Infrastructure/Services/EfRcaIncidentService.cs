@@ -753,6 +753,30 @@ public class EfRcaIncidentService : IRcaIncidentService
         return ApiResult<RcaFactDto>.Ok(ToFactDto(fact), "Hecho agregado a la linea RCA.");
     }
 
+    public async Task<ApiResult<IReadOnlyList<RcaAuditRecordDto>>> ListAuditRecordsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is null)
+        {
+            return ApiResult<IReadOnlyList<RcaAuditRecordDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." });
+        }
+
+        var records = await _dbContext.RcaAuditRecords
+            .AsNoTracking()
+            .Where(x => x.TenantId == incident.TenantId && x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .OrderByDescending(x => x.OccurredAt)
+            .ThenByDescending(x => x.CreatedAt)
+            .Select(x => ToAuditRecordDto(x))
+            .ToListAsync(cancellationToken);
+
+        return ApiResult<IReadOnlyList<RcaAuditRecordDto>>.Ok(records);
+    }
+
     public async Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
     {
         var validationErrors = ValidateCloseRequest(request);
@@ -1880,6 +1904,23 @@ public class EfRcaIncidentService : IRcaIncidentService
             ValidatedByUserId = evidence.ValidatedByUserId,
             ValidationNotes = evidence.ValidationNotes,
             CreatedAt = evidence.CreatedAt
+        };
+    }
+
+    private static RcaAuditRecordDto ToAuditRecordDto(RcaAuditRecord record)
+    {
+        return new RcaAuditRecordDto
+        {
+            Id = record.Id,
+            TenantId = record.TenantId,
+            RcaIncidentId = record.RcaIncidentId,
+            EntityType = record.EntityType,
+            EntityId = record.EntityId,
+            Action = record.Action,
+            UserId = record.UserId,
+            OccurredAt = record.OccurredAt,
+            Summary = record.Summary,
+            DataJson = record.DataJson
         };
     }
 

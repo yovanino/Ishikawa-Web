@@ -44,6 +44,7 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
+await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
 
@@ -119,6 +120,56 @@ static async Task AssertIncompleteExternalFactCorrelationFailsAsync()
     AssertContains(
         result.Errors.Select(x => x.Code).ToList(),
         "EXTERNAL_FACT_CORRELATION_INCOMPLETE");
+}
+
+static async Task AssertInMemoryAuditRecordsAsync()
+{
+    var service = new InMemoryRcaIncidentService();
+    var created = await service.CreateAsync(new CreateRcaIncidentRequest
+    {
+        TenantId = Guid.NewGuid(),
+        Title = "Audit records",
+        ProblemDescription = "Test RCA",
+        SourceSystem = "TEST",
+        ReportedBy = "tests"
+    });
+
+    if (created.Data is null)
+    {
+        throw new InvalidOperationException("Expected test incident to be created.");
+    }
+
+    var action = await service.AddCorrectiveActionAsync(created.Data.Id, new AddCorrectiveActionRequest
+    {
+        Title = "Audit action",
+        ActionType = "Corrective",
+        ResolutionScope = "RootCause"
+    });
+
+    if (action.Data is null)
+    {
+        throw new InvalidOperationException("Expected test action to be created.");
+    }
+
+    await service.UpdateCorrectiveActionStatusAsync(created.Data.Id, action.Data.Id, new UpdateCorrectiveActionStatusRequest
+    {
+        Status = "Completed",
+        CompletedByUserId = "quality",
+        ValidationNotes = "Audit record validation."
+    });
+
+    var audit = await service.ListAuditRecordsAsync(created.Data.Id);
+    var record = audit.Data?.FirstOrDefault(x => x.Action == "CorrectiveActionStatusChanged");
+
+    if (record is null)
+    {
+        throw new InvalidOperationException("Expected corrective action status change audit record.");
+    }
+
+    if (record.EntityType != nameof(CorrectiveAction) || record.UserId != "quality")
+    {
+        throw new InvalidOperationException("Expected audit record to preserve entity type and user.");
+    }
 }
 
 static async Task AssertEvidenceStorageRejectsOversizedFilesAsync()

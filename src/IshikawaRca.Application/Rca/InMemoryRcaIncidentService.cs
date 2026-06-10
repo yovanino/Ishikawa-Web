@@ -4,6 +4,7 @@ using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
+using System.Text.Json;
 
 namespace IshikawaRca.Application.Rca;
 
@@ -18,6 +19,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
     };
 
     private readonly ConcurrentDictionary<Guid, RcaIncident> _incidents = new();
+    private readonly ConcurrentBag<RcaAuditRecord> _auditRecords = new();
 
     public Task<ApiResult<RcaIncidentDto>> CreateAsync(CreateRcaIncidentRequest request, CancellationToken cancellationToken = default)
     {
@@ -246,6 +248,7 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
 
         var status = ParseCorrectiveActionStatus(request.Status);
         var now = DateTimeOffset.UtcNow;
+        var previousStatus = action.Status;
 
         action.Status = status;
         action.ValidationNotes = Normalize(request.ValidationNotes);
@@ -262,6 +265,22 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             action.CompletedAt = null;
             action.CompletedByUserId = null;
         }
+
+        AddAuditRecord(
+            action.TenantId,
+            incidentId,
+            nameof(CorrectiveAction),
+            action.Id,
+            "CorrectiveActionStatusChanged",
+            action.UpdatedByUserId,
+            $"Estado de accion cambiado de {previousStatus} a {status}.",
+            new
+            {
+                previousStatus = previousStatus.ToString(),
+                newStatus = status.ToString(),
+                action.CompletedByUserId,
+                action.ValidationNotes
+            });
 
         return Task.FromResult(ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Estado de accion actualizado."));
     }
@@ -537,6 +556,25 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         incident.Facts.Add(fact);
 
         return Task.FromResult(ApiResult<RcaFactDto>.Ok(ToFactDto(fact), "Hecho agregado a la linea RCA."));
+    }
+
+    public Task<ApiResult<IReadOnlyList<RcaAuditRecordDto>>> ListAuditRecordsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        if (!_incidents.TryGetValue(incidentId, out var incident) || incident.IsDeleted)
+        {
+            return Task.FromResult(ApiResult<IReadOnlyList<RcaAuditRecordDto>>.Fail(
+                "No se encontro el incidente RCA.",
+                new ApiError { Field = nameof(incidentId), Code = "RCA_NOT_FOUND", Message = "El identificador no corresponde a un incidente activo." }));
+        }
+
+        var records = _auditRecords
+            .Where(x => x.TenantId == incident.TenantId && x.RcaIncidentId == incidentId && !x.IsDeleted)
+            .OrderByDescending(x => x.OccurredAt)
+            .ThenByDescending(x => x.CreatedAt)
+            .Select(ToAuditRecordDto)
+            .ToList();
+
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaAuditRecordDto>>.Ok(records));
     }
 
     public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default)
@@ -1176,6 +1214,30 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
         }
     }
 
+    private void AddAuditRecord(
+        Guid tenantId,
+        Guid incidentId,
+        string entityType,
+        Guid entityId,
+        string action,
+        string? userId,
+        string summary,
+        object? data)
+    {
+        _auditRecords.Add(new RcaAuditRecord
+        {
+            TenantId = tenantId,
+            RcaIncidentId = incidentId,
+            EntityType = entityType,
+            EntityId = entityId,
+            Action = action,
+            UserId = Normalize(userId),
+            OccurredAt = DateTimeOffset.UtcNow,
+            Summary = summary,
+            DataJson = data is null ? null : JsonSerializer.Serialize(data)
+        });
+    }
+
     private static RcaIncidentDto ToDto(RcaIncident incident)
     {
         return new RcaIncidentDto
@@ -1291,6 +1353,23 @@ public class InMemoryRcaIncidentService : IRcaIncidentService
             ValidatedByUserId = evidence.ValidatedByUserId,
             ValidationNotes = evidence.ValidationNotes,
             CreatedAt = evidence.CreatedAt
+        };
+    }
+
+    private static RcaAuditRecordDto ToAuditRecordDto(RcaAuditRecord record)
+    {
+        return new RcaAuditRecordDto
+        {
+            Id = record.Id,
+            TenantId = record.TenantId,
+            RcaIncidentId = record.RcaIncidentId,
+            EntityType = record.EntityType,
+            EntityId = record.EntityId,
+            Action = record.Action,
+            UserId = record.UserId,
+            OccurredAt = record.OccurredAt,
+            Summary = record.Summary,
+            DataJson = record.DataJson
         };
     }
 

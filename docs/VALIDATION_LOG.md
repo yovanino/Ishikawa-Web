@@ -1,5 +1,34 @@
 # Validation Log
 
+## 2026-06-10 - Incident audit records API
+
+Scope: make persisted sensitive-operation audit records queryable and
+repeatable in local validation.
+
+Checks:
+
+- Added `GET /api/v1/rca/incidents/{id}/audit`.
+- The endpoint requires `Supervisor`, `Quality` or `Administrator`.
+- The endpoint returns incident audit records ordered from newest to oldest.
+- Added `scripts/smoke-audit-records.ps1`.
+- `scripts/run-local-validation.ps1` now runs the audit smoke after evidence
+  attachment validation and before external facts.
+
+Validation:
+
+- Initial isolated audit smoke failed with HTTP 404 before implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed when `ConnectionStrings__IshikawaRca` was supplied from local
+  development configuration with `AllowPublicKeyRetrieval=True`; output
+  included `Audit records smoke test completed successfully.`.
+
+Result: passed.
+
 ## 2026-06-10 - Evidence attachment controlled download smoke
 
 Scope: make controlled evidence attachment downloads verifiable in the main

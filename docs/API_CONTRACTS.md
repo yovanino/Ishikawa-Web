@@ -73,6 +73,7 @@ GET  /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/evidence-files
 GET  /api/v1/rca/incidents/{id}/evidence/{evidenceId}/attachment
+GET  /api/v1/rca/incidents/{id}/audit
 POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
@@ -147,6 +148,17 @@ Validacion/cierre de accion correctiva:
 ```
 
 Para completar una accion, `validationNotes` es obligatorio. Esto mantiene el modulo standalone, pero deja trazabilidad suficiente para CAPA, auditoria y consumo desde Gantt/OEE/TPM.
+
+Auditoria del incidente:
+
+```http
+GET /api/v1/rca/incidents/{id}/audit
+```
+
+Devuelve registros persistidos de auditoria para operaciones sensibles del RCA,
+ordenados de mas reciente a mas antiguo. Requiere rol `Supervisor`, `Quality` o
+`Administrator`. Cada registro incluye `entityType`, `entityId`, `action`,
+`userId`, `occurredAt`, `summary` y `dataJson` con el detalle tecnico auditable.
 
 Evidencia RCA inicial:
 

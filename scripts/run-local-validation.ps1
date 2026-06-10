@@ -30,6 +30,10 @@ try {
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
 
+    & (Join-Path $PSScriptRoot "smoke-audit-records.ps1") `
+        -BaseUrl $BaseUrl `
+        -RequestTimeoutSeconds $RequestTimeoutSeconds
+
     & (Join-Path $PSScriptRoot "smoke-external-facts.ps1") `
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds

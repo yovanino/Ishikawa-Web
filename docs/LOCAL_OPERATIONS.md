@@ -142,6 +142,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-evidence
 El script crea un RCA minimo e intenta subir un adjunto con extension no
 permitida para verificar HTTP 400 con `INVALID_ATTACHMENT`.
 
+Auditoria de operaciones sensibles:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-audit-records.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
+```
+
+El script crea un RCA minimo, completa una accion correctiva protegida y valida
+que `GET /api/v1/rca/incidents/{id}/audit` devuelva el registro
+`CorrectiveActionStatusChanged` con entidad, usuario y resumen esperados.
+
 Validacion local completa:
 
 ```powershell
@@ -151,9 +161,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
 `-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
 smoke test funcional con descarga controlada de adjuntos, valida errores API
-de modelo, 401/403, adjuntos de evidencia, facts externos e idempotencia y
-detiene el proceso aunque el test falle. Omitir `-Build` solo cuando se quiera
-probar un DLL ya compilado.
+de modelo, 401/403, adjuntos de evidencia, auditoria, facts externos e
+idempotencia y detiene el proceso aunque el test falle. Omitir `-Build` solo
+cuando se quiera probar un DLL ya compilado.
 
 ## Timeouts Operativos
 

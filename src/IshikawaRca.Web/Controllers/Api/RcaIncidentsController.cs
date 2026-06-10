@@ -219,6 +219,21 @@ public class RcaIncidentsController : ControllerBase
         return CreatedAtAction(nameof(ListFacts), new { id }, result);
     }
 
+    [HttpGet("{id:guid}/audit")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaAuditRecordDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaAuditRecordDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<RcaAuditRecordDto>>>> ListAuditRecords(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _rcaIncidentService.ListAuditRecordsAsync(id, cancellationToken);
+        if (!result.Success)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
+
     [HttpPost("{id:guid}/evidence-files")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(104_857_600)]
