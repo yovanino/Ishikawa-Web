@@ -72,6 +72,9 @@ standalone.
   `AUTHENTICATION_REQUIRED` o `FORBIDDEN`.
 - Actualizado smoke local API + DB para cubrir flujo critico P0 completo y
   endpoints protegidos por roles.
+- Agregado preflight `scripts/check-dotnet-sdk.ps1` y opcion `-Build` en
+  `scripts/run-local-validation.ps1` para detectar SDK faltante antes de una
+  validacion local completa.
 
 ## Pendientes
 
@@ -123,6 +126,13 @@ standalone.
   MSBuild quedaron bloqueados porque el entorno local no tiene SDK .NET
   registrado; `dotnet --info` lista runtimes, pero no SDKs. Se completo
   revision estatica de diff/referencias.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\check-dotnet-sdk.ps1`: falla rapido con mensaje claro porque no hay
+  SDKs registrados y `global.json` pide `10.0.300`.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 5 -RequestTimeoutSeconds 5 -ShutdownTimeoutSeconds 5`:
+  falla rapido por el mismo preflight y no deja proceso web vivo.
 
 ## Ultimo Cierre
 
@@ -130,5 +140,6 @@ standalone.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
-  DB critico y normalizacion de 401/403 API.
-- Commit sugerido: `fix(api): normalize authorization failures`.
+  DB critico, normalizacion de 401/403 API y preflight de SDK para validacion
+  local.
+- Commit sugerido: `chore(scripts): add dotnet sdk preflight`.

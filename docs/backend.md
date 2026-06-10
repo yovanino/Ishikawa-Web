@@ -161,4 +161,7 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   escalamiento 8D, cierre formal, wizard cerrado, snapshot, eventos e IA stub.
 - `scripts/start-web.ps1` arranca correctamente cuando el path del repo contiene
   espacios y guarda logs de stdout/stderr ante fallos de startup.
+- `scripts/check-dotnet-sdk.ps1` detecta rapido si falta el SDK requerido por
+  `global.json`, y `run-local-validation.ps1 -Build` fuerza esa validacion antes
+  de compilar/levantar la app.
 - Validado con `run-local-validation.ps1` contra DB local.

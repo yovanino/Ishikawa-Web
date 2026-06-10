@@ -1,5 +1,33 @@
 # Validation Log
 
+## 2026-06-10 - Local validation SDK preflight
+
+Scope: validate that local smoke/build scripts fail fast when the required
+.NET SDK is not available.
+
+Checks:
+
+- Added `scripts/check-dotnet-sdk.ps1` to read `global.json` and verify a
+  registered matching .NET SDK.
+- Added `-Build` to `scripts/run-local-validation.ps1` and pass-through to
+  `start-web.ps1`.
+- `scripts/start-web.ps1` now checks SDK availability before build, and before
+  asking for a compiled DLL when none exists.
+
+Validation:
+
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\check-dotnet-sdk.ps1`: failed fast as expected with
+  `No .NET SDKs are registered. Install SDK 10.0.300 or update global.json to
+  an installed SDK.`
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 5 -RequestTimeoutSeconds 5 -ShutdownTimeoutSeconds 5`:
+  failed fast through the same preflight and reported no PID file to stop.
+
+Result: passed for the SDK-preflight behavior; full build/smoke remains blocked
+until SDK `10.0.300` is installed or `global.json` is aligned.
+
 ## 2026-06-10 - API authorization error normalization
 
 Scope: validate consistent API error responses for authentication and

@@ -18,10 +18,12 @@ $stderrLog = Join-Path $repoRoot "artifacts\ishikawa-web.stderr.log"
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 
 if ($Build) {
+    & (Join-Path $PSScriptRoot "check-dotnet-sdk.ps1") -RepoRoot $repoRoot
     & dotnet build (Join-Path $repoRoot "IshikawaRca.sln") /m:1 --no-restore
 }
 
 if (-not (Test-Path $webDll)) {
+    & (Join-Path $PSScriptRoot "check-dotnet-sdk.ps1") -RepoRoot $repoRoot
     throw "Compiled web DLL not found. Run dotnet build IshikawaRca.sln /m:1 --no-restore first."
 }
 

@@ -51,6 +51,12 @@ Si Visual Studio corta una request mientras EF esta abriendo MySQL, puede verse 
 
 ## Compilacion
 
+Validar primero que el SDK pedido por `global.json` este registrado:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-dotnet-sdk.ps1
+```
+
 ```powershell
 dotnet build IshikawaRca.sln /m:1 --no-restore
 ```
@@ -91,10 +97,13 @@ consulta eventos de integracion y valida los endpoints de IA en modo stub.
 Validacion local completa:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20 -RequestTimeoutSeconds 10 -ShutdownTimeoutSeconds 10
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 20 -RequestTimeoutSeconds 10 -ShutdownTimeoutSeconds 10
 ```
 
-Este comando normaliza el `Path` de la sesion, levanta la app, espera el puerto con timeout, ejecuta el smoke test y detiene el proceso aunque el test falle.
+Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
+`-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
+smoke test y detiene el proceso aunque el test falle. Omitir `-Build` solo
+cuando se quiera probar un DLL ya compilado.
 
 ## Timeouts Operativos
 
