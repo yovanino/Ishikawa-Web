@@ -26,7 +26,10 @@ Las validaciones automaticas de modelos en controllers API tambien devuelven
 `ApiResult<object>` con errores `MODEL_VALIDATION_ERROR` y `correlationId`. Las
 excepciones no controladas bajo `/api` se traducen a HTTP 500 con
 `UNHANDLED_API_ERROR`, registrando el detalle en logs y exponiendo solo el
-`correlationId` al consumidor.
+`correlationId` al consumidor. Las fallas de autenticacion/autorizacion bajo
+`/api` tambien usan el mismo patron: HTTP 401 con `AUTHENTICATION_REQUIRED`
+cuando falta autenticacion valida, y HTTP 403 con `FORBIDDEN` cuando el usuario
+no tiene el rol requerido.
 
 ## Seguridad y Tenant
 

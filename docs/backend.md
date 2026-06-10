@@ -73,6 +73,8 @@ El backend ya cuenta con:
   escalamiento 8D, cambios de estado de acciones, validacion/edicion sensible
   de evidencias, reemplazo/eliminacion de adjuntos y gestion interna de intake
   externo.
+- Respuestas API consistentes con `ApiResult` para validaciones, errores 500 y
+  fallas 401/403 de autenticacion/autorizacion.
 - Tabla `rca_audit_records` para auditoria inicial de operaciones sensibles.
 
 ## Prioridad Backend P0
@@ -146,6 +148,9 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
 - Las excepciones no controladas bajo `/api` devuelven HTTP 500 con
   `UNHANDLED_API_ERROR` y `correlationId`, sin exponer detalles internos al
   consumidor.
+- Las denegaciones de autenticacion/autorizacion bajo `/api` devuelven HTTP 401
+  `AUTHENTICATION_REQUIRED` o HTTP 403 `FORBIDDEN` con `ApiResult<object>` y
+  `correlationId`.
 
 ### 2026-06-08 - Smoke API + DB P0
 

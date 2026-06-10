@@ -3,6 +3,7 @@ using IshikawaRca.Web.Api;
 using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,7 @@ builder.Services
         StandaloneRcaAuthenticationHandler.SchemeName,
         _ => { });
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthorizationResultHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentRcaUserContext, CurrentRcaUserContext>();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);

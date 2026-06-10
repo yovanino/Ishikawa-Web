@@ -1,5 +1,33 @@
 # Validation Log
 
+## 2026-06-10 - API authorization error normalization
+
+Scope: validate consistent API error responses for authentication and
+authorization failures.
+
+Checks:
+
+- Added an API authorization result handler for `/api` requests.
+- API authentication challenges return HTTP 401 with `ApiResult<object>` and
+  error code `AUTHENTICATION_REQUIRED`.
+- API forbidden results return HTTP 403 with `ApiResult<object>` and error code
+  `FORBIDDEN`.
+- MVC routes keep the default ASP.NET Core authorization behavior.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: blocked because the local `dotnet`
+  host reports no installed SDKs and `global.json` requests SDK `10.0.300`.
+- `dotnet --info`: blocked for build purposes; only .NET runtimes are
+  registered, no SDKs.
+- Visual Studio MSBuild fallback: blocked because `Microsoft.NET.Sdk` and
+  `Microsoft.NET.Sdk.Web` cannot be resolved without a registered SDK.
+- Static diff/reference review completed for the new authorization handler,
+  DI registration and API contract documentation.
+
+Result: code change prepared; runtime/build validation blocked by missing local
+.NET SDK.
+
 ## 2026-06-08 - Backend standalone auth context
 
 Scope: validate the first P0 backend security increment.

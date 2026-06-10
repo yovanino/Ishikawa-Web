@@ -68,6 +68,8 @@ standalone.
 - Agregadas pruebas livianas de storage de evidencias.
 - Normalizadas validaciones automaticas y excepciones no controladas de API
   para devolver `ApiResult`.
+- Normalizadas denegaciones 401/403 de API para devolver `ApiResult` con
+  `AUTHENTICATION_REQUIRED` o `FORBIDDEN`.
 - Actualizado smoke local API + DB para cubrir flujo critico P0 completo y
   endpoints protegidos por roles.
 
@@ -79,8 +81,6 @@ standalone.
 - Aplicar migracion `AddRcaAuditRecords` en ambientes no locales cuando se haga
   el siguiente corte DB/deploy.
 - Extender consulta/UI/API de auditoria cuando se defina el consumidor.
-- Ampliar normalizacion de errores a codigos 401/403 si se requiere contrato
-  explicito para consumidores externos.
 - Agregar tests de politicas y servicios.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
   defina politica documental productiva.
@@ -119,12 +119,16 @@ standalone.
   .\scripts\run-local-validation.ps1 -BaseUrl http://localhost:5025
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; smoke API + DB crea, valida, escala y cierra RCA.
+- Para el ajuste 401/403, `dotnet build IshikawaRca.sln /m:1` y fallback con
+  MSBuild quedaron bloqueados porque el entorno local no tiene SDK .NET
+  registrado; `dotnet --info` lista runtimes, pero no SDKs. Se completo
+  revision estatica de diff/referencias.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-08.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
-  operaciones sensibles; aplicado hardening inicial de adjuntos y smoke API +
-  DB critico.
-- Commit sugerido: `test(backend): expand critical smoke flow`.
+  operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
+  DB critico y normalizacion de 401/403 API.
+- Commit sugerido: `fix(api): normalize authorization failures`.
