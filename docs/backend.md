@@ -165,4 +165,6 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   `global.json` y acepta patches compatibles del mismo feature band;
   `run-local-validation.ps1 -Build` fuerza esa validacion antes de
   compilar/levantar la app.
+- `scripts/smoke-api-auth-errors.ps1` valida el contrato API de errores 401/403
+  para operaciones protegidas, y queda incluido en `run-local-validation.ps1`.
 - Validado con `run-local-validation.ps1` contra DB local.

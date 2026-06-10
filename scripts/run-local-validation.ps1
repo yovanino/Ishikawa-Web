@@ -17,6 +17,10 @@ try {
     & (Join-Path $PSScriptRoot "smoke-test.ps1") `
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
+
+    & (Join-Path $PSScriptRoot "smoke-api-auth-errors.ps1") `
+        -BaseUrl $BaseUrl `
+        -RequestTimeoutSeconds $RequestTimeoutSeconds
 }
 finally {
     & (Join-Path $PSScriptRoot "stop-web.ps1") `

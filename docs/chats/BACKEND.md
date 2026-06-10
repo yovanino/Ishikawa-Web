@@ -75,6 +75,9 @@ standalone.
 - Agregado preflight `scripts/check-dotnet-sdk.ps1` y opcion `-Build` en
   `scripts/run-local-validation.ps1` para detectar SDK faltante antes de una
   validacion local completa.
+- Agregado smoke repetible `scripts/smoke-api-auth-errors.ps1` para cubrir
+  contrato 401/403 de endpoints API protegidos; `run-local-validation.ps1` lo
+  ejecuta despues del smoke funcional DB.
 
 ## Pendientes
 
@@ -146,6 +149,11 @@ standalone.
 - Validado contrato 401/403 en
   `POST /api/v1/rca/incidents/{id}/close`: rol `Operator` devuelve
   `FORBIDDEN`; tenant invalido devuelve `AUTHENTICATION_REQUIRED`.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye smoke funcional API + DB y smoke API de errores
+  401/403.
 
 ## Ultimo Cierre
 
@@ -153,6 +161,6 @@ standalone.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
-  DB critico, normalizacion de 401/403 API y preflight de SDK para validacion
-  local.
-- Commit sugerido: `chore(scripts): add dotnet sdk preflight`.
+  DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
+  local y smoke repetible para errores API de autorizacion.
+- Commit sugerido: `test(api): add authorization error smoke`.
