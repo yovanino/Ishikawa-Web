@@ -89,6 +89,55 @@ function Invoke-MultipartPost {
     }
 }
 
+function Invoke-BinaryGet {
+    param(
+        [string]$Uri
+    )
+
+    Add-Type -AssemblyName System.Net.Http
+
+    $client = [System.Net.Http.HttpClient]::new()
+    $client.Timeout = [TimeSpan]::FromSeconds($RequestTimeoutSeconds)
+    foreach ($key in $Headers.Keys) {
+        $client.DefaultRequestHeaders.Add($key, [string]$Headers[$key])
+    }
+
+    try {
+        $response = $client.GetAsync($Uri).GetAwaiter().GetResult()
+        $body = $response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+        if (-not $response.IsSuccessStatusCode) {
+            throw "Binary get failed: $($response.StatusCode) $([System.Text.Encoding]::UTF8.GetString($body))"
+        }
+
+        return [pscustomobject]@{
+            Bytes = $body
+            ContentType = $response.Content.Headers.ContentType.MediaType
+            ContentDisposition = [string]$response.Content.Headers.ContentDisposition
+        }
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
+function Assert-ByteArrayEqual {
+    param(
+        [byte[]]$Actual,
+        [byte[]]$Expected,
+        [string]$Step
+    )
+
+    if ($Actual.Length -ne $Expected.Length) {
+        throw "$Step failed: expected $($Expected.Length) bytes, got $($Actual.Length)"
+    }
+
+    for ($i = 0; $i -lt $Expected.Length; $i++) {
+        if ($Actual[$i] -ne $Expected[$i]) {
+            throw "$Step failed: byte mismatch at offset $i"
+        }
+    }
+}
+
 function Assert-Success {
     param(
         [object]$Result,
@@ -223,17 +272,19 @@ if ([string]::IsNullOrWhiteSpace($fileEvidence.data.attachmentStorageKey)) {
     throw "Add evidence file failed: expected attachmentStorageKey"
 }
 
-$downloadPath = Join-Path $artifactDir "smoke-evidence-download-$timestamp.txt"
-Invoke-WebRequest `
-    -Method Get `
-    -Uri "$base/api/v1/rca/incidents/$incidentId/evidence/$($fileEvidence.data.id)/attachment" `
-    -Headers $Headers `
-    -TimeoutSec $RequestTimeoutSeconds `
-    -OutFile $downloadPath
-if (-not (Test-Path $downloadPath)) {
-    throw "Download evidence attachment failed: file not found"
+$downloadedEvidenceFile = Invoke-BinaryGet "$base/api/v1/rca/incidents/$incidentId/evidence/$($fileEvidence.data.id)/attachment"
+$expectedEvidenceBytes = [System.IO.File]::ReadAllBytes($evidenceFilePath)
+Assert-ByteArrayEqual $downloadedEvidenceFile.Bytes $expectedEvidenceBytes "Download evidence attachment"
+if ($downloadedEvidenceFile.ContentType -ne "text/plain") {
+    throw "Download evidence attachment failed: expected content-type text/plain, got $($downloadedEvidenceFile.ContentType)"
+}
+
+$expectedEvidenceFileName = [System.IO.Path]::GetFileName($evidenceFilePath)
+if ($downloadedEvidenceFile.ContentDisposition -notmatch [regex]::Escape($expectedEvidenceFileName)) {
+    throw "Download evidence attachment failed: expected content-disposition to include $expectedEvidenceFileName"
 }
 Write-Host "Added evidence file: $($fileEvidence.data.id)"
+Write-Host "Downloaded evidence file through controlled endpoint."
 
 $wizardEvidence = Invoke-JsonPost "$base/api/v1/rca/incidents/$incidentId/wizard/step" @{
     step = "Evidence"

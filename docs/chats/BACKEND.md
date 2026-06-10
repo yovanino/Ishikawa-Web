@@ -72,6 +72,8 @@ standalone.
   `AUTHENTICATION_REQUIRED` o `FORBIDDEN`.
 - Actualizado smoke local API + DB para cubrir flujo critico P0 completo y
   endpoints protegidos por roles.
+- Reforzado `scripts/smoke-test.ps1` para validar la descarga controlada del
+  adjunto de evidencia comparando bytes, content-type y content-disposition.
 - Agregado preflight `scripts/check-dotnet-sdk.ps1` y opcion `-Build` en
   `scripts/run-local-validation.ps1` para detectar SDK faltante antes de una
   validacion local completa.
@@ -189,17 +191,27 @@ standalone.
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; incluye smoke de adjuntos de evidencia con rechazo
   `INVALID_ATTACHMENT`.
+- `dotnet build IshikawaRca.sln /m:1`: correcto, 0 warnings y 0 errores,
+  para el ajuste de descarga controlada de adjuntos.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  correcto para el ajuste de descarga controlada de adjuntos.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye descarga controlada con bytes, content-type y
+  content-disposition.
 - `docs/STATUS_AND_NEXT_STEPS.md` alineado con P0 actual: auth/tenant/roles,
   auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
 
 ## Ultimo Cierre
 
-- Fecha: 2026-06-08.
+- Fecha: 2026-06-10.
 - Resumen: creada base de autenticacion/autorizacion standalone, tenant
   configurable para MVC/API, proteccion por roles y auditoria inicial para
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
   local, smoke repetible para errores API de modelo y autorizacion, smoke de
   adjuntos de evidencia, smoke de facts externos, aclaracion de configuracion
-  local y estado P0 actualizado.
-- Commit sugerido: `test(api): add evidence attachment validation smoke`.
+  local, estado P0 actualizado y validacion estricta de descarga controlada
+  de adjuntos dentro del smoke funcional.
+- Commit sugerido: `test(api): verify evidence attachment download`.

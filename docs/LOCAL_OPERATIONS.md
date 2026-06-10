@@ -98,9 +98,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
 ```
 
 El script crea un incidente demo, agrega causa raiz y subcausa, registra
-evidencia validada con adjunto, agrega y completa accion correctiva y accion
-preventiva de recurrencia, escala a 8D, cierra el RCA, valida wizard/snapshot,
-consulta eventos de integracion y valida los endpoints de IA en modo stub.
+evidencia validada con adjunto, descarga el adjunto por endpoint controlado y
+valida bytes/content-type/content-disposition, agrega y completa accion
+correctiva y accion preventiva de recurrencia, escala a 8D, cierra el RCA,
+valida wizard/snapshot, consulta eventos de integracion y valida los endpoints
+de IA en modo stub.
 
 Contrato de errores de autorizacion API:
 
@@ -148,9 +150,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 
 Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
 `-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
-smoke test funcional, valida errores API de modelo, 401/403, adjuntos de
-evidencia, facts externos e idempotencia y detiene el proceso aunque el test
-falle. Omitir `-Build` solo cuando se quiera probar un DLL ya compilado.
+smoke test funcional con descarga controlada de adjuntos, valida errores API
+de modelo, 401/403, adjuntos de evidencia, facts externos e idempotencia y
+detiene el proceso aunque el test falle. Omitir `-Build` solo cuando se quiera
+probar un DLL ya compilado.
 
 ## Timeouts Operativos
 

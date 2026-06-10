@@ -1,5 +1,33 @@
 # Validation Log
 
+## 2026-06-10 - Evidence attachment controlled download smoke
+
+Scope: make controlled evidence attachment downloads verifiable in the main
+API + DB smoke.
+
+Checks:
+
+- `scripts/smoke-test.ps1` downloads the uploaded evidence attachment through
+  `GET /api/v1/rca/incidents/{id}/evidence/{evidenceId}/attachment`.
+- The smoke validates the downloaded bytes match the uploaded file.
+- The smoke validates `Content-Type` is preserved as `text/plain`.
+- The smoke validates `Content-Disposition` includes the original uploaded
+  file name.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed when `ConnectionStrings__IshikawaRca` was supplied from local
+  development configuration with `AllowPublicKeyRetrieval=True`; the main
+  smoke printed `Downloaded evidence file through controlled endpoint.`.
+
+Result: passed.
+
 ## 2026-06-10 - Evidence attachment validation smoke
 
 Scope: make evidence attachment API hardening repeatable in local validation.

@@ -159,6 +159,8 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
 - El smoke cubre cierre critico real: causa raiz, subcausa, evidencia validada,
   adjunto validado, accion correctiva, accion preventiva de recurrencia,
   escalamiento 8D, cierre formal, wizard cerrado, snapshot, eventos e IA stub.
+- La descarga controlada del adjunto se valida dentro del smoke comparando
+  bytes contra el archivo subido, `Content-Type` y `Content-Disposition`.
 - `scripts/start-web.ps1` arranca correctamente cuando el path del repo contiene
   espacios y guarda logs de stdout/stderr ante fallos de startup.
 - `scripts/check-dotnet-sdk.ps1` detecta rapido si falta el SDK requerido por
