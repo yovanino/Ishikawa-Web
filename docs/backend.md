@@ -169,6 +169,8 @@ El siguiente corte recomendado es endurecimiento de producto standalone:
   para operaciones protegidas, y queda incluido en `run-local-validation.ps1`.
 - `scripts/smoke-api-model-validation.ps1` valida el contrato API de errores de
   model binding con `MODEL_VALIDATION_ERROR` y `correlationId`.
+- `scripts/smoke-evidence-attachment-validation.ps1` valida rechazo API de
+  adjuntos de evidencia con extension no permitida.
 - `scripts/smoke-external-facts.ps1` valida ingestion de facts externos por API,
   idempotencia por sistema/evento y rechazo de correlacion incompleta.
 - Validado con `run-local-validation.ps1` contra DB local.

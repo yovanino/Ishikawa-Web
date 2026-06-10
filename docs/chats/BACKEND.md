@@ -80,6 +80,8 @@ standalone.
   ejecuta despues del smoke funcional DB.
 - Agregado smoke repetible `scripts/smoke-api-model-validation.ps1` para cubrir
   `MODEL_VALIDATION_ERROR` y `correlationId` en errores de model binding API.
+- Agregado smoke repetible `scripts/smoke-evidence-attachment-validation.ps1`
+  para cubrir rechazo de adjuntos de evidencia con extension no permitida.
 - Agregado smoke repetible `scripts/smoke-external-facts.ps1` para cubrir
   ingestion de facts externos, idempotencia por `externalSourceSystem` +
   `externalEventId` y validacion de correlacion incompleta.
@@ -177,6 +179,16 @@ standalone.
   -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
   10`: correcto; incluye smoke API de model validation con
   `MODEL_VALIDATION_ERROR` y `correlationId`.
+- `dotnet build IshikawaRca.sln /m:1`: correcto, 0 warnings y 0 errores,
+  despues de repetir secuencialmente por una carrera transitoria causada por
+  ejecutar build/tests en paralelo.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  correcto.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: correcto; incluye smoke de adjuntos de evidencia con rechazo
+  `INVALID_ATTACHMENT`.
 - `docs/STATUS_AND_NEXT_STEPS.md` alineado con P0 actual: auth/tenant/roles,
   auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
 
@@ -188,5 +200,6 @@ standalone.
   operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
   DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
   local, smoke repetible para errores API de modelo y autorizacion, smoke de
-  facts externos, aclaracion de configuracion local y estado P0 actualizado.
-- Commit sugerido: `docs(status): update p0 backend state`.
+  adjuntos de evidencia, smoke de facts externos, aclaracion de configuracion
+  local y estado P0 actualizado.
+- Commit sugerido: `test(api): add evidence attachment validation smoke`.

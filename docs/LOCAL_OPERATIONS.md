@@ -131,6 +131,15 @@ El script crea un RCA minimo, registra un hecho externo con correlacion
 `externalSourceSystem` + `externalEventId`, valida idempotencia por reintento,
 lista facts y verifica rechazo `EXTERNAL_FACT_CORRELATION_INCOMPLETE`.
 
+Validacion de adjuntos de evidencia:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke-evidence-attachment-validation.ps1 -BaseUrl http://localhost:5025 -RequestTimeoutSeconds 10
+```
+
+El script crea un RCA minimo e intenta subir un adjunto con extension no
+permitida para verificar HTTP 400 con `INVALID_ATTACHMENT`.
+
 Validacion local completa:
 
 ```powershell
@@ -139,9 +148,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-vali
 
 Este comando normaliza el `Path` de la sesion, valida el SDK cuando se usa
 `-Build`, compila, levanta la app, espera el puerto con timeout, ejecuta el
-smoke test funcional, valida errores API de modelo, 401/403, facts externos e
-idempotencia y detiene el proceso aunque el test falle. Omitir `-Build` solo
-cuando se quiera probar un DLL ya compilado.
+smoke test funcional, valida errores API de modelo, 401/403, adjuntos de
+evidencia, facts externos e idempotencia y detiene el proceso aunque el test
+falle. Omitir `-Build` solo cuando se quiera probar un DLL ya compilado.
 
 ## Timeouts Operativos
 

@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-10 - Evidence attachment validation smoke
+
+Scope: make evidence attachment API hardening repeatable in local validation.
+
+Checks:
+
+- Added `scripts/smoke-evidence-attachment-validation.ps1`.
+- The script creates a minimal RCA incident through `/api/v1/rca/incidents`.
+- The script attempts to upload an evidence attachment with a disallowed
+  `.exe` extension through `/api/v1/rca/incidents/{id}/evidence-files`.
+- The script validates HTTP 400, `success=false` and `INVALID_ATTACHMENT`.
+- `scripts/run-local-validation.ps1` now runs the evidence-attachment smoke
+  after auth-error smoke and before external-facts smoke.
+
+Validation:
+
+- Initial `dotnet build` was accidentally run in parallel with
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`,
+  causing a transient copy race in `bin\Debug\net9.0`; rerun sequentially.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025
+  -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds
+  10`: passed when `ConnectionStrings__IshikawaRca` was supplied from local
+  development configuration with `AllowPublicKeyRetrieval=True`.
+
+Result: passed.
+
 ## 2026-06-10 - P0 backend status documentation
 
 Scope: align current project status with the validated backend P0 increments.

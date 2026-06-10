@@ -26,6 +26,10 @@ try {
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
 
+    & (Join-Path $PSScriptRoot "smoke-evidence-attachment-validation.ps1") `
+        -BaseUrl $BaseUrl `
+        -RequestTimeoutSeconds $RequestTimeoutSeconds
+
     & (Join-Path $PSScriptRoot "smoke-external-facts.ps1") `
         -BaseUrl $BaseUrl `
         -RequestTimeoutSeconds $RequestTimeoutSeconds
