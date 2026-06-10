@@ -73,19 +73,36 @@ Fecha de corte: 2026-06-04.
      excepciones no controladas bajo `/api`.
    - Hardening inicial de adjuntos con limite configurable y validacion de ruta
      dentro del storage root.
+   - Descarga controlada de adjuntos validada por smoke comparando bytes,
+     content-type y content-disposition.
+   - Consulta protegida de auditoria por incidente mediante
+     `GET /api/v1/rca/incidents/{id}/audit`.
    - Smoke local API + DB con flujo critico de cierre, evidencias, acciones,
-     escalamiento 8D, cierre, eventos, IA stub, errores API y facts externos.
+     escalamiento 8D, cierre, eventos, IA stub, errores API, auditoria y facts
+     externos.
+
+## Estado de Corte P0
+
+P0 queda cerrado como modulo standalone pilotable. El corte cumple build limpio,
+suite base de tests livianos, smokes API + DB versionados, tenant configurable,
+roles sobre operaciones sensibles, auditoria persistida/consultable, errores API
+normalizados y adjuntos trazables con hash, limites y descarga controlada.
+
+Los puntos que dependen de plataforma corporativa se mantienen como pendientes
+post-P0: Identity global real, tenant multitenant corporativo, storage
+documental productivo, CI/CD, tests MVC/UI, outbox/event bus, reapertura
+gobernada y reportes corporativos de auditoria.
 
 ## Pendientes Tecnicos Inmediatos
 
 - Definir integracion futura con Identity global y tenant corporativo real.
-- Agregar suite formal de tests unitarios/integracion sobre la base de smokes
-  y pruebas livianas actuales.
+- Agregar suite formal ampliada de tests unitarios/integracion sobre la base de
+  smokes y pruebas livianas actuales.
 - Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
-- Extender consulta/UI/API de auditoria fina y reportes cuando se defina el
-  consumidor.
+- Extender UI/API de auditoria fina, reapertura gobernada y reportes cuando se
+  defina el consumidor corporativo.
 - Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
 - Evaluar storage documental productivo para evidencias y exportaciones generadas.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
@@ -95,9 +112,9 @@ Fecha de corte: 2026-06-04.
 
 ## Siguiente Corte Recomendado
 
-El proximo paso natural es elegir uno de estos dos caminos:
+El proximo paso natural ya no es P0; es elegir uno de estos caminos:
 
-- Endurecimiento tecnico: suite formal de tests, auditoria consultable,
-  permisos productivos refinados e integracion futura con Identity/tenant
+- Endurecimiento tecnico post-P0: suite formal de tests, permisos productivos
+  refinados e integracion futura con Identity/tenant
   corporativo.
 - Workflow RCA avanzado: CAPA, auditoria ampliada, aprobaciones, versionado PDF y adjuntos externos.

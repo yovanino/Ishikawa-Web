@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-10 - P0 standalone closure
+
+Scope: close the backend P0 standalone cut in project documentation.
+
+Checks:
+
+- `docs/ROADMAP.md` now marks the standalone P0 cut as closed and separates
+  post-P0 corporate/platform work.
+- `docs/STATUS_AND_NEXT_STEPS.md` records the P0 closure state and next
+  post-P0 paths.
+- `docs/backend.md` records the backend P0 cut as pilotable.
+- `docs/chats/BACKEND.md` records the closure for continuity.
+
+Validation:
+
+- Documentation-only change; based on the successful validation recorded in
+  `2026-06-10 - Incident audit records API`.
+
+Result: passed.
+
 ## 2026-06-10 - Incident audit records API
 
 Scope: make persisted sensitive-operation audit records queryable and

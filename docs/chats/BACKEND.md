@@ -98,13 +98,13 @@ standalone.
 
 ## Pendientes
 
-- Relevar `Program.cs`, controllers API, servicios EF, entidades y DbContext.
 - Definir siguiente paso de tenant productivo: resolver tenant desde Identity o
   proveedor corporativo cuando exista.
 - Aplicar migracion `AddRcaAuditRecords` en ambientes no locales cuando se haga
   el siguiente corte DB/deploy.
-- Extender consulta/UI/API de auditoria cuando se defina el consumidor.
-- Agregar tests de politicas y servicios.
+- Extender UI/API de auditoria, reapertura gobernada y reportes cuando se
+  defina el consumidor corporativo.
+- Agregar suite formal ampliada de tests sobre la base liviana actual.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
   defina politica documental productiva.
 - Mantener smoke API + DB en cada corte backend significativo.
@@ -225,5 +225,6 @@ standalone.
   local, smoke repetible para errores API de modelo y autorizacion, smoke de
   adjuntos de evidencia, smoke de auditoria, smoke de facts externos,
   aclaracion de configuracion local, estado P0 actualizado, validacion estricta
-  de descarga controlada de adjuntos y consulta protegida de auditoria.
-- Commit sugerido: `feat(api): expose incident audit records`.
+  de descarga controlada de adjuntos, consulta protegida de auditoria y cierre
+  documental del corte P0 standalone.
+- Commit sugerido: `docs(roadmap): close p0 standalone cut`.

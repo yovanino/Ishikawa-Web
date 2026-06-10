@@ -1,102 +1,337 @@
-# Roadmap del Modulo Ishikawa RCA
+# Roadmap Maestro del Modulo Ishikawa RCA
 
-## Estado Actual
+Fecha de corte: 2026-06-06.
 
-El repositorio ya tiene la base modular, persistencia MySQL, flujo RCA operacional, evidencias con adjuntos y validacion, wizard guiado, exportacion PDF, contratos de integracion y stub de AI Gateway. El siguiente objetivo es endurecer tests, permisos, auditoria, storage documental productivo y conexion real con AI Gateway/plataforma global.
+## Lectura Ejecutiva
 
-## Fase 0 - Base del Repositorio
+El modulo Ishikawa RCA ya supero el estado de MVP basico. El repositorio tiene
+una solucion ASP.NET Core por capas, persistencia MySQL, UI MVC operativa,
+contratos API versionados, evidencias con adjuntos/hash/validacion, facts
+operacionales, intake externo cliente/proveedor, wizard guiado, exportacion PDF,
+feed de integracion y asistencia IA en modo stub.
 
-- [x] Documentar alcance modular.
-- [x] Definir contratos API iniciales.
-- [x] Definir eventos de dominio.
-- [x] Definir preparacion para AI Gateway.
-- [x] Crear solucion ASP.NET Core MVC.
+El corte P0 standalone ya no debe leerse como "hacer que funcione"; queda
+cerrado como base pilotable. Los siguientes cortes deben llevarlo hacia producto
+industrial: UX de cockpit, integraciones salientes reales, Identity corporativo,
+storage documental productivo y AI Gateway HTTP.
 
-## Fase 1 - MVP Operacional
+## Estado Actual Comprobado
 
-- [x] CRUD de incidentes RCA.
-- [x] Wizard basico.
-- [x] Canvas Ishikawa visual inicial.
-- [x] Categorias dinamicas base.
-- [x] Causas.
-- [x] Subcausas.
+### Arquitectura
+
+- [x] Solucion modular ASP.NET Core.
+- [x] Capas separadas: `Domain`, `Application`, `Contracts`,
+  `Infrastructure`, `Web`.
+- [x] Entidades de dominio para incidentes, ramas, causas, acciones,
+  evidencias, facts e intake externo.
+- [x] Servicios de aplicacion para RCA e intake externo.
+- [x] Implementacion EF Core + MySQL.
+- [x] Implementacion in-memory para pruebas/logica aislada.
+- [x] Contratos API compartidos en proyecto `Contracts`.
+- [x] Documentacion de contexto, limites, APIs, IA, operaciones locales,
+  benchmark UI y modelo de chats Codex.
+
+### Producto RCA
+
+- [x] Alta, listado y detalle de incidentes RCA.
+- [x] Clasificacion por severidad, estado, origen, linea, maquina, OT y actor
+  del reclamo.
+- [x] Canvas Ishikawa inicial con ramas 6M.
+- [x] Causas y subcausas.
+- [x] Seleccion de causa raiz.
 - [x] Acciones correctivas.
-- [x] Cierre/validacion basica de acciones correctivas.
-- [x] Escalamiento a 8D.
-- [x] Cierre formal de RCA.
-- [x] Evidencias RCA iniciales por metadatos y referencia.
-- [x] Evidencias con adjuntos, previews, acciones de gestion, tags y validacion.
-- [x] Wizard guiado con progreso, bloqueos y checklist por etapa.
-- [x] Exportacion PDF RCA con cierre y manifiesto de evidencias.
-- [x] Linea de hechos manual RCA para registrar observaciones, mediciones, alarmas y contexto.
-- [x] Hechos vinculables a causa, evidencia, accion correctiva e intake externo.
-- [x] Clasificacion industrial de hechos: severidad, turno, maquina, linea, OT, material, lote, alarma y medicion.
-- [x] Hechos por API con correlacion externa e idempotencia para SCADA/OEE/Gantt/Andon.
-- [x] Clasificacion de acciones por tipo: correctiva, preventiva y preventiva de recurrencia.
-- [x] Separacion de resolucion entre causa raiz del defecto y FUGA/no deteccion.
-- [x] Persistencia en MySQL.
-- [x] API para crear incidentes desde sistemas externos.
-- [x] Contexto basico de reclamo interno/externo.
-- [x] Actor de reclamo explicito: area interna, cliente o proveedor.
-- [x] Intake link seguro MVP para proveedor/cliente.
-- [x] Revision interna de intake externo con importacion a causa/accion.
+- [x] Acciones clasificadas por tipo: correctiva, preventiva y preventiva de
+  recurrencia.
+- [x] Acciones clasificadas por ambito: causa raiz y FUGA/no deteccion.
+- [x] Politica de cierre/resolucion que exige cobertura preventiva de
+  recurrencia.
+- [x] Escalamiento formal a 8D.
+- [x] Cierre formal con resumen, usuario y fecha.
 
-## Fase 2 - Experiencia Visual
+### Wizard y Flujo Guiado
 
-- Drag and drop.
-- Zoom y pan.
-- Panel lateral de edicion.
-- Context menu industrial.
-- Auto-layout inicial.
-- [x] Linea de hechos manual visible en detalle RCA.
-- [x] Vinculos visuales de hechos con causa, evidencia, accion e intake externo.
-- [x] Clasificacion industrial visible y capturable en hechos RCA.
-- [x] Panel visual de resolucion causa raiz/FUGA para acciones correctivas.
-- [x] Evidencias iniciales con tipo, fuente, resumen y referencia.
-- [x] Adjuntos binarios/documentales iniciales para evidencias.
-- [x] Miniaturas/previews compactos de evidencias.
-- [x] Gestion visual de evidencias: editar, reemplazar adjunto y eliminar.
-- [x] Wizard visual guiado con porcentaje, metricas y bloqueos.
-- Comentarios.
+- [x] Wizard con etapas `Problem`, `Causes`, `Evidence`, `Actions`,
+  `Validation`, `Closed`.
+- [x] Endpoint de avance de etapa.
+- [x] Endpoint de progreso con porcentaje, bloqueos, metricas y siguiente paso.
+- [x] UI con checklist, bloqueos y avance visual.
 
-## Fase 3 - Integracion Operacional
+### Evidencias
 
-- SignalR para actualizaciones en vivo.
-- Webhooks/eventos salientes.
-- Integracion Gantt por API.
-- Integracion SCADA/Gateway por API.
-- [x] Timeline visual de RCA alimentada por eventos de integracion.
-- [x] Timeline unificado con hechos, evidencias, acciones, wizard, intake externo y contexto industrial.
-- [x] Entrada de hechos por API desde modulos externos con `externalSourceSystem` y `externalEventId`.
-- Estados y auditoria ampliada.
-- [x] Evento de RCA escalado a 8D.
-- [x] Evento de etapa wizard RCA completada.
-- [x] Evento de RCA cerrado.
-- [x] Evento de accion correctiva completada.
-- Eventos de integracion para intake externo.
-- [x] Rechazo formal de intake externo con motivo.
-- Auditoria ampliada de intake externo.
-- [x] Evidencia RCA inicial vinculable a causa o intake externo.
-- [x] Endpoint de progreso de wizard para consumidores externos.
-- [x] Exportacion PDF controlada desde detalle RCA.
-- Adjuntos binarios/documentales en intake externo.
+- [x] Evidencias por metadatos.
+- [x] Evidencias vinculables a causa e intake externo.
+- [x] Adjuntos reales con storage local configurable.
+- [x] Descarga controlada por endpoint.
+- [x] SHA-256 de adjuntos.
+- [x] Previews compactos por tipo de archivo.
+- [x] Edicion, reemplazo de adjunto y eliminacion.
+- [x] Estados de validacion, validador, fecha y notas.
+- [ ] Storage documental productivo.
+- [ ] Versionado formal de documentos/evidencias.
+- [ ] Firma/aprobacion documental.
 
-## Fase 4 - Inteligencia Asistida
+### Hechos Operacionales
 
-- Consumo de AI Gateway.
-- Sugerencia de causas.
-- Sugerencia de acciones.
-- Sugerencia de evidencias faltantes y riesgos de cierre.
-- Deteccion de recurrencia.
-- Resumen del analisis.
-- Borrador de 8D.
+- [x] Linea de hechos manual.
+- [x] Facts vinculables a causa, evidencia, accion e intake externo.
+- [x] Clasificacion industrial: severidad, turno, maquina, linea, OT,
+  material, lote, alarma y medicion.
+- [x] Ingreso de facts por API.
+- [x] Correlacion externa con `externalSourceSystem`, `externalEventId` y
+  `externalRecordUri`.
+- [x] Idempotencia por RCA + sistema/evento externo.
 
-## Fase 5 - Plataforma Global
+### Intake Externo Cliente/Proveedor
 
-- Registro en app global.
-- Integracion con Identity/Tenant global.
-- Integracion con maestros globales de clientes y proveedores.
-- Integracion con Event Bus global.
-- Timeline operacional unificado.
-- Dashboard cross-module.
+- [x] Actor de reclamo: area interna, cliente o proveedor.
+- [x] Link externo con token hasheado.
+- [x] Expiracion, revocacion y estados de intake.
+- [x] Pantalla externa sin navegacion completa.
+- [x] Envio de respuesta externa.
+- [x] Revision interna.
+- [x] Importacion opcional de causa y accion correctiva.
+- [x] Rechazo formal con motivo.
+- [x] Eventos derivados de created/opened/submitted/reviewed/rejected/revoked/
+  expired.
+- [ ] Adjuntos binarios/documentales en intake externo.
+- [ ] Verificacion adicional para actores externos cuando lo defina Identity.
 
+### APIs e Integracion
+
+- [x] Endpoints versionados `/api/v1`.
+- [x] API de incidentes.
+- [x] API de canvas/causas.
+- [x] API de acciones.
+- [x] API de evidencias y adjuntos.
+- [x] API de facts.
+- [x] API de cierre y escalamiento 8D.
+- [x] API de wizard/progreso.
+- [x] Snapshots de integracion.
+- [x] Feed derivado de eventos RCA.
+- [x] Contratos preparados para Gantt, SCADA/Gateway, OEE, Andon, TPM y app
+  global.
+- [ ] Webhooks salientes.
+- [ ] Outbox/event bus transaccional.
+- [ ] SignalR o canal live para actualizaciones.
+
+### IA
+
+- [x] Contratos de contexto y resultados IA.
+- [x] Servicio de aplicacion para armar contexto RCA.
+- [x] Cliente AI Gateway abstracto.
+- [x] Stub deterministico local.
+- [x] Endpoints de sugerencia de causas, acciones y resumen.
+- [ ] Cliente HTTP real contra AI Gateway.
+- [ ] Deteccion de recurrencia.
+- [ ] Borrador 8D.
+- [ ] Flujo UI de aprobacion humana de sugerencias.
+
+### UI
+
+- [x] UI MVC para crear/listar/ver RCA.
+- [x] Detalle RCA con canvas, wizard, timeline, evidencias, facts, acciones,
+  intake externo y cierre.
+- [x] Exportacion PDF desde UI.
+- [x] Gestion visual de evidencias.
+- [x] Timeline unificado.
+- [ ] Drag and drop de causas.
+- [ ] Zoom y pan del canvas.
+- [ ] Panel lateral de edicion.
+- [ ] Context menu industrial.
+- [ ] Auto-layout del fishbone.
+- [ ] Comentarios colaborativos.
+- [ ] Vistas por rol.
+- [ ] Modo cockpit/Obeya para supervision.
+
+### QA y Operacion
+
+- [x] Scripts locales de arranque y smoke test.
+- [x] Guia de operacion local.
+- [x] Tests livianos de politica de resolucion, facts externos, storage de
+  evidencias y auditoria in-memory.
+- [x] Suite base de tests de dominio/aplicacion para politicas P0.
+- [x] Tests de integracion API por smokes versionados.
+- [ ] Tests MVC/UI.
+- [x] Smoke automatizado estable contra DB local.
+- [ ] Validacion CI/CD.
+
+### Seguridad y Gobierno
+
+- [x] Tokens hasheados para intake externo.
+- [x] Antiforgery en formularios MVC.
+- [x] Descarga controlada de adjuntos.
+- [x] Autenticacion/autorizacion standalone configurable.
+- [x] Tenant configurable en MVC en lugar de tenant demo hardcodeado.
+- [x] Roles base para operaciones sensibles.
+- [x] Auditoria inicial persistida para operaciones sensibles.
+- [x] Consulta protegida de auditoria por incidente.
+- [ ] Integracion con Identity global.
+- [ ] Tenant real resuelto por identidad corporativa/multitenant.
+- [x] Permisos P0 refinados por operacion sensible.
+- [x] Consulta inicial de auditoria fina.
+- [ ] Politica productiva de secretos/configuracion.
+
+## Prioridad Recomendada
+
+### P0 - Endurecimiento Producto Standalone
+
+Objetivo: dejar Ishikawa RCA como modulo standalone confiable para uso piloto
+industrial.
+
+- [x] Autenticacion/autorizacion basica standalone.
+- [x] Tenant configurable y eliminacion del tenant demo hardcodeado en MVC.
+- [x] Roles minimos: operador, supervisor, calidad, mantenimiento,
+  administrador.
+- [x] Preparacion para integracion futura con Identity global y tenant
+  corporativo real mediante contexto de usuario/tenant desacoplado.
+- [x] Suite base de tests para politicas de dominio y validaciones P0.
+- [x] Tests de integracion para endpoints criticos mediante smokes API.
+- [x] Smoke test automatizado API + DB.
+- [x] Auditoria inicial para cierre, revision/rechazo de intake
+  y cambios de evidencia.
+- [x] Auditoria fina inicial con consulta protegida por incidente.
+- [x] Manejo consistente de errores API y validaciones MVC existentes.
+- [x] Hardening de storage local y limites de adjuntos.
+- [x] Actualizar `VALIDATION_LOG.md` por cada corte.
+
+Estado del corte: P0 cerrado como producto standalone pilotable. Quedan fuera
+del alcance P0 y pasan a cortes posteriores: Identity global real, tenant
+corporativo multitenant, storage documental productivo, CI/CD, tests MVC/UI,
+outbox/event bus, reapertura gobernada y reportes corporativos de auditoria.
+
+Criterio de salida P0:
+
+- Build limpio.
+- Tests unitarios e integracion pasando.
+- Smoke local documentado.
+- Ningun flujo critico depende de tenant demo.
+- Operaciones sensibles requieren usuario/rol.
+- Adjuntos y evidencias mantienen trazabilidad verificable.
+
+### P1 - Experiencia Visual Industrial
+
+Objetivo: transformar la UI de detalle RCA en una superficie de trabajo tipo
+cockpit industrial.
+
+- [ ] Command bar del incidente: estado, severidad, SLA, linea, maquina,
+  responsable, fase actual.
+- [ ] KPI rail compacto: causas abiertas, evidencias, acciones vencidas, edad
+  de contencion, riesgo de recurrencia.
+- [ ] Fishbone interactivo con tarjetas de causa.
+- [ ] Drag/reorder de causas.
+- [ ] Zoom, pan y fit-to-screen.
+- [ ] Panel lateral de edicion para causa/evidencia/accion.
+- [ ] Timeline operacional filtrable.
+- [ ] CAPA board separado por correctiva, preventiva y recurrencia.
+- [ ] Estados empty/loading/error/offline.
+- [ ] Validacion responsive/tablet.
+
+Criterio de salida P1:
+
+- El usuario puede navegar el RCA principal sin perder contexto.
+- Las decisiones clave se ven en una sola pantalla.
+- El canvas deja de ser solo dibujo y se comporta como artefacto vivo.
+- La UI mantiene densidad industrial sin volverse decorativa.
+
+### P2 - Integracion Operacional Real
+
+Objetivo: conectar el RCA con otros modulos/sistemas sin acoplamiento directo.
+
+- [ ] Webhooks configurables.
+- [ ] Outbox transaccional.
+- [ ] Contratos de eventos listos para broker/event bus.
+- [ ] SignalR o canal live para timeline y estados.
+- [ ] Integracion API concreta con Gantt.
+- [ ] Integracion API concreta con Gateway/SCADA para facts.
+- [ ] Estados y auditoria ampliada para consumidores externos.
+- [ ] Documentar versionado y compatibilidad de eventos.
+
+Criterio de salida P2:
+
+- Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder
+  al modelo interno.
+- Los eventos relevantes salen de forma confiable e idempotente.
+- El modulo sigue funcionando standalone si los consumidores externos fallan.
+
+### P3 - IA Asistida con Aprobacion Humana
+
+Objetivo: pasar de stub IA a asistencia real gobernada.
+
+- [ ] Cliente HTTP real para AI Gateway.
+- [ ] Configuracion por ambiente/tenant.
+- [ ] Sugerencias de causas con metadata de modelo/proveedor.
+- [ ] Sugerencias de acciones CAPA.
+- [ ] Resumen del RCA.
+- [ ] Deteccion de recurrencia por historico.
+- [ ] Borrador 8D.
+- [ ] UI para aceptar/rechazar sugerencias.
+- [ ] Auditoria de sugerencias aceptadas.
+
+Criterio de salida P3:
+
+- La IA no escribe decisiones oficiales sin aprobacion humana.
+- Toda sugerencia aceptada queda trazable.
+- El modulo opera correctamente con IA apagada o degradada.
+
+### P4 - Gobierno Documental y Plataforma Global
+
+Objetivo: preparar el modulo para produccion corporativa y convivencia con la
+plataforma industrial mayor.
+
+- [ ] Storage documental productivo.
+- [ ] Versionado de PDF de cierre.
+- [ ] Plantilla corporativa de PDF.
+- [ ] Firma/aprobacion de cierre.
+- [ ] Integracion con Identity global.
+- [ ] Integracion con maestros globales de clientes/proveedores.
+- [ ] Registro en app global.
+- [ ] Dashboard cross-module.
+- [ ] Timeline operacional unificado.
+
+Criterio de salida P4:
+
+- Los cierres RCA son auditables como documentos formales.
+- El modulo puede integrarse a la plataforma sin reescritura interna.
+- Clientes/proveedores se resuelven por maestros globales cuando existan.
+
+## Secuencia Recomendada de Trabajo
+
+1. Crear frente QA/P0: tests de dominio, API y smoke DB.
+2. Crear frente Seguridad/P0: tenant real, auth, roles y permisos.
+3. Crear frente Auditoria/P0: historial fino de acciones sensibles.
+4. Crear frente UI/P1: cockpit del detalle RCA.
+5. Crear frente Integracion/P2: outbox/webhooks y live updates.
+6. Crear frente IA/P3: cliente HTTP AI Gateway y aprobacion humana.
+7. Crear frente Documental/P4: storage, PDF versionado y aprobaciones.
+
+## Riesgos Principales
+
+- Avanzar UI premium sin cerrar seguridad y tenant real puede producir una demo
+  vistosa pero no pilotable.
+- Agregar integraciones directas con otros modulos puede romper la decision de
+  arquitectura standalone.
+- Usar IA sin aprobacion humana puede degradar trazabilidad y confianza.
+- Mantener solo tests de consola deja sin cobertura flujos API/MVC criticos.
+- El storage local de adjuntos sirve para MVP, pero debe endurecerse antes de
+  produccion.
+
+## Proximo Corte Recomendado
+
+El siguiente corte debe salir de P0 y elegir foco:
+
+- P1 si se prioriza experiencia visual industrial/cockpit.
+- P2 si se prioriza integracion operacional real.
+- P3 si se prioriza AI Gateway con aprobacion humana.
+- P4 si se prioriza gobierno documental y plataforma global.
+
+El corte P0 ya dejo entregado:
+
+- Auth/roles/tenant real minimos.
+- Suite de tests base.
+- Smoke API + DB confiable.
+- Auditoria fina inicial.
+- Validacion documentada en `docs/VALIDATION_LOG.md`.
+
+Con ese piso, el proyecto queda en condiciones de invertir fuerte en UI cockpit,
+integraciones reales, IA gobernada o gobierno documental sin reabrir la base
+standalone.

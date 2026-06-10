@@ -79,22 +79,28 @@ El backend ya cuenta con:
 - Endpoint protegido `GET /api/v1/rca/incidents/{id}/audit` para consultar la
   auditoria persistida de un RCA.
 
-## Prioridad Backend P0
+## Corte Backend P0
 
-El siguiente corte recomendado es endurecimiento de producto standalone:
+El corte de endurecimiento de producto standalone queda cerrado como base
+pilotable:
 
-- Autenticacion/autorizacion basica.
-- Tenant real en lugar de tenant demo.
+- Autenticacion/autorizacion basica standalone.
+- Tenant configurable en lugar de tenant demo.
 - Roles minimos: operador, supervisor, calidad, mantenimiento y administrador.
-- Proteccion de operaciones sensibles: cierre, escalamiento 8D, revision o
+- Proteccion por rol de operaciones sensibles: cierre, escalamiento 8D, revision o
   rechazo de intake, completar/cancelar acciones, validar evidencias y
   reemplazar/eliminar adjuntos.
-- Auditoria fina para operaciones sensibles.
+- Auditoria persistida y consulta protegida para operaciones sensibles.
 - Manejo consistente de errores API con `ApiResult`.
-- Tests de dominio, aplicacion e integracion para flujos criticos.
+- Tests base de dominio/aplicacion e integracion por smokes para flujos
+  criticos.
 - Smoke API + DB estable.
 - Hardening de adjuntos: extension, tamano, path traversal, descarga
   controlada y preparacion para storage documental productivo.
+
+Quedan como post-P0: Identity global, tenant corporativo multitenant, permisos
+productivos finos, reapertura gobernada, reportes corporativos de auditoria,
+tests MVC/UI, CI/CD y storage documental productivo.
 
 ## Limites
 
