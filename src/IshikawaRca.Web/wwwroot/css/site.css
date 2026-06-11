@@ -311,6 +311,63 @@ a {
   padding: 24px;
 }
 
+.rca-command-center {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.command-copy {
+  min-width: 0;
+}
+
+.command-eyebrow,
+.command-context-strip,
+.command-state-stack,
+.command-action-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.command-eyebrow {
+  color: var(--muted);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.command-eyebrow span {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 850;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.command-context-strip {
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.command-context-strip span {
+  background: #f6f8fa;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #263647;
+  display: inline-grid;
+  gap: 2px;
+  min-width: 104px;
+  padding: 9px 11px;
+}
+
+.command-context-strip strong {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .premium-heading {
   padding: 24px;
 }
@@ -320,6 +377,26 @@ a {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.command-state-stack {
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.command-action-row {
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.phase-chip {
+  background: var(--brand-soft);
+  border: 1px solid #b7dede;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 7px 10px;
 }
 
 .section-title {
@@ -1214,6 +1291,37 @@ textarea.form-control {
   font-size: 1rem;
   font-weight: 850;
   margin: 0;
+}
+
+.cockpit-metric {
+  border-color: #cbd6df;
+}
+
+.risk-alto {
+  border-color: #ebb8b0;
+  background: linear-gradient(180deg, #fffafa 0, #ffffff 100%);
+}
+
+.risk-alto .metric-value {
+  color: var(--danger);
+}
+
+.risk-medio {
+  border-color: #efd29a;
+  background: linear-gradient(180deg, #fffaf0 0, #ffffff 100%);
+}
+
+.risk-medio .metric-value {
+  color: var(--accent);
+}
+
+.risk-bajo {
+  border-color: #adddca;
+  background: linear-gradient(180deg, #f4fbf8 0, #ffffff 100%);
+}
+
+.risk-bajo .metric-value {
+  color: var(--success);
 }
 
 .resolution-lane-heading span {

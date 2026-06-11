@@ -112,9 +112,15 @@ gobernada y reportes corporativos de auditoria.
 
 ## Siguiente Corte Recomendado
 
-El proximo paso natural ya no es P0; es elegir uno de estos caminos:
+El corte activo recomendado pasa a P1: experiencia visual industrial del detalle
+RCA. El primer ajuste ya avanzo command bar y KPI rail del cockpit, validado con
+build y tests livianos en serie. Para mantener velocidad, cada micro-ajuste UI
+se valida con build/tests/diff y la validacion visual completa se agrupa al
+cierre de bloques de cockpit o responsive.
 
-- Endurecimiento tecnico post-P0: suite formal de tests, permisos productivos
-  refinados e integracion futura con Identity/tenant
+- Continuar P1 con fishbone de tarjetas, CAPA board, timeline filtrable y
+  responsive/tablet.
+- Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,
+  permisos productivos refinados e integracion futura con Identity/tenant
   corporativo.
 - Workflow RCA avanzado: CAPA, auditoria ampliada, aprobaciones, versionado PDF y adjuntos externos.

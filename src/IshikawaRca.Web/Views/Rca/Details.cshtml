@@ -9,7 +9,20 @@
         .ToDictionary(x => x.Key, x => x.ToList());
     var causesById = Model.Canvas.Causes.ToDictionary(x => x.Id);
     var rootCause = Model.Canvas.Causes.FirstOrDefault(x => x.IsRootCause);
+    var now = DateTimeOffset.UtcNow;
     var openActions = Model.CorrectiveActions.Count(x => !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+    var overdueActions = Model.CorrectiveActions.Count(x =>
+        !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase) &&
+        x.DueDate.HasValue &&
+        x.DueDate.Value < now);
+    var nextActionDue = Model.CorrectiveActions
+        .Where(x =>
+            !string.Equals(x.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase) &&
+            x.DueDate.HasValue)
+        .OrderBy(x => x.DueDate)
+        .FirstOrDefault();
     var rootResolutionActions = Model.CorrectiveActions
         .Where(x => string.Equals(x.ResolutionScope, "RootCause", StringComparison.OrdinalIgnoreCase))
         .ToList();
@@ -28,18 +41,49 @@
     var currentWizardIndex = Array.FindIndex(wizardSteps, x => string.Equals(x.Key, incident.WizardStep, StringComparison.OrdinalIgnoreCase));
     currentWizardIndex = currentWizardIndex < 0 ? 0 : currentWizardIndex;
     var wizardProgress = Model.WizardProgress;
+    var currentWizardLabel = wizardSteps[currentWizardIndex].Label;
+    var containmentAge = now - incident.OccurredAt;
+    var containmentAgeLabel = incident.ClosedAt.HasValue
+        ? $"{Math.Max(0, (int)Math.Floor((incident.ClosedAt.Value - incident.OccurredAt).TotalDays))}d"
+        : containmentAge.TotalDays >= 1
+            ? $"{(int)Math.Floor(containmentAge.TotalDays)}d"
+            : $"{Math.Max(0, (int)Math.Floor(containmentAge.TotalHours))}h";
+    var recurrenceRisk = overdueActions > 0
+        ? "Alto"
+        : rootCause is null || openActions > 0
+            ? "Medio"
+            : "Bajo";
+    var recurrenceRiskClass = recurrenceRisk.ToLowerInvariant();
 }
 
 <section class="rca-command-center">
-    <div>
-        <p class="module-kicker">@incident.SourceSystem | @incident.ClaimActorType</p>
+    <div class="command-copy">
+        <div class="command-eyebrow">
+            <span>@incident.SourceSystem</span>
+            <span>@incident.ClaimActorType</span>
+            <span>@incident.CreatedAt.LocalDateTime.ToString("dd/MM HH:mm")</span>
+        </div>
         <h1>@incident.Title</h1>
         <p>@(incident.ProblemDescription ?? "Sin descripcion cargada.")</p>
+        <div class="command-context-strip" aria-label="Contexto industrial del RCA">
+            <span><strong>Linea</strong>@(incident.LineCode ?? "-")</span>
+            <span><strong>Maquina</strong>@(incident.MachineCode ?? "-")</span>
+            <span><strong>OT</strong>@(incident.WorkOrderCode ?? "-")</span>
+            <span><strong>Fase</strong>@currentWizardLabel</span>
+            <span><strong>Owner</strong>@(incident.WizardStepCompletedByUserId ?? incident.ClosedByUserId ?? "Sin asignar")</span>
+        </div>
     </div>
     <div class="command-actions">
-        <span class="status-chip">@incident.Status</span>
-        <a class="btn btn-primary" asp-controller="Rca" asp-action="ExportPdf" asp-route-id="@incident.Id">Exportar PDF</a>
-        <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
+        <div class="command-state-stack" aria-label="Estado principal del RCA">
+            <span class="severity-pill severity-@incident.Severity.ToLowerInvariant()">@incident.Severity</span>
+            <span class="status-chip">@incident.Status</span>
+            <span class="phase-chip">@wizardProgress.CompletionPercent% RCA</span>
+        </div>
+        <div class="command-action-row">
+            <a class="btn btn-primary" asp-controller="Rca" asp-action="ExportPdf" asp-route-id="@incident.Id">Exportar PDF</a>
+            <a class="btn btn-outline-secondary" href="#capa-board">CAPA</a>
+            <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
+        </div>
     </div>
 </section>
 
@@ -80,12 +124,22 @@
     <article class="metric-tile">
         <span class="metric-value">@openActions</span>
         <strong>Acciones abiertas</strong>
-        <p>Trabajo correctivo pendiente.</p>
+        <p>@overdueActions vencidas; @(nextActionDue?.DueDate?.LocalDateTime.ToString("dd/MM HH:mm") ?? "sin proximo vencimiento").</p>
     </article>
     <article class="metric-tile">
         <span class="metric-value">@(rootCause is null ? "Pend." : "Raiz")</span>
         <strong>Causa raiz</strong>
         <p>@(rootCause?.Title ?? "Aun sin confirmar.")</p>
+    </article>
+    <article class="metric-tile cockpit-metric">
+        <span class="metric-value">@containmentAgeLabel</span>
+        <strong>Edad de contencion</strong>
+        <p>Desde el evento reportado hasta el estado actual.</p>
+    </article>
+    <article class="metric-tile cockpit-metric risk-@recurrenceRiskClass">
+        <span class="metric-value">@recurrenceRisk</span>
+        <strong>Riesgo de recurrencia</strong>
+        <p>@(overdueActions > 0 ? "Hay acciones vencidas." : rootCause is null ? "Falta confirmar causa raiz." : openActions > 0 ? "Quedan acciones abiertas." : "Cierre operacional sin bloqueos visibles.")</p>
     </article>
 </section>
 
@@ -665,7 +719,7 @@
     }
 </section>
 
-<section class="analysis-grid actions-grid">
+<section class="analysis-grid actions-grid" id="capa-board">
     <article class="analysis-panel">
         <div class="panel-heading">
             <div>

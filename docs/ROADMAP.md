@@ -213,9 +213,10 @@ Criterio de salida P0:
 Objetivo: transformar la UI de detalle RCA en una superficie de trabajo tipo
 cockpit industrial.
 
-- [ ] Command bar del incidente: estado, severidad, SLA, linea, maquina,
+- [x] Command bar del incidente: estado, severidad, linea, maquina,
   responsable, fase actual.
-- [ ] KPI rail compacto: causas abiertas, evidencias, acciones vencidas, edad
+- [ ] SLA visual del incidente cuando exista regla formal de SLA.
+- [x] KPI rail compacto: causas abiertas, evidencias, acciones vencidas, edad
   de contencion, riesgo de recurrencia.
 - [ ] Fishbone interactivo con tarjetas de causa.
 - [ ] Drag/reorder de causas.
@@ -225,6 +226,10 @@ cockpit industrial.
 - [ ] CAPA board separado por correctiva, preventiva y recurrencia.
 - [ ] Estados empty/loading/error/offline.
 - [ ] Validacion responsive/tablet.
+
+Avance P1 inicial 2026-06-11: el detalle RCA ya tiene command bar industrial y
+KPI rail ampliado. La validacion visual completa queda agrupada para el cierre
+del bloque cockpit/tablet, no para cada micro-ajuste UI.
 
 Criterio de salida P1:
 

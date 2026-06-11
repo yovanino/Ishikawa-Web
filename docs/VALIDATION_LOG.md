@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-11 - P1 RCA command bar and KPI rail
+
+Scope: start the P1 industrial cockpit pass on the RCA detail screen.
+
+Checks:
+
+- Added an incident command bar with source, claim actor, creation time,
+  severity, status, phase progress, line, machine, work order, current phase
+  and owner context.
+- Expanded the KPI rail with overdue actions, next due date, containment age
+  and recurrence risk.
+- Kept the change inside MVC view/CSS only; no backend contracts, persistence
+  or API behavior changed.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Visual browser validation intentionally deferred to the P1 cockpit block
+  closure to avoid slow app/DB startup on every micro-adjustment.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-10 - P0 standalone closure
 
 Scope: close the backend P0 standalone cut in project documentation.
