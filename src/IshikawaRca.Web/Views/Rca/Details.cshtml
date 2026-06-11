@@ -29,6 +29,27 @@
     var escapeResolutionActions = Model.CorrectiveActions
         .Where(x => string.Equals(x.ResolutionScope, "Escape", StringComparison.OrdinalIgnoreCase))
         .ToList();
+    var correctiveActions = Model.CorrectiveActions
+        .Where(x => string.Equals(x.ActionType, "Corrective", StringComparison.OrdinalIgnoreCase))
+        .OrderBy(x => x.DueDate ?? DateTimeOffset.MaxValue)
+        .ThenBy(x => x.Title)
+        .ToList();
+    var preventiveActions = Model.CorrectiveActions
+        .Where(x => string.Equals(x.ActionType, "Preventive", StringComparison.OrdinalIgnoreCase))
+        .OrderBy(x => x.DueDate ?? DateTimeOffset.MaxValue)
+        .ThenBy(x => x.Title)
+        .ToList();
+    var recurrenceActions = Model.CorrectiveActions
+        .Where(x => string.Equals(x.ActionType, "RecurrencePreventive", StringComparison.OrdinalIgnoreCase))
+        .OrderBy(x => x.DueDate ?? DateTimeOffset.MaxValue)
+        .ThenBy(x => x.Title)
+        .ToList();
+    var capaLanes = new[]
+    {
+        new { Title = "Correctiva", Subtitle = "Contencion y correccion directa", Actions = correctiveActions, Tone = "corrective" },
+        new { Title = "Preventiva", Subtitle = "Evita repeticion por proceso", Actions = preventiveActions, Tone = "preventive" },
+        new { Title = "Recurrencia", Subtitle = "Sostiene el aprendizaje RCA", Actions = recurrenceActions, Tone = "recurrence" }
+    };
     var wizardSteps = new[]
     {
         new { Key = "Problem", Label = "Problema", Detail = "Contexto y alcance" },
@@ -1286,6 +1307,54 @@
                 <span>Causa raiz, FUGA, acciones y recurrencia</span>
             </div>
             <span class="canvas-counter">@Model.CorrectiveActions.Count accion(es)</span>
+        </div>
+
+        <div class="capa-board" aria-label="CAPA board por tipo de accion">
+            @foreach (var lane in capaLanes)
+            {
+                <section class="capa-lane capa-lane-@lane.Tone">
+                    <div class="capa-lane-heading">
+                        <div>
+                            <h3>@lane.Title</h3>
+                            <span>@lane.Subtitle</span>
+                        </div>
+                        <strong>@lane.Actions.Count</strong>
+                    </div>
+
+                    @if (lane.Actions.Count == 0)
+                    {
+                        <p class="muted-text">Sin acciones en esta categoria.</p>
+                    }
+                    else
+                    {
+                        <div class="capa-card-list">
+                            @foreach (var action in lane.Actions)
+                            {
+                                var linkedCause = Model.Canvas.Causes.FirstOrDefault(x => x.Id == action.CauseId);
+                                var isActionOpen = !string.Equals(action.Status, "Completed", StringComparison.OrdinalIgnoreCase) &&
+                                    !string.Equals(action.Status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+                                var isActionOverdue = isActionOpen && action.DueDate.HasValue && action.DueDate.Value < now;
+
+                                <article class="capa-card @(isActionOverdue ? "capa-card-overdue" : string.Empty)">
+                                    <div class="capa-card-topline">
+                                        <span class="status-chip">@action.Status</span>
+                                        @if (isActionOverdue)
+                                        {
+                                            <span class="capa-due-chip">Vencida</span>
+                                        }
+                                    </div>
+                                    <strong>@action.Title</strong>
+                                    <span>@(linkedCause?.Title ?? "Sin causa asociada")</span>
+                                    <footer>
+                                        <small>@(action.AssignedToUserId ?? "Sin responsable")</small>
+                                        <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
+                                    </footer>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            }
         </div>
 
         <div class="resolution-columns">

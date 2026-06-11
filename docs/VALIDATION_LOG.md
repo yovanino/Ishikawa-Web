@@ -1,5 +1,28 @@
 # Validation Log
 
+## 2026-06-11 - P1 CAPA board
+
+Scope: add an operational CAPA board to the RCA detail screen.
+
+Checks:
+
+- Grouped existing actions into Corrective, Preventive and Recurrence lanes.
+- Each lane shows count, status, linked cause, owner, due date and overdue
+  marker where applicable.
+- Existing root-cause/FUGA resolution lists and update forms remain in place.
+- Kept the change inside MVC view/CSS only; no backend contracts, persistence
+  or API behavior changed.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Visual browser validation intentionally deferred to the P1 cockpit/tablet
+  closure.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-11 - P1 RCA command bar and KPI rail
 
 Scope: start the P1 industrial cockpit pass on the RCA detail screen.

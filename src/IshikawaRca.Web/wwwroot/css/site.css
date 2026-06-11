@@ -1265,6 +1265,128 @@ textarea.form-control {
   gap: 10px;
 }
 
+.capa-board {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.capa-lane {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.capa-lane-corrective {
+  border-top: 4px solid var(--danger);
+}
+
+.capa-lane-preventive {
+  border-top: 4px solid var(--accent);
+}
+
+.capa-lane-recurrence {
+  border-top: 4px solid var(--success);
+}
+
+.capa-lane-heading {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.capa-lane-heading h3 {
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.capa-lane-heading span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.capa-lane-heading strong {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 850;
+  height: 30px;
+  justify-content: center;
+  min-width: 30px;
+  padding: 0 9px;
+}
+
+.capa-card-list {
+  display: grid;
+  gap: 10px;
+}
+
+.capa-card {
+  background: #fff;
+  border: 1px solid #dfe5eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  min-height: 128px;
+  padding: 12px;
+}
+
+.capa-card-overdue {
+  border-color: #ebb8b0;
+}
+
+.capa-card-topline,
+.capa-card footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.capa-card strong,
+.capa-card span,
+.capa-card small {
+  display: block;
+}
+
+.capa-card strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.capa-card span,
+.capa-card small {
+  color: #657586;
+  font-size: 0.82rem;
+}
+
+.capa-due-chip {
+  background: #fff1ef;
+  border: 1px solid #ebb8b0;
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 850;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
 .resolution-columns {
   display: grid;
   gap: 14px;
@@ -1914,6 +2036,7 @@ textarea.form-control {
   .hero-command,
   .form-layout,
   .analysis-grid,
+  .capa-board,
   .resolution-columns,
   .wizard-guidance-grid {
     grid-template-columns: 1fr;

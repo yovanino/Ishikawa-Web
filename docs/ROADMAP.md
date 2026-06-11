@@ -223,13 +223,17 @@ cockpit industrial.
 - [ ] Zoom, pan y fit-to-screen.
 - [ ] Panel lateral de edicion para causa/evidencia/accion.
 - [ ] Timeline operacional filtrable.
-- [ ] CAPA board separado por correctiva, preventiva y recurrencia.
+- [x] CAPA board separado por correctiva, preventiva y recurrencia.
 - [ ] Estados empty/loading/error/offline.
 - [ ] Validacion responsive/tablet.
 
 Avance P1 inicial 2026-06-11: el detalle RCA ya tiene command bar industrial y
 KPI rail ampliado. La validacion visual completa queda agrupada para el cierre
 del bloque cockpit/tablet, no para cada micro-ajuste UI.
+
+Avance P1 2026-06-11: la seccion de resolucion incorpora CAPA board separado
+por accion correctiva, preventiva y preventiva de recurrencia, reutilizando las
+acciones existentes y sin cambios de contrato.
 
 Criterio de salida P1:
 

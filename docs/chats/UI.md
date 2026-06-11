@@ -194,11 +194,14 @@ detalle RCA:
 - 2026-06-11: se amplia el KPI rail del detalle con acciones vencidas,
   proximo vencimiento, edad de contencion y riesgo de recurrencia calculado
   desde causa raiz y acciones abiertas/vencidas.
+- 2026-06-11: se agrega CAPA board en la resolucion del problema, separado en
+  carriles correctiva, preventiva y recurrencia, reutilizando acciones
+  existentes y conservando abajo la gestion por causa raiz/FUGA.
 
 ## Pendientes
 
-- Continuar el corte P1 con fishbone de tarjetas mas informativas, CAPA board
-  por tipo de accion y timeline filtrable.
+- Continuar el corte P1 con fishbone de tarjetas mas informativas, timeline
+  filtrable y luego responsive/tablet.
 - Mantener sincronizado este archivo luego de cada trabajo UI.
 - Registrar validaciones visuales y funcionales relevantes en
   `docs/VALIDATION_LOG.md`.
@@ -227,10 +230,13 @@ detalle RCA:
   paso ejecutado en serie. La validacion visual completa queda diferida al
   cierre del bloque cockpit/tablet para evitar levantar app + DB en cada
   micro-ajuste.
+- 2026-06-11: para el CAPA board, `dotnet build IshikawaRca.sln /m:1` paso con
+  0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  paso en serie.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-11.
-- Resumen: primer ajuste P1 del cockpit RCA con command bar industrial y KPI
-  rail ampliado en el detalle.
+- Resumen: P1 avanza con command bar/KPI rail del cockpit y CAPA board por
+  tipo de accion en el detalle RCA.
 - Commit: pendiente en este cierre.
