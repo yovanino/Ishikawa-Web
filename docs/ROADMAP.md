@@ -226,7 +226,7 @@ cockpit industrial.
 - [ ] Edicion avanzada desde panel lateral.
 - [x] Timeline operacional filtrable.
 - [x] CAPA board separado por correctiva, preventiva y recurrencia.
-- [ ] Estados empty/loading/error/offline.
+- [x] Estados empty/loading/error/offline.
 - [ ] Validacion responsive/tablet.
 
 Avance P1 inicial 2026-06-11: el detalle RCA ya tiene command bar industrial y
@@ -249,6 +249,9 @@ alejar, ajustar y paneo por arrastre dentro del tablero.
 
 Avance P1 2026-06-11: se agrega panel lateral contextual para consultar detalle
 de causas, evidencias y acciones desde sus tarjetas.
+
+Avance P1 2026-06-11: se refuerzan estados empty con cards compactas, loading
+visual en submits, banner offline y se mantienen errores de validacion MVC.
 
 Criterio de salida P1:
 

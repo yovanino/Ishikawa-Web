@@ -660,6 +660,33 @@ a {
   text-align: center;
 }
 
+.inline-empty {
+  background: #f8fafb;
+  color: #607080;
+  margin: 0;
+  padding: 18px;
+  text-align: left;
+}
+
+.offline-banner {
+  background: #fff7df;
+  border: 1px solid #efcf88;
+  border-radius: 8px;
+  color: #704600;
+  font-weight: 820;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+}
+
+.is-submitting {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.is-submitting button[type="submit"]::after {
+  content: "...";
+}
+
 .premium-empty {
   border: 0;
   box-shadow: none;

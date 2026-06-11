@@ -108,6 +108,10 @@
     </div>
 </section>
 
+<div class="offline-banner" data-offline-banner hidden>
+    Conexion local no disponible. Los cambios pueden requerir reintento.
+</div>
+
 @if (TempData["StatusMessage"] is string message)
 {
     <div class="alert alert-success premium-alert" role="status">@message</div>
@@ -384,7 +388,7 @@
 
         @if (Model.Facts.Count == 0)
         {
-            <p class="muted-text">Sin hechos cargados. Registra primero lo observado antes de concluir causas.</p>
+            <p class="empty-state inline-empty">Sin hechos cargados. Registra primero lo observado antes de concluir causas.</p>
         }
         else
         {
@@ -666,7 +670,7 @@
 
     @if (Model.UnifiedTimeline.Count == 0)
     {
-        <p class="muted-text">Sin eventos registrados.</p>
+        <p class="empty-state inline-empty">Sin eventos registrados.</p>
     }
     else
     {
@@ -761,7 +765,7 @@
 
         @if (Model.Evidence.Count == 0)
         {
-            <p class="muted-text">Sin evidencias cargadas.</p>
+            <p class="empty-state inline-empty">Sin evidencias cargadas.</p>
         }
         else
         {
@@ -1085,7 +1089,7 @@
 
         @if (Model.ExternalIntakes.Count == 0)
         {
-            <p class="muted-text">Sin links externos creados.</p>
+            <p class="empty-state inline-empty">Sin links externos creados.</p>
         }
         else
         {
@@ -1226,7 +1230,7 @@
                             </div>
                             @if (causes.Count == 0)
                             {
-                                <p class="muted-text">Sin causas cargadas</p>
+                                <p class="empty-state inline-empty">Sin causas cargadas</p>
                             }
                             else
                             {
@@ -1374,7 +1378,7 @@
 
                     @if (lane.Actions.Count == 0)
                     {
-                        <p class="muted-text">Sin acciones en esta categoria.</p>
+                        <p class="empty-state inline-empty">Sin acciones en esta categoria.</p>
                     }
                     else
                     {
@@ -1428,7 +1432,7 @@
 
                 @if (rootResolutionActions.Count == 0)
                 {
-                    <p class="muted-text">Sin acciones para la causa raiz.</p>
+                    <p class="empty-state inline-empty">Sin acciones para la causa raiz.</p>
                 }
                 else
                 {
@@ -1486,7 +1490,7 @@
 
                 @if (escapeResolutionActions.Count == 0)
                 {
-                    <p class="muted-text">Sin desarrollo de FUGA cargado.</p>
+                    <p class="empty-state inline-empty">Sin desarrollo de FUGA cargado.</p>
                 }
                 else
                 {

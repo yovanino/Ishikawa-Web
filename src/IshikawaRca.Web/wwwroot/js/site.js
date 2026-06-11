@@ -23,6 +23,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const offlineBanner = document.querySelector("[data-offline-banner]");
+
+  if (offlineBanner) {
+    const syncOnlineState = () => {
+      offlineBanner.hidden = navigator.onLine;
+    };
+
+    window.addEventListener("online", syncOnlineState);
+    window.addEventListener("offline", syncOnlineState);
+    syncOnlineState();
+  }
+
+  document.querySelectorAll("form").forEach((form) => {
+    form.addEventListener("submit", () => {
+      form.classList.add("is-submitting");
+    });
+  });
+
   const fishboneBoard = document.querySelector("[data-fishbone-board]");
   const fishboneViewport = document.querySelector("[data-fishbone-viewport]");
 
