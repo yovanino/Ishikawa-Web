@@ -219,9 +219,9 @@ cockpit industrial.
 - [x] KPI rail compacto: causas abiertas, evidencias, acciones vencidas, edad
   de contencion, riesgo de recurrencia.
 - [x] Fishbone con tarjetas de causa enriquecidas.
-- [ ] Interaccion avanzada del fishbone sobre tarjetas de causa.
+- [x] Interaccion avanzada del fishbone sobre tarjetas de causa.
 - [ ] Drag/reorder de causas.
-- [ ] Zoom, pan y fit-to-screen.
+- [x] Zoom, pan y fit-to-screen.
 - [ ] Panel lateral de edicion para causa/evidencia/accion.
 - [x] Timeline operacional filtrable.
 - [x] CAPA board separado por correctiva, preventiva y recurrencia.
@@ -242,6 +242,9 @@ acciones.
 
 Avance P1 2026-06-11: el timeline unificado incorpora filtros client-side por
 hechos, evidencias, acciones, wizard y eventos externos.
+
+Avance P1 2026-06-11: el fishbone incorpora toolbar client-side para acercar,
+alejar, ajustar y paneo por arrastre dentro del tablero.
 
 Criterio de salida P1:
 

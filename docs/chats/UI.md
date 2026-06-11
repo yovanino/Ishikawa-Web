@@ -202,10 +202,12 @@ detalle RCA:
   hechos y acciones vinculadas.
 - 2026-06-11: se agrega filtro client-side al timeline unificado por todos,
   hechos, evidencias, acciones, wizard y eventos externos.
+- 2026-06-11: se agrega toolbar client-side al fishbone para zoom out, fit,
+  zoom in y paneo por arrastre del tablero.
 
 ## Pendientes
 
-- Continuar el corte P1 con interaccion avanzada del fishbone,
+- Continuar el corte P1 con drag/reorder de causas, panel lateral,
   empty/loading/error/offline y luego responsive/tablet.
 - Mantener sincronizado este archivo luego de cada trabajo UI.
 - Registrar validaciones visuales y funcionales relevantes en
@@ -244,10 +246,13 @@ detalle RCA:
 - 2026-06-11: para timeline filtrable, `dotnet build IshikawaRca.sln /m:1`
   paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   paso en serie.
+- 2026-06-11: para zoom/pan del fishbone, `dotnet build IshikawaRca.sln /m:1`
+  paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  paso en serie.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-11.
-- Resumen: P1 avanza con command bar/KPI rail, CAPA board, tarjetas de causa
-  enriquecidas y timeline filtrable en el detalle RCA.
+- Resumen: P1 avanza con command bar/KPI rail, CAPA board, tarjetas de causa,
+  zoom/pan del fishbone y timeline filtrable en el detalle RCA.
 - Commit: pendiente en este cierre.

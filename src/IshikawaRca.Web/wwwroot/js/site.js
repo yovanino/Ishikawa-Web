@@ -2,26 +2,99 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterBar = document.querySelector("[data-timeline-filter-bar]");
   const timelineItems = document.querySelectorAll("[data-timeline-kind]");
 
-  if (!filterBar || timelineItems.length === 0) {
+  if (filterBar && timelineItems.length > 0) {
+    filterBar.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-timeline-filter]");
+
+      if (!button) {
+        return;
+      }
+
+      const filter = button.dataset.timelineFilter;
+
+      filterBar.querySelectorAll("[data-timeline-filter]").forEach((item) => {
+        item.classList.toggle("is-active", item === button);
+      });
+
+      timelineItems.forEach((item) => {
+        const shouldShow = filter === "all" || item.dataset.timelineKind === filter;
+        item.classList.toggle("is-hidden", !shouldShow);
+      });
+    });
+  }
+
+  const fishboneBoard = document.querySelector("[data-fishbone-board]");
+  const fishboneViewport = document.querySelector("[data-fishbone-viewport]");
+
+  if (!fishboneBoard || !fishboneViewport) {
     return;
   }
 
-  filterBar.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-timeline-filter]");
+  let zoom = 1;
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let scrollStartLeft = 0;
+  let scrollStartTop = 0;
 
-    if (!button) {
+  const applyZoom = () => {
+    fishboneViewport.style.transform = `scale(${zoom})`;
+  };
+
+  document.querySelectorAll("[data-fishbone-zoom]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const action = button.dataset.fishboneZoom;
+
+      if (action === "fit") {
+        zoom = 1;
+        fishboneBoard.scrollLeft = 0;
+        fishboneBoard.scrollTop = 0;
+      } else if (action === "in") {
+        zoom = Math.min(1.4, zoom + 0.1);
+      } else {
+        zoom = Math.max(0.75, zoom - 0.1);
+      }
+
+      applyZoom();
+    });
+  });
+
+  fishboneViewport.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button, a, input, select, textarea")) {
       return;
     }
 
-    const filter = button.dataset.timelineFilter;
-
-    filterBar.querySelectorAll("[data-timeline-filter]").forEach((item) => {
-      item.classList.toggle("is-active", item === button);
-    });
-
-    timelineItems.forEach((item) => {
-      const shouldShow = filter === "all" || item.dataset.timelineKind === filter;
-      item.classList.toggle("is-hidden", !shouldShow);
-    });
+    isPanning = true;
+    panStartX = event.clientX;
+    panStartY = event.clientY;
+    scrollStartLeft = fishboneBoard.scrollLeft;
+    scrollStartTop = fishboneBoard.scrollTop;
+    fishboneBoard.classList.add("is-panning");
+    fishboneViewport.setPointerCapture(event.pointerId);
   });
+
+  fishboneViewport.addEventListener("pointermove", (event) => {
+    if (!isPanning) {
+      return;
+    }
+
+    fishboneBoard.scrollLeft = scrollStartLeft - (event.clientX - panStartX);
+    fishboneBoard.scrollTop = scrollStartTop - (event.clientY - panStartY);
+  });
+
+  const stopPanning = (event) => {
+    if (!isPanning) {
+      return;
+    }
+
+    isPanning = false;
+    fishboneBoard.classList.remove("is-panning");
+
+    if (fishboneViewport.hasPointerCapture(event.pointerId)) {
+      fishboneViewport.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  fishboneViewport.addEventListener("pointerup", stopPanning);
+  fishboneViewport.addEventListener("pointercancel", stopPanning);
 });

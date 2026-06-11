@@ -1194,70 +1194,77 @@
             <span class="canvas-counter">@Model.Canvas.Causes.Count causa(s)</span>
         </div>
 
-        <div class="fishbone-board">
-            <div class="fishbone-spine">
-                <span>@Model.Canvas.ProblemTitle</span>
+        <div class="fishbone-board" data-fishbone-board>
+            <div class="fishbone-toolbar" aria-label="Controles del fishbone">
+                <button type="button" class="tool-button" data-fishbone-zoom="out" title="Alejar">-</button>
+                <button type="button" class="tool-button" data-fishbone-zoom="fit" title="Ajustar">Fit</button>
+                <button type="button" class="tool-button" data-fishbone-zoom="in" title="Acercar">+</button>
             </div>
-            <div class="branch-grid">
-                @foreach (var branch in Model.Canvas.Branches)
-                {
-                    var causes = causesByBranch.TryGetValue(branch.Id, out var branchCauses)
-                        ? branchCauses
-                        : new List<IshikawaRca.Contracts.Rca.IshikawaCauseDto>();
+            <div class="fishbone-viewport" data-fishbone-viewport>
+                <div class="fishbone-spine">
+                    <span>@Model.Canvas.ProblemTitle</span>
+                </div>
+                <div class="branch-grid">
+                    @foreach (var branch in Model.Canvas.Branches)
+                    {
+                        var causes = causesByBranch.TryGetValue(branch.Id, out var branchCauses)
+                            ? branchCauses
+                            : new List<IshikawaRca.Contracts.Rca.IshikawaCauseDto>();
 
-                    <section class="branch-lane">
-                        <div class="branch-title-row">
-                            <h3>@branch.Name</h3>
-                            <span>@causes.Count</span>
-                        </div>
-                        @if (causes.Count == 0)
-                        {
-                            <p class="muted-text">Sin causas cargadas</p>
-                        }
-                        else
-                        {
-                            <ul class="cause-list">
-                                @foreach (var cause in causes)
-                                {
-                                    causesById.TryGetValue(cause.ParentCauseId ?? Guid.Empty, out var parentCause);
-                                    var causeEvidenceCount = Model.Evidence.Count(x => x.CauseId == cause.Id);
-                                    var causeFactCount = Model.Facts.Count(x => x.CauseId == cause.Id);
-                                    var causeActionCount = Model.CorrectiveActions.Count(x => x.CauseId == cause.Id);
-                                    var causeScore = cause.ProbabilityScore + cause.ImpactScore + cause.FrequencyScore;
+                        <section class="branch-lane">
+                            <div class="branch-title-row">
+                                <h3>@branch.Name</h3>
+                                <span>@causes.Count</span>
+                            </div>
+                            @if (causes.Count == 0)
+                            {
+                                <p class="muted-text">Sin causas cargadas</p>
+                            }
+                            else
+                            {
+                                <ul class="cause-list">
+                                    @foreach (var cause in causes)
+                                    {
+                                        causesById.TryGetValue(cause.ParentCauseId ?? Guid.Empty, out var parentCause);
+                                        var causeEvidenceCount = Model.Evidence.Count(x => x.CauseId == cause.Id);
+                                        var causeFactCount = Model.Facts.Count(x => x.CauseId == cause.Id);
+                                        var causeActionCount = Model.CorrectiveActions.Count(x => x.CauseId == cause.Id);
+                                        var causeScore = cause.ProbabilityScore + cause.ImpactScore + cause.FrequencyScore;
 
-                                    <li class="cause-card @(cause.IsRootCause ? "root-cause" : "")">
-                                        <div class="cause-card-heading">
-                                            <strong>@cause.Title</strong>
-                                            @if (cause.IsRootCause)
+                                        <li class="cause-card @(cause.IsRootCause ? "root-cause" : "")">
+                                            <div class="cause-card-heading">
+                                                <strong>@cause.Title</strong>
+                                                @if (cause.IsRootCause)
+                                                {
+                                                    <span class="cause-root-chip">Raiz</span>
+                                                }
+                                            </div>
+                                            <div class="cause-score-strip" aria-label="Puntajes de causa">
+                                                <span>P @cause.ProbabilityScore</span>
+                                                <span>I @cause.ImpactScore</span>
+                                                <span>F @cause.FrequencyScore</span>
+                                                <strong>@causeScore</strong>
+                                            </div>
+                                            @if (parentCause is not null)
                                             {
-                                                <span class="cause-root-chip">Raiz</span>
+                                                <span class="cause-parent">Subcausa de @parentCause.Title</span>
                                             }
-                                        </div>
-                                        <div class="cause-score-strip" aria-label="Puntajes de causa">
-                                            <span>P @cause.ProbabilityScore</span>
-                                            <span>I @cause.ImpactScore</span>
-                                            <span>F @cause.FrequencyScore</span>
-                                            <strong>@causeScore</strong>
-                                        </div>
-                                        @if (parentCause is not null)
-                                        {
-                                            <span class="cause-parent">Subcausa de @parentCause.Title</span>
-                                        }
-                                        @if (!string.IsNullOrWhiteSpace(cause.EvidenceSummary))
-                                        {
-                                            <small>@cause.EvidenceSummary</small>
-                                        }
-                                        <div class="cause-link-strip" aria-label="Trazabilidad de causa">
-                                            <span>@causeEvidenceCount evid.</span>
-                                            <span>@causeFactCount hechos</span>
-                                            <span>@causeActionCount acc.</span>
-                                        </div>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    </section>
-                }
+                                            @if (!string.IsNullOrWhiteSpace(cause.EvidenceSummary))
+                                            {
+                                                <small>@cause.EvidenceSummary</small>
+                                            }
+                                            <div class="cause-link-strip" aria-label="Trazabilidad de causa">
+                                                <span>@causeEvidenceCount evid.</span>
+                                                <span>@causeFactCount hechos</span>
+                                                <span>@causeActionCount acc.</span>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </section>
+                    }
+                </div>
             </div>
         </div>
     </article>

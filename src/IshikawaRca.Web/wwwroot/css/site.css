@@ -1141,7 +1141,53 @@ textarea.form-control {
   border: 1px solid #d7e0e7;
   border-radius: 8px;
   min-height: 440px;
+  overflow: auto;
   padding: 18px;
+  position: relative;
+}
+
+.fishbone-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  position: sticky;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.tool-button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 850;
+  height: 32px;
+  justify-content: center;
+  min-width: 32px;
+  padding: 0 9px;
+}
+
+.tool-button:hover {
+  background: var(--brand-soft);
+  border-color: #b7dede;
+  color: var(--brand-strong);
+}
+
+.fishbone-viewport {
+  cursor: grab;
+  min-width: 720px;
+  transform-origin: top center;
+  transition: transform 140ms ease;
+}
+
+.fishbone-board.is-panning .fishbone-viewport {
+  cursor: grabbing;
 }
 
 .fishbone-spine {
