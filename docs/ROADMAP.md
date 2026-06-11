@@ -300,6 +300,10 @@ outbox transaccional y webhooks en
 recomendado es outbox primero, webhooks despues, manteniendo el feed derivado
 como compatibilidad hasta igualar cobertura.
 
+Avance P2 2026-06-11: inicia la implementacion outbox con el modelo de dominio
+`RcaOutboxEvent` y estados `Pending`, `Publishing`, `Published`, `Failed` y
+`DeadLetter`. Todavia no hay tabla, publicador ni reemplazo del feed derivado.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

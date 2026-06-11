@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox domain model
+
+Scope: add the initial RCA outbox domain model.
+
+Checks:
+
+- Added `RcaOutboxEventStatus` with `Pending`, `Publishing`, `Published`,
+  `Failed` and `DeadLetter`.
+- Added `RcaOutboxEvent` with event identity, RCA correlation, serialized
+  payload and delivery state fields.
+- Added a lightweight test for default pending delivery state.
+- Corrected the outbox implementation plan assertion for `NextAttemptAt`.
+
+Validation:
+
+- Initial `dotnet build IshikawaRca.sln /m:1`: failed as expected before the
+  model existed, with missing `RcaOutboxEvent` and `RcaOutboxEventStatus`.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed after correcting the `NextAttemptAt` assertion.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox base implementation plan
 
 Scope: create an executable implementation plan for the first RCA outbox base

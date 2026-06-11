@@ -58,7 +58,7 @@ static void AssertOutboxEventDomainDefaults()
 
     if (outboxEvent.Status != RcaOutboxEventStatus.Pending ||
         outboxEvent.AttemptCount != 0 ||
-        outboxEvent.NextAttemptAt is null ||
+        outboxEvent.NextAttemptAt is not null ||
         outboxEvent.PayloadJson != payload)
     {
         throw new InvalidOperationException("Expected outbox event defaults to preserve pending delivery state.");

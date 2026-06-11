@@ -45,6 +45,7 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
+AssertOutboxEventDomainDefaults();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -276,6 +277,31 @@ static async Task AssertIntegrationEventCompatibilityAsync()
     if (afterCreated.Data is null || afterCreated.Data.Any(x => x.Id == createdEvent.Id))
     {
         throw new InvalidOperationException("Expected since filter to exclude older processed events.");
+    }
+}
+
+static void AssertOutboxEventDomainDefaults()
+{
+    var tenantId = Guid.NewGuid();
+    var incidentId = Guid.NewGuid();
+    var payload = "{\"type\":\"RcaIncidentCreated\"}";
+
+    var outboxEvent = new RcaOutboxEvent
+    {
+        TenantId = tenantId,
+        EventId = "rca-incident-created:" + incidentId,
+        EventType = "RcaIncidentCreated",
+        OccurredAt = DateTimeOffset.UtcNow,
+        IncidentId = incidentId,
+        PayloadJson = payload
+    };
+
+    if (outboxEvent.Status != RcaOutboxEventStatus.Pending ||
+        outboxEvent.AttemptCount != 0 ||
+        outboxEvent.NextAttemptAt is not null ||
+        outboxEvent.PayloadJson != payload)
+    {
+        throw new InvalidOperationException("Expected outbox event defaults to preserve pending delivery state.");
     }
 }
 

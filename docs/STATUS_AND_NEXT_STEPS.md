@@ -133,12 +133,14 @@ Tambien queda definida la especificacion tecnica inicial de outbox/webhooks en
 siguiente incremento recomendado es crear entidad, mapping y migracion
 `RcaOutboxEvent`, sin reemplazar todavia el feed derivado. El plan ejecutable
 esta en `docs/superpowers/plans/2026-06-11-p2-rca-outbox-base.md`.
+La primera tarea del plan ya agrego el modelo de dominio `RcaOutboxEvent` y
+`RcaOutboxEventStatus`; sigue pendiente el mapping EF y la migracion.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: implementar la base de outbox transaccional
-  segun la spec y dejar webhooks configurables para el corte posterior.
+- Siguiente paso P2 recomendado: agregar mapping EF y migracion
+  `AddRcaOutboxEvents`, dejando webhooks configurables para un corte posterior.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

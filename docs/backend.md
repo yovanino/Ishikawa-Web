@@ -86,6 +86,8 @@ El backend ya cuenta con:
   `tests/IshikawaRca.Tests`.
 - Diseno tecnico P2 para outbox transaccional y webhooks documentado en
   `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
+- Modelo de dominio inicial para outbox: `RcaOutboxEvent` y
+  `RcaOutboxEventStatus`.
 
 ## Corte Backend P0
 
@@ -212,3 +214,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Definido diseno P2 recomendado: `RcaOutboxEvent` como tabla transaccional,
   deduplicacion por `TenantId + EventId`, estados de publicacion, backoff,
   dead-letter y webhooks deshabilitados por default.
+- Agregados `RcaOutboxEventStatus` (`Pending`, `Publishing`, `Published`,
+  `Failed`, `DeadLetter`) y entidad `RcaOutboxEvent` con envelope,
+  correlacion externa, payload JSON y campos de intento/publicacion.
+- Agregada prueba liviana de defaults de dominio del outbox.
