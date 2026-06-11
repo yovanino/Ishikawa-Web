@@ -327,8 +327,11 @@ derivado.
 Avance P2 2026-06-11: `EfRcaExternalIntakeService` tambien captura eventos
 outbox para intake externo creado, abierto, enviado, revisado, rechazado,
 revocado y expirado. Con esto la captura outbox cubre los tipos actuales del
-feed derivado, aunque aun falta decidir lectura primaria del endpoint,
-publicador y webhooks.
+feed derivado. Aun faltan publicador y webhooks.
+
+Avance P2 2026-06-11: el endpoint de eventos de integracion combina eventos
+outbox persistidos con el feed derivado historico y deduplica por `id`. Quedan
+pendientes publicador, webhooks y operaciones de reintento/dead-letter.
 
 Criterio de salida P2:
 

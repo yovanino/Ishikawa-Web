@@ -1241,6 +1241,7 @@ public class EfRcaIncidentService : IRcaIncidentService
 
     public async Task<ApiResult<IReadOnlyList<RcaDomainEventDto>>> ListIntegrationEventsAsync(Guid? incidentId = null, DateTimeOffset? since = null, CancellationToken cancellationToken = default)
     {
+        var outboxEvents = await ListOutboxIntegrationEventsAsync(incidentId, since, cancellationToken);
         var query = _dbContext.RcaIncidents
             .AsNoTracking()
             .Where(x => !x.IsDeleted);
@@ -1468,12 +1469,72 @@ public class EfRcaIncidentService : IRcaIncidentService
             }
         }
 
-        var filteredEvents = events
+        var derivedEvents = events
             .Where(x => !since.HasValue || x.OccurredAt >= since.Value)
-            .OrderBy(x => x.OccurredAt)
             .ToList();
 
-        return ApiResult<IReadOnlyList<RcaDomainEventDto>>.Ok(filteredEvents);
+        return ApiResult<IReadOnlyList<RcaDomainEventDto>>.Ok(MergeIntegrationEvents(outboxEvents, derivedEvents));
+    }
+
+    private async Task<IReadOnlyList<RcaDomainEventDto>> ListOutboxIntegrationEventsAsync(Guid? incidentId, DateTimeOffset? since, CancellationToken cancellationToken)
+    {
+        var query = _dbContext.RcaOutboxEvents
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted);
+
+        if (incidentId.HasValue)
+        {
+            query = query.Where(x => x.IncidentId == incidentId.Value);
+        }
+
+        if (since.HasValue)
+        {
+            query = query.Where(x => x.OccurredAt >= since.Value);
+        }
+
+        var outboxRows = await query
+            .OrderBy(x => x.OccurredAt)
+            .Take(1000)
+            .ToListAsync(cancellationToken);
+
+        var events = new List<RcaDomainEventDto>();
+        foreach (var row in outboxRows)
+        {
+            try
+            {
+                var integrationEvent = JsonSerializer.Deserialize<RcaDomainEventDto>(row.PayloadJson, OutboxSerializerOptions);
+                if (integrationEvent is not null)
+                {
+                    events.Add(integrationEvent);
+                }
+            }
+            catch (JsonException)
+            {
+                // Invalid outbox payloads are delivery/audit issues; keep the public feed available through derived events.
+            }
+        }
+
+        return events;
+    }
+
+    private static IReadOnlyList<RcaDomainEventDto> MergeIntegrationEvents(
+        IEnumerable<RcaDomainEventDto> outboxEvents,
+        IEnumerable<RcaDomainEventDto> derivedEvents)
+    {
+        var byId = new Dictionary<string, RcaDomainEventDto>(StringComparer.Ordinal);
+
+        foreach (var integrationEvent in outboxEvents.Concat(derivedEvents))
+        {
+            if (!byId.ContainsKey(integrationEvent.Id))
+            {
+                byId[integrationEvent.Id] = integrationEvent;
+            }
+        }
+
+        return byId.Values
+            .OrderBy(x => x.OccurredAt)
+            .ThenBy(x => x.Id)
+            .ToList();
     }
 
     private static List<ApiError> ValidateCreateRequest(CreateRcaIncidentRequest request)

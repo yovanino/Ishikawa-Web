@@ -99,6 +99,8 @@ El backend ya cuenta con:
   creadas, evidencias, wizard y escalamiento 8D.
 - Captura outbox para estados de intake externo cliente/proveedor en
   `EfRcaExternalIntakeService`.
+- El feed de eventos de integracion combina outbox y feed derivado con
+  deduplicacion por `id`.
 
 ## Corte Backend P0
 
@@ -250,5 +252,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `RcaExternalIntakeOpened`, `RcaExternalIntakeSubmitted`,
   `RcaExternalIntakeReviewed`, `RcaExternalIntakeRejected`,
   `RcaExternalIntakeRevoked` y `RcaExternalIntakeExpired`.
-- El endpoint `/api/v1/integrations/rca/events` sigue usando feed derivado; el
-  outbox todavia no reemplaza el feed ni publica webhooks.
+- El endpoint `/api/v1/integrations/rca/events` ahora lee eventos outbox
+  persistidos y los combina con el feed derivado historico. Si un evento existe
+  en ambas fuentes, se conserva una sola entrada por `id`, priorizando el
+  payload del outbox.
+- El outbox todavia no publica webhooks ni broker/event bus.

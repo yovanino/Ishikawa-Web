@@ -144,15 +144,15 @@ su cobertura. La captura del servicio RCA principal ahora tambien cubre causas,
 acciones creadas, evidencias, wizard y escalamiento 8D. El intake externo ya
 fue conectado al outbox para created/opened/submitted/reviewed/rejected/revoked/
 expired, por lo que la captura cubre los tipos actuales del feed derivado.
-Siguen pendientes la lectura primaria/fallback desde outbox, publicador y
-webhooks.
+El endpoint `/api/v1/integrations/rca/events` ahora combina outbox y feed
+derivado historico con deduplicacion por `id`. Siguen pendientes publicador,
+webhooks y endpoints operativos de reintento/dead-letter.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: decidir e implementar la lectura del endpoint
-  de eventos desde outbox como fuente primaria/fallback, o avanzar primero con
-  publicador/webhooks.
+- Siguiente paso P2 recomendado: implementar publicador/webhooks o endpoints
+  operativos de outbox para reintentos y dead-letter.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

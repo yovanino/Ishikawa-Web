@@ -1,5 +1,31 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox event feed merge
+
+Scope: make the integration event endpoint read persisted outbox events while
+keeping the derived feed as historical fallback.
+
+Checks:
+
+- `ListIntegrationEventsAsync` loads matching `RcaOutboxEvent` rows.
+- Outbox payloads are deserialized as `RcaDomainEventDto`.
+- Derived events are still generated for historical RCA records without outbox
+  rows.
+- Outbox and derived events are merged and deduplicated by `id`.
+- Invalid outbox payloads do not break the public feed; derived events remain
+  available.
+
+Validation:
+
+- First parallel build/tests attempt hit the known transient artifact copy race.
+- `dotnet build IshikawaRca.sln /m:1`: passed in series with 0 warnings and
+  0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed in series.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 intake outbox capture
 
 Scope: capture external customer/supplier intake events into the RCA outbox.
