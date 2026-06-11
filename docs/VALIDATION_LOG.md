@@ -1,5 +1,31 @@
 # Validation Log
 
+## 2026-06-11 - P2 intake outbox capture
+
+Scope: capture external customer/supplier intake events into the RCA outbox.
+
+Checks:
+
+- `CreateAsync` captures `RcaExternalIntakeCreated`.
+- `GetByTokenAsync` captures `RcaExternalIntakeOpened` and expiration as
+  `RcaExternalIntakeExpired`.
+- `SubmitAsync` captures `RcaExternalIntakeSubmitted` and expiration as
+  `RcaExternalIntakeExpired`.
+- `ReviewAsync` captures `RcaExternalIntakeReviewed`.
+- `RejectAsync` captures `RcaExternalIntakeRejected`.
+- `RevokeAsync` captures `RcaExternalIntakeRevoked`.
+- Outbox capture still does not publish webhooks or replace the public derived
+  event feed.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 expanded RCA outbox capture
 
 Scope: expand outbox capture inside `EfRcaIncidentService` beyond the initial

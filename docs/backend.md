@@ -97,6 +97,8 @@ El backend ya cuenta con:
   `RcaClosed`.
 - Cobertura outbox adicional en `EfRcaIncidentService` para causas, acciones
   creadas, evidencias, wizard y escalamiento 8D.
+- Captura outbox para estados de intake externo cliente/proveedor en
+  `EfRcaExternalIntakeService`.
 
 ## Corte Backend P0
 
@@ -244,5 +246,9 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Extendida la captura outbox del servicio RCA principal para
   `RcaCauseCreated`, `RcaRootCauseSelected`, `RcaCorrectiveActionCreated`,
   `RcaEvidenceAttached`, `RcaWizardStepCompleted` y `RcaEscalatedTo8D`.
+- Agregada captura outbox de intake externo para `RcaExternalIntakeCreated`,
+  `RcaExternalIntakeOpened`, `RcaExternalIntakeSubmitted`,
+  `RcaExternalIntakeReviewed`, `RcaExternalIntakeRejected`,
+  `RcaExternalIntakeRevoked` y `RcaExternalIntakeExpired`.
 - El endpoint `/api/v1/integrations/rca/events` sigue usando feed derivado; el
   outbox todavia no reemplaza el feed ni publica webhooks.

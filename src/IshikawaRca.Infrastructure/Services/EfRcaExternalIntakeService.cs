@@ -14,6 +14,8 @@ namespace IshikawaRca.Infrastructure.Services;
 public class EfRcaExternalIntakeService : IRcaExternalIntakeService
 {
     private static readonly TimeSpan DefaultExpiration = TimeSpan.FromDays(14);
+    private static readonly JsonSerializerOptions OutboxSerializerOptions = new(JsonSerializerDefaults.Web);
+
     private readonly RcaDbContext _dbContext;
 
     public EfRcaExternalIntakeService(RcaDbContext dbContext)
@@ -56,6 +58,14 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         };
 
         _dbContext.RcaExternalIntakeRequests.Add(intake);
+        await AddOutboxEventAsync(
+            CreateExternalIntakeEvent(
+                $"rca-external-intake-created:{intake.Id}",
+                "RcaExternalIntakeCreated",
+                intake.CreatedAt,
+                incident,
+                intake),
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<CreatedExternalIntakeDto>.Ok(
@@ -101,6 +111,19 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow && result.Intake.Status is not RcaExternalIntakeStatus.Submitted and not RcaExternalIntakeStatus.Reviewed and not RcaExternalIntakeStatus.Rejected)
         {
             result.Intake.Status = RcaExternalIntakeStatus.Expired;
+            var incident = await GetIncidentAsync(result.Intake.RcaIncidentId, cancellationToken);
+            if (incident is not null)
+            {
+                await AddOutboxEventAsync(
+                    CreateExternalIntakeEvent(
+                        $"rca-external-intake-expired:{result.Intake.Id}",
+                        "RcaExternalIntakeExpired",
+                        result.Intake.UpdatedAt ?? result.Intake.ExpiresAt,
+                        incident,
+                        result.Intake),
+                    cancellationToken);
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             return ApiResult<RcaExternalIntakeDto>.Fail(
                 "El link externo expiro.",
@@ -125,6 +148,19 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         {
             result.Intake.Status = RcaExternalIntakeStatus.Opened;
             result.Intake.OpenedAt = DateTimeOffset.UtcNow;
+            var incident = await GetIncidentAsync(result.Intake.RcaIncidentId, cancellationToken);
+            if (incident is not null)
+            {
+                await AddOutboxEventAsync(
+                    CreateExternalIntakeEvent(
+                        $"rca-external-intake-opened:{result.Intake.Id}",
+                        "RcaExternalIntakeOpened",
+                        result.Intake.OpenedAt.Value,
+                        incident,
+                        result.Intake),
+                    cancellationToken);
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -142,6 +178,19 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         if (result.Intake.ExpiresAt < DateTimeOffset.UtcNow)
         {
             result.Intake.Status = RcaExternalIntakeStatus.Expired;
+            var incident = await GetIncidentAsync(result.Intake.RcaIncidentId, cancellationToken);
+            if (incident is not null)
+            {
+                await AddOutboxEventAsync(
+                    CreateExternalIntakeEvent(
+                        $"rca-external-intake-expired:{result.Intake.Id}",
+                        "RcaExternalIntakeExpired",
+                        result.Intake.UpdatedAt ?? result.Intake.ExpiresAt,
+                        incident,
+                        result.Intake),
+                    cancellationToken);
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             return ApiResult<RcaExternalIntakeDto>.Fail(
                 "El link externo expiro.",
@@ -174,6 +223,19 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
         result.Intake.SubmittedAt = DateTimeOffset.UtcNow;
         result.Intake.Status = RcaExternalIntakeStatus.Submitted;
         result.Intake.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var submitIncident = await GetIncidentAsync(result.Intake.RcaIncidentId, cancellationToken);
+        if (submitIncident is not null)
+        {
+            await AddOutboxEventAsync(
+                CreateExternalIntakeEvent(
+                    $"rca-external-intake-submitted:{result.Intake.Id}",
+                    "RcaExternalIntakeSubmitted",
+                    result.Intake.SubmittedAt.Value,
+                    submitIncident,
+                    result.Intake),
+                cancellationToken);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -283,6 +345,15 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 importedCauseId = importedCause?.Id
             });
 
+        await AddOutboxEventAsync(
+            CreateExternalIntakeEvent(
+                $"rca-external-intake-reviewed:{intake.Id}",
+                "RcaExternalIntakeReviewed",
+                intake.ReviewedAt.Value,
+                incident,
+                intake),
+            cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incident.Title), "Respuesta externa revisada.");
@@ -300,13 +371,12 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 new ApiError { Field = nameof(intakeId), Code = "INTAKE_NOT_FOUND", Message = "El identificador no corresponde a una solicitud activa." });
         }
 
-        var incidentTitle = await _dbContext.RcaIncidents
+        var incident = await _dbContext.RcaIncidents
             .AsNoTracking()
             .Where(x => x.Id == intake.RcaIncidentId && !x.IsDeleted)
-            .Select(x => x.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (incidentTitle is null)
+        if (incident is null)
         {
             return ApiResult<RcaExternalIntakeDto>.Fail(
                 "No se encontro el incidente RCA.",
@@ -346,9 +416,18 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 intake.RejectionReason
             });
 
+        await AddOutboxEventAsync(
+            CreateExternalIntakeEvent(
+                $"rca-external-intake-rejected:{intake.Id}",
+                "RcaExternalIntakeRejected",
+                intake.RejectedAt.Value,
+                incident,
+                intake),
+            cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Respuesta externa rechazada.");
+        return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incident.Title), "Respuesta externa rechazada.");
     }
 
     public async Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, string? revokedByUserId = null, CancellationToken cancellationToken = default)
@@ -363,11 +442,12 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 new ApiError { Field = nameof(intakeId), Code = "INTAKE_NOT_FOUND", Message = "El identificador no corresponde a un intake activo." });
         }
 
-        var incidentTitle = await _dbContext.RcaIncidents
+        var incident = await _dbContext.RcaIncidents
             .AsNoTracking()
             .Where(x => x.Id == intake.RcaIncidentId)
-            .Select(x => x.Title)
-            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var incidentTitle = incident?.Title ?? string.Empty;
 
         if (intake.Status is RcaExternalIntakeStatus.Submitted or RcaExternalIntakeStatus.Reviewed or RcaExternalIntakeStatus.Rejected)
         {
@@ -394,9 +474,108 @@ public class EfRcaExternalIntakeService : IRcaExternalIntakeService
                 previousStatus = previousStatus.ToString()
             });
 
+        if (incident is not null)
+        {
+            await AddOutboxEventAsync(
+                CreateExternalIntakeEvent(
+                    $"rca-external-intake-revoked:{intake.Id}",
+                    "RcaExternalIntakeRevoked",
+                    intake.UpdatedAt ?? intake.CreatedAt,
+                    incident,
+                    intake),
+                cancellationToken);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaExternalIntakeDto>.Ok(ToDto(intake, incidentTitle), "Link externo revocado.");
+    }
+
+    private async Task<RcaIncident?> GetIncidentAsync(Guid incidentId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+    }
+
+    private static RcaDomainEventDto CreateExternalIntakeEvent(string id, string type, DateTimeOffset occurredAt, RcaIncident incident, RcaExternalIntakeRequest intake)
+    {
+        return new RcaDomainEventDto
+        {
+            Id = id,
+            Type = type,
+            OccurredAt = occurredAt,
+            IncidentId = incident.Id,
+            TenantId = incident.TenantId,
+            SourceSystem = incident.SourceSystem,
+            ExternalTaskId = incident.ExternalTaskId,
+            ExternalEventId = incident.ExternalEventId,
+            ExternalWorkOrderId = incident.ExternalWorkOrderId,
+            Data = CreateExternalIntakeEventData(intake)
+        };
+    }
+
+    private static Dictionary<string, string?> CreateExternalIntakeEventData(RcaExternalIntakeRequest intake)
+    {
+        return new Dictionary<string, string?>
+        {
+            ["intakeId"] = intake.Id.ToString(),
+            ["actorType"] = intake.ActorType.ToString(),
+            ["actorName"] = intake.ActorName,
+            ["contactEmail"] = intake.ContactEmail,
+            ["status"] = intake.Status.ToString(),
+            ["expiresAt"] = intake.ExpiresAt.ToString("O"),
+            ["submittedAt"] = intake.SubmittedAt?.ToString("O"),
+            ["reviewedAt"] = intake.ReviewedAt?.ToString("O"),
+            ["reviewedByUserId"] = intake.ReviewedByUserId,
+            ["rejectedAt"] = intake.RejectedAt?.ToString("O"),
+            ["rejectedByUserId"] = intake.RejectedByUserId,
+            ["rejectionReason"] = intake.RejectionReason,
+            ["claimReference"] = intake.ClaimReference,
+            ["materialCode"] = intake.MaterialCode,
+            ["batchOrLot"] = intake.BatchOrLot
+        };
+    }
+
+    private async Task AddOutboxEventAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken)
+    {
+        var alreadyTracked = _dbContext.RcaOutboxEvents.Local.Any(x =>
+            x.TenantId == integrationEvent.TenantId &&
+            x.EventId == integrationEvent.Id &&
+            !x.IsDeleted);
+
+        if (alreadyTracked)
+        {
+            return;
+        }
+
+        var exists = await _dbContext.RcaOutboxEvents
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.TenantId == integrationEvent.TenantId &&
+                    x.EventId == integrationEvent.Id &&
+                    !x.IsDeleted,
+                cancellationToken);
+
+        if (exists)
+        {
+            return;
+        }
+
+        _dbContext.RcaOutboxEvents.Add(new RcaOutboxEvent
+        {
+            TenantId = integrationEvent.TenantId,
+            EventId = integrationEvent.Id,
+            EventType = integrationEvent.Type,
+            OccurredAt = integrationEvent.OccurredAt,
+            IncidentId = integrationEvent.IncidentId,
+            SourceSystem = integrationEvent.SourceSystem,
+            ExternalTaskId = integrationEvent.ExternalTaskId,
+            ExternalEventId = integrationEvent.ExternalEventId,
+            ExternalWorkOrderId = integrationEvent.ExternalWorkOrderId,
+            PayloadJson = JsonSerializer.Serialize(integrationEvent, OutboxSerializerOptions),
+            Status = RcaOutboxEventStatus.Pending
+        });
     }
 
     private async Task<(bool Success, RcaExternalIntakeRequest? Intake, string? IncidentTitle, ApiError Error)> FindByTokenAsync(string token, bool track, CancellationToken cancellationToken)

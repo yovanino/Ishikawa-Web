@@ -120,6 +120,8 @@ standalone.
   `RcaCorrectiveActionCompleted`, `RcaFactRecorded` y `RcaClosed`.
 - Extendida captura outbox de `EfRcaIncidentService` a causas, acciones
   creadas, evidencias, wizard y escalamiento 8D.
+- Agregada captura outbox en `EfRcaExternalIntakeService` para eventos de
+  intake externo cliente/proveedor.
 
 ## Pendientes
 
@@ -139,8 +141,8 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: conectar eventos de intake externo en
-  `EfRcaExternalIntakeService` antes de reemplazar el feed o publicar webhooks.
+- Siguiente tarea P2: decidir si el endpoint de eventos debe leer outbox como
+  fuente primaria/fallback o avanzar primero con publicador/webhooks.
 
 ## Riesgos
 
@@ -270,6 +272,9 @@ standalone.
   IshikawaRca.sln /m:1`, `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `git diff --check`
   pasan.
+- Para captura outbox de intake externo, `dotnet build IshikawaRca.sln /m:1`,
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `git diff --check` pasan.
 
 ## Ultimo Cierre
 
@@ -285,5 +290,6 @@ standalone.
   tabla outbox. Agregado servicio base outbox para enqueue idempotente y
   cambios de estado de entrega. Agregada captura outbox inicial de eventos de
   alto valor sin reemplazar el feed derivado. Extendida la captura del servicio
-  RCA principal a causas, acciones creadas, evidencias, wizard y 8D.
-- Commit sugerido: `feat(integration): expand RCA outbox capture`.
+  RCA principal a causas, acciones creadas, evidencias, wizard y 8D. Agregada
+  captura outbox de intake externo.
+- Commit sugerido: `feat(integration): capture intake events in outbox`.

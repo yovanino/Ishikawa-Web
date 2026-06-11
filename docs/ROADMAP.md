@@ -324,6 +324,12 @@ a causas, acciones creadas, evidencias, wizard y escalamiento 8D. Queda
 pendiente intake externo antes de considerar el outbox equivalente al feed
 derivado.
 
+Avance P2 2026-06-11: `EfRcaExternalIntakeService` tambien captura eventos
+outbox para intake externo creado, abierto, enviado, revisado, rechazado,
+revocado y expirado. Con esto la captura outbox cubre los tipos actuales del
+feed derivado, aunque aun falta decidir lectura primaria del endpoint,
+publicador y webhooks.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder
