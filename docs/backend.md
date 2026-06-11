@@ -104,6 +104,8 @@ El backend ya cuenta con:
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
   observar conteos y timestamps operativos del outbox sin publicar ni reintentar
   eventos.
+- Configuracion `RcaIntegration` para futuro publicador outbox/webhooks, con
+  webhooks deshabilitados por default y sin secretos versionados.
 
 ## Corte Backend P0
 
@@ -263,4 +265,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `GET /api/v1/integrations/rca/outbox/status`, que devuelve total, conteos por
   estado y marcas temporales de pendientes, reintentos, intentos y publicaciones
   para observabilidad operacional del outbox.
+- Agregadas opciones `RcaIntegrationOptions` / `RcaWebhookOptions`, binding
+  manual en infraestructura y defaults seguros en `appsettings.json`:
+  webhooks vacios, batch 50, 5 intentos maximos y timeout de 5 segundos.
 - El outbox todavia no publica webhooks ni broker/event bus.

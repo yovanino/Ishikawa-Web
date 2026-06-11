@@ -34,7 +34,38 @@ public static class DependencyInjection
         services.AddScoped<IRcaOutboxService, EfRcaOutboxService>();
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
+        services.Configure<RcaIntegrationOptions>(options =>
+        {
+            var section = configuration.GetSection(RcaIntegrationOptions.SectionName);
+
+            options.PublishBatchSize = ReadInt(section["PublishBatchSize"], options.PublishBatchSize);
+            options.MaxPublishAttempts = ReadInt(section["MaxPublishAttempts"], options.MaxPublishAttempts);
+            options.PublishTimeoutSeconds = ReadInt(section["PublishTimeoutSeconds"], options.PublishTimeoutSeconds);
+            options.Webhooks = section.GetSection("Webhooks")
+                .GetChildren()
+                .Select(webhook => new RcaWebhookOptions
+                {
+                    Name = webhook["Name"] ?? string.Empty,
+                    Url = webhook["Url"] ?? string.Empty,
+                    Enabled = bool.TryParse(webhook["Enabled"], out var enabled) && enabled,
+                    Secret = webhook["Secret"] ?? string.Empty,
+                    EventTypes = webhook.GetSection("EventTypes")
+                        .GetChildren()
+                        .Select(x => x.Value)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x!)
+                        .ToList()
+                })
+                .ToList();
+        });
 
         return services;
+    }
+
+    private static int ReadInt(string? value, int fallback)
+    {
+        return int.TryParse(value, out var parsed) && parsed > 0
+            ? parsed
+            : fallback;
     }
 }

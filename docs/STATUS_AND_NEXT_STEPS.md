@@ -149,7 +149,8 @@ derivado historico con deduplicacion por `id`. Siguen pendientes publicador,
 webhooks y endpoints operativos de reintento/dead-letter. Ya existe
 observabilidad basica del outbox mediante
 `GET /api/v1/integrations/rca/outbox/status`, protegido por roles de gobierno
-de calidad.
+de calidad. Tambien queda preparada la configuracion `RcaIntegration` para el
+futuro publicador/webhooks, con webhooks vacios y apagados por default.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla

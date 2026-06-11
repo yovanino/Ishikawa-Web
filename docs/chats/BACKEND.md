@@ -128,6 +128,9 @@ standalone.
   `GET /api/v1/integrations/rca/outbox/status` para exponer estado operativo
   del outbox con conteos por estado y timestamps de pendientes, reintentos,
   intentos y publicaciones.
+- Agregada configuracion base `RcaIntegration` para futuro
+  publicador/webhooks, con defaults seguros y webhooks deshabilitados por
+  defecto.
 
 ## Pendientes
 
@@ -149,7 +152,8 @@ standalone.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
 - Siguiente tarea P2: implementar publicador/webhooks o endpoints operativos de
   reintento/dead-letter; el endpoint de eventos ya usa outbox + fallback
-  derivado y el endpoint de status ya cubre observabilidad.
+  derivado, el endpoint de status ya cubre observabilidad y la configuracion
+  base de webhooks ya existe.
 
 ## Riesgos
 
@@ -290,6 +294,9 @@ standalone.
 - Para endpoint de status del outbox, `dotnet build IshikawaRca.sln /m:1` y
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   pasan en serie. `git diff --check` queda pendiente antes del commit.
+- Para configuracion base de webhooks, `dotnet build IshikawaRca.sln /m:1`
+  pasa despues de cambiar a binding manual sin paquetes nuevos. Tests y
+  `git diff --check` quedan pendientes antes del commit.
 
 ## Ultimo Cierre
 
@@ -308,5 +315,7 @@ standalone.
   RCA principal a causas, acciones creadas, evidencias, wizard y 8D. Agregada
   captura outbox de intake externo. El endpoint de eventos combina outbox y
   feed derivado historico con deduplicacion por `id`. Agregado endpoint
-  protegido de status del outbox para observabilidad operacional.
-- Commit sugerido: `feat(integration): expose RCA outbox status`.
+  protegido de status del outbox para observabilidad operacional. Agregada
+  configuracion base `RcaIntegration` para futuros webhooks, apagados por
+  default.
+- Commit sugerido: `feat(integration): add RCA webhook configuration`.

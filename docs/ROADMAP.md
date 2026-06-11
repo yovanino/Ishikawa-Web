@@ -337,6 +337,11 @@ Avance P2 2026-06-11: se agrega endpoint protegido de observabilidad
 `GET /api/v1/integrations/rca/outbox/status`, con conteos por estado y marcas
 temporales del outbox. No publica eventos ni ejecuta reintentos.
 
+Avance P2 2026-06-11: queda agregada la configuracion base
+`RcaIntegration` para futuro publicador/webhooks, con webhooks apagados por
+default, sin secretos versionados, batch 50, 5 intentos maximos y timeout de
+5 segundos.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

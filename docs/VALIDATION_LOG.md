@@ -1,5 +1,31 @@
 # Validation Log
 
+## 2026-06-11 - P2 webhook configuration base
+
+Scope: prepare safe configuration for the future RCA outbox webhook publisher.
+
+Checks:
+
+- Added `RcaIntegrationOptions` and `RcaWebhookOptions`.
+- Registered manual `RcaIntegration` binding in infrastructure without adding
+  packages.
+- Added safe defaults in `appsettings.json`: empty webhooks, batch 50,
+  5 max attempts and 5 second timeout.
+- Added lightweight test coverage for disabled, secret-free defaults.
+- No webhook publication behavior was added in this cut.
+
+Validation:
+
+- Initial build failed because the infrastructure project did not have the
+  `Configure<T>(IConfigurationSection)` overload available.
+- Switched to manual `IConfiguration` binding.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox status endpoint
 
 Scope: expose operational visibility for the RCA outbox without publishing or

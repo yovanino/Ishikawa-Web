@@ -46,6 +46,7 @@ await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
 AssertOutboxEventDomainDefaults();
+AssertRcaIntegrationOptionsDefaults();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -302,6 +303,30 @@ static void AssertOutboxEventDomainDefaults()
         outboxEvent.PayloadJson != payload)
     {
         throw new InvalidOperationException("Expected outbox event defaults to preserve pending delivery state.");
+    }
+}
+
+static void AssertRcaIntegrationOptionsDefaults()
+{
+    var options = new RcaIntegrationOptions();
+
+    if (options.PublishBatchSize != 50 ||
+        options.MaxPublishAttempts != 5 ||
+        options.PublishTimeoutSeconds != 5 ||
+        options.Webhooks.Count != 0)
+    {
+        throw new InvalidOperationException("Expected RCA integration options to default to safe disabled webhooks.");
+    }
+
+    var webhook = new RcaWebhookOptions
+    {
+        Name = "test",
+        Url = "https://example.local/rca/events"
+    };
+
+    if (webhook.Enabled || webhook.Secret.Length != 0 || webhook.EventTypes.Count != 0)
+    {
+        throw new InvalidOperationException("Expected webhook options to be disabled and secret-free by default.");
     }
 }
 
