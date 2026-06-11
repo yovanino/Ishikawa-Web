@@ -15,7 +15,7 @@
 - Create `src/IshikawaRca.Domain/Enums/RcaOutboxEventStatus.cs`: status enum for persistence and retry state.
 - Create `src/IshikawaRca.Domain/Entities/RcaOutboxEvent.cs`: tenant entity that stores the serialized event envelope and delivery state.
 - Modify `src/IshikawaRca.Infrastructure/Data/RcaDbContext.cs`: add `DbSet<RcaOutboxEvent>` and mapping/indexes.
-- Create EF migration under `src/IshikawaRca.Infrastructure/Migrations`: add `rca_outbox_events`.
+- Create EF migration under `src/IshikawaRca.Infrastructure/Data/Migrations`: add `rca_outbox_events`.
 - Create `src/IshikawaRca.Application/Rca/IRcaOutboxService.cs`: application-facing outbox interface.
 - Create `src/IshikawaRca.Infrastructure/Services/EfRcaOutboxService.cs`: EF implementation for idempotent enqueue and status transitions.
 - Modify DI registration in `src/IshikawaRca.Web/Program.cs`: register the outbox service.
@@ -157,9 +157,9 @@ git commit -m "feat(integration): add RCA outbox event model"
 
 **Files:**
 - Modify: `src/IshikawaRca.Infrastructure/Data/RcaDbContext.cs`
-- Create: `src/IshikawaRca.Infrastructure/Migrations/*_AddRcaOutboxEvents.cs`
-- Create: `src/IshikawaRca.Infrastructure/Migrations/*_AddRcaOutboxEvents.Designer.cs`
-- Modify: `src/IshikawaRca.Infrastructure/Migrations/RcaDbContextModelSnapshot.cs`
+- Create: `src/IshikawaRca.Infrastructure/Data/Migrations/*_AddRcaOutboxEvents.cs`
+- Create: `src/IshikawaRca.Infrastructure/Data/Migrations/*_AddRcaOutboxEvents.Designer.cs`
+- Modify: `src/IshikawaRca.Infrastructure/Data/Migrations/RcaDbContextModelSnapshot.cs`
 
 - [ ] **Step 1: Add `DbSet` and mapping**
 
@@ -225,7 +225,7 @@ Expected: build passes with 0 errors.
 - [ ] **Step 4: Commit**
 
 ```powershell
-git add src/IshikawaRca.Infrastructure/Data/RcaDbContext.cs src/IshikawaRca.Infrastructure/Migrations
+git add src/IshikawaRca.Infrastructure/Data/RcaDbContext.cs src/IshikawaRca.Infrastructure/Data/Migrations
 git commit -m "feat(db): add RCA outbox events table"
 ```
 

@@ -304,6 +304,11 @@ Avance P2 2026-06-11: inicia la implementacion outbox con el modelo de dominio
 `RcaOutboxEvent` y estados `Pending`, `Publishing`, `Published`, `Failed` y
 `DeadLetter`. Todavia no hay tabla, publicador ni reemplazo del feed derivado.
 
+Avance P2 2026-06-11: se agrega mapping EF y migracion
+`AddRcaOutboxEvents` para `rca_outbox_events`, con idempotencia por
+`TenantId + EventId` e indices para publicacion pendiente y consulta por RCA o
+tipo de evento.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

@@ -88,6 +88,8 @@ El backend ya cuenta con:
   `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
 - Modelo de dominio inicial para outbox: `RcaOutboxEvent` y
   `RcaOutboxEventStatus`.
+- Mapping EF y migracion `AddRcaOutboxEvents` para la tabla
+  `rca_outbox_events`.
 
 ## Corte Backend P0
 
@@ -218,3 +220,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `Failed`, `DeadLetter`) y entidad `RcaOutboxEvent` con envelope,
   correlacion externa, payload JSON y campos de intento/publicacion.
 - Agregada prueba liviana de defaults de dominio del outbox.
+- Agregado `DbSet<RcaOutboxEvents>`, mapping EF e indices:
+  `TenantId + EventId` unico, `TenantId + Status + NextAttemptAt`,
+  `TenantId + IncidentId + OccurredAt` y `TenantId + EventType + OccurredAt`.
+- Generada migracion `20260611123836_AddRcaOutboxEvents` para crear
+  `rca_outbox_events`.

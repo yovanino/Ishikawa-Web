@@ -28,6 +28,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<RcaAuditRecord> RcaAuditRecords => Set<RcaAuditRecord>();
 
+    public DbSet<RcaOutboxEvent> RcaOutboxEvents => Set<RcaOutboxEvent>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -40,6 +42,7 @@ public class RcaDbContext : DbContext
         ConfigureRcaFact(modelBuilder);
         ConfigureRcaExternalIntakeRequest(modelBuilder);
         ConfigureRcaAuditRecord(modelBuilder);
+        ConfigureRcaOutboxEvent(modelBuilder);
     }
 
     private static void ConfigureRcaIncident(ModelBuilder modelBuilder)
@@ -281,6 +284,29 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.EntityType, x.EntityId });
         entity.HasIndex(x => new { x.TenantId, x.Action, x.OccurredAt });
+    }
+
+    private static void ConfigureRcaOutboxEvent(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaOutboxEvent>();
+
+        entity.ToTable("rca_outbox_events");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.EventId).HasMaxLength(220).IsRequired();
+        entity.Property(x => x.EventType).HasMaxLength(120).IsRequired();
+        entity.Property(x => x.SourceSystem).HasMaxLength(64);
+        entity.Property(x => x.ExternalTaskId).HasMaxLength(120);
+        entity.Property(x => x.ExternalEventId).HasMaxLength(120);
+        entity.Property(x => x.ExternalWorkOrderId).HasMaxLength(120);
+        entity.Property(x => x.PayloadJson).HasColumnType("json");
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.LastError).HasMaxLength(2000);
+
+        entity.HasIndex(x => new { x.TenantId, x.EventId }).IsUnique();
+        entity.HasIndex(x => new { x.TenantId, x.Status, x.NextAttemptAt });
+        entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.OccurredAt });
+        entity.HasIndex(x => new { x.TenantId, x.EventType, x.OccurredAt });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

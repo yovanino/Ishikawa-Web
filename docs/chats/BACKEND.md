@@ -112,6 +112,8 @@ standalone.
   `docs/superpowers/plans/2026-06-11-p2-rca-outbox-base.md`.
 - Agregado modelo de dominio inicial del outbox: `RcaOutboxEventStatus` y
   `RcaOutboxEvent`.
+- Agregado mapping EF y migracion `AddRcaOutboxEvents` para
+  `rca_outbox_events`.
 
 ## Pendientes
 
@@ -131,7 +133,8 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea del plan: mapping EF y migracion `AddRcaOutboxEvents`.
+- Siguiente tarea del plan: servicio base `IRcaOutboxService` +
+  `EfRcaOutboxService`.
 
 ## Riesgos
 
@@ -246,6 +249,11 @@ standalone.
 - Para el plan P2 outbox base, validacion documental y `git diff --check`.
 - Para el modelo de dominio outbox, primero se confirmo falla de build por
   tipos inexistentes y luego pasaron build, tests livianos y `git diff --check`.
+- Para mapping/migracion outbox, `dotnet build IshikawaRca.sln /m:1`,
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `git diff --check` pasan. La primera migracion generada con `--no-build`
+  quedo vacia por assembly desactualizado; se removio y regenero despues de
+  compilar.
 
 ## Ultimo Cierre
 
@@ -257,5 +265,6 @@ standalone.
   modelo interno. Agregada prueba liviana que protege ese contrato antes de
   avanzar a outbox o webhooks. Definida spec tecnica para implementar outbox
   primero y webhooks despues. Creado plan ejecutable para la base outbox y
-  agregado el modelo de dominio inicial.
-- Commit sugerido: `feat(integration): add RCA outbox event model`.
+  agregado el modelo de dominio inicial. Agregado mapping EF y migracion de
+  tabla outbox.
+- Commit sugerido: `feat(db): add RCA outbox events table`.

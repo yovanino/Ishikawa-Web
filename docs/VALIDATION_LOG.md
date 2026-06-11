@@ -1,5 +1,30 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox EF mapping
+
+Scope: add EF persistence mapping and migration for RCA outbox events.
+
+Checks:
+
+- Added `RcaDbContext.RcaOutboxEvents`.
+- Mapped `rca_outbox_events` with envelope, external correlation, payload,
+  delivery status and retry fields.
+- Added unique index on `TenantId + EventId`.
+- Added indexes for pending publication and event lookup by incident/type.
+- Generated migration `20260611123836_AddRcaOutboxEvents`.
+
+Validation:
+
+- First migration attempt with `--no-build` produced an empty migration because
+  EF used an older compiled assembly. It was removed and regenerated after
+  rebuilding.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox domain model
 
 Scope: add the initial RCA outbox domain model.
