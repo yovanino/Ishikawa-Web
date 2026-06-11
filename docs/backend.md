@@ -84,6 +84,8 @@ El backend ya cuenta con:
   `docs/INTEGRATION_EVENTS.md`, basado en `RcaDomainEventDto`.
 - Cobertura liviana de compatibilidad para eventos de integracion en
   `tests/IshikawaRca.Tests`.
+- Diseno tecnico P2 para outbox transaccional y webhooks documentado en
+  `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
 
 ## Corte Backend P0
 
@@ -207,3 +209,6 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Agregada prueba liviana sobre `InMemoryRcaIncidentService` que valida tipos
   de evento documentados, envelope, correlacion externa, claves `data`
   criticas y filtro incremental `since`.
+- Definido diseno P2 recomendado: `RcaOutboxEvent` como tabla transaccional,
+  deduplicacion por `TenantId + EventId`, estados de publicacion, backoff,
+  dead-letter y webhooks deshabilitados por default.

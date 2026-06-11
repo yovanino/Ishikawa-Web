@@ -294,6 +294,12 @@ feed de eventos de integracion sobre el servicio in-memory. La prueba fija
 envelope, correlacion externa, tipos documentados, claves `data` criticas y
 filtro incremental `since`.
 
+Avance P2 2026-06-11: queda especificado el diseno tecnico recomendado para
+outbox transaccional y webhooks en
+`docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`. El orden
+recomendado es outbox primero, webhooks despues, manteniendo el feed derivado
+como compatibilidad hasta igualar cobertura.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

@@ -128,11 +128,16 @@ contrato contra el servicio in-memory para proteger envelope, correlacion
 externa, tipos de evento documentados, claves `data` criticas y filtro
 incremental `since`.
 
+Tambien queda definida la especificacion tecnica inicial de outbox/webhooks en
+`docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`. El
+siguiente incremento recomendado es crear entidad, mapping y migracion
+`RcaOutboxEvent`, sin reemplazar todavia el feed derivado.
+
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: elegir entre outbox transaccional, webhooks
-  configurables o canal live para timeline/estados.
+- Siguiente paso P2 recomendado: implementar la base de outbox transaccional
+  segun la spec y dejar webhooks configurables para el corte posterior.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

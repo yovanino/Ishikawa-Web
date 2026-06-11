@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox webhooks design
+
+Scope: define the recommended technical design for RCA outbox and configurable
+webhooks before implementing persistence and delivery behavior.
+
+Checks:
+
+- Added `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
+- The spec recommends outbox first and webhooks second.
+- The spec preserves `RcaDomainEventDto` compatibility and keeps the derived
+  feed until outbox coverage matches it.
+- The spec documents idempotency, statuses, retries, backoff, dead-letter,
+  webhook defaults and testing criteria.
+
+Validation:
+
+- Documentation/spec review against `docs/INTEGRATION_EVENTS.md`, roadmap and
+  current EF persistence patterns.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 integration event compatibility coverage
 
 Scope: add lightweight regression coverage for the RCA integration event

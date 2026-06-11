@@ -106,6 +106,8 @@ standalone.
 - Agregada cobertura liviana del contrato de eventos sobre
   `InMemoryRcaIncidentService`, validando envelope, correlacion externa, tipos
   documentados, claves `data` criticas y filtro `since`.
+- Especificado el diseno P2 de outbox transaccional y webhooks en
+  `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
 
 ## Pendientes
 
@@ -122,6 +124,8 @@ standalone.
 - Registrar validaciones en `docs/VALIDATION_LOG.md` cuando se ejecuten.
 - Elegir el siguiente incremento P2: outbox transaccional, webhooks
   configurables o canal live para timeline/estados.
+- Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
+  P2, conservando el feed derivado hasta igualar cobertura outbox.
 
 ## Riesgos
 
@@ -232,6 +236,7 @@ standalone.
 - Para la cobertura P2 de eventos, `dotnet build IshikawaRca.sln /m:1` y
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   pasan con 0 errores.
+- Para la spec P2 outbox/webhooks, validacion documental y `git diff --check`.
 
 ## Ultimo Cierre
 
@@ -241,5 +246,6 @@ standalone.
   `/api/v1`, deduplicacion por `id`, polling por `occurredAt` y evolucion
   esperada hacia outbox/webhooks/SignalR sin acoplar consumidores externos al
   modelo interno. Agregada prueba liviana que protege ese contrato antes de
-  avanzar a outbox o webhooks.
-- Commit sugerido: `test(integration): cover RCA event compatibility`.
+  avanzar a outbox o webhooks. Definida spec tecnica para implementar outbox
+  primero y webhooks despues.
+- Commit sugerido: `docs(integration): design RCA outbox webhooks`.
