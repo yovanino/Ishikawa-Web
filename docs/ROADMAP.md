@@ -289,6 +289,11 @@ incluyendo envelope `RcaDomainEventDto`, reglas de compatibilidad `/api/v1`,
 deduplicacion por `id`, polling por `occurredAt` y evolucion futura hacia
 outbox/webhooks/SignalR sin acoplar consumidores al modelo interno.
 
+Avance P2 2026-06-11: se agrega cobertura liviana de compatibilidad para el
+feed de eventos de integracion sobre el servicio in-memory. La prueba fija
+envelope, correlacion externa, tipos documentados, claves `data` criticas y
+filtro incremental `since`.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

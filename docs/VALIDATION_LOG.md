@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-11 - P2 integration event compatibility coverage
+
+Scope: add lightweight regression coverage for the RCA integration event
+compatibility contract.
+
+Checks:
+
+- Added an in-memory test flow that creates an externally correlated RCA.
+- The test records a root cause, corrective action, completed action, evidence
+  and SCADA fact.
+- The test validates documented event types, stable envelope fields, external
+  correlation, critical `data` keys and the incremental `since` filter.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 integration event compatibility
 
 Scope: document the RCA integration event feed compatibility contract.

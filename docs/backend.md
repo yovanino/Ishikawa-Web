@@ -82,6 +82,8 @@ El backend ya cuenta con:
   auditoria persistida de un RCA.
 - Contrato documentado de eventos de integracion en
   `docs/INTEGRATION_EVENTS.md`, basado en `RcaDomainEventDto`.
+- Cobertura liviana de compatibilidad para eventos de integracion en
+  `tests/IshikawaRca.Tests`.
 
 ## Corte Backend P0
 
@@ -202,3 +204,6 @@ tests MVC/UI, CI/CD y storage documental productivo.
   polling por `occurredAt`.
 - Registrada la evolucion esperada hacia outbox transaccional, webhooks,
   SignalR o broker preservando compatibilidad standalone.
+- Agregada prueba liviana sobre `InMemoryRcaIncidentService` que valida tipos
+  de evento documentados, envelope, correlacion externa, claves `data`
+  criticas y filtro incremental `since`.

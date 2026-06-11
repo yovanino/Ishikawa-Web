@@ -44,6 +44,7 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
+await AssertIntegrationEventCompatibilityAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -120,6 +121,162 @@ static async Task AssertIncompleteExternalFactCorrelationFailsAsync()
     AssertContains(
         result.Errors.Select(x => x.Code).ToList(),
         "EXTERNAL_FACT_CORRELATION_INCOMPLETE");
+}
+
+static async Task AssertIntegrationEventCompatibilityAsync()
+{
+    var tenantId = Guid.NewGuid();
+    var service = new InMemoryRcaIncidentService();
+    var created = await service.CreateAsync(new CreateRcaIncidentRequest
+    {
+        TenantId = tenantId,
+        Title = "Integration event contract",
+        ProblemDescription = "Test RCA",
+        SourceSystem = "GANTT",
+        ExternalTaskId = "TASK-001",
+        ExternalEventId = "EVT-001",
+        ExternalWorkOrderId = "WO-001",
+        ReportedBy = "tests"
+    });
+
+    if (created.Data is null)
+    {
+        throw new InvalidOperationException("Expected test incident to be created.");
+    }
+
+    var canvas = await service.GetCanvasAsync(created.Data.Id);
+    var branchId = canvas.Data?.Branches.FirstOrDefault()?.Id
+        ?? throw new InvalidOperationException("Expected default Ishikawa branches.");
+
+    var cause = await service.AddCauseAsync(created.Data.Id, new AddIshikawaCauseRequest
+    {
+        BranchId = branchId,
+        Title = "Root cause",
+        IsRootCause = true,
+        ProbabilityScore = 3,
+        ImpactScore = 4,
+        FrequencyScore = 2
+    });
+
+    if (cause.Data is null)
+    {
+        throw new InvalidOperationException("Expected test cause to be created.");
+    }
+
+    var action = await service.AddCorrectiveActionAsync(created.Data.Id, new AddCorrectiveActionRequest
+    {
+        CauseId = cause.Data.Id,
+        Title = "Corrective event action",
+        ActionType = "Corrective",
+        ResolutionScope = "RootCause",
+        DueDate = DateTimeOffset.UtcNow.AddDays(1)
+    });
+
+    if (action.Data is null)
+    {
+        throw new InvalidOperationException("Expected test action to be created.");
+    }
+
+    await service.UpdateCorrectiveActionStatusAsync(created.Data.Id, action.Data.Id, new UpdateCorrectiveActionStatusRequest
+    {
+        Status = "Completed",
+        CompletedByUserId = "quality",
+        ValidationNotes = "Event contract validation."
+    });
+
+    var evidence = await service.AddEvidenceAsync(created.Data.Id, new AddRcaEvidenceRequest
+    {
+        CauseId = cause.Data.Id,
+        Title = "Event evidence",
+        EvidenceType = "Photo",
+        Source = "Manual",
+        Tags = "event-contract",
+        ValidationStatus = "Validated",
+        ValidatedByUserId = "quality",
+        AttachmentFileName = "evidence.jpg",
+        AttachmentContentType = "image/jpeg",
+        AttachmentSizeBytes = 128,
+        AttachmentStorageProvider = "Local",
+        AttachmentSha256 = new string('a', 64)
+    });
+
+    if (evidence.Data is null)
+    {
+        throw new InvalidOperationException("Expected test evidence to be created.");
+    }
+
+    var fact = await service.AddFactAsync(created.Data.Id, new AddRcaFactRequest
+    {
+        CauseId = cause.Data.Id,
+        EvidenceId = evidence.Data.Id,
+        CorrectiveActionId = action.Data.Id,
+        Title = "SCADA pressure alarm",
+        FactType = "Alarm",
+        Source = "SCADA",
+        ExternalSourceSystem = "SCADA",
+        ExternalEventId = "ALM-002",
+        ExternalRecordUri = "scada://line-1/alarm/ALM-002",
+        AlarmCode = "PRES-HIGH"
+    });
+
+    if (fact.Data is null)
+    {
+        throw new InvalidOperationException("Expected test fact to be created.");
+    }
+
+    var result = await service.ListIntegrationEventsAsync(created.Data.Id);
+    var events = result.Data ?? throw new InvalidOperationException("Expected integration events.");
+
+    AssertEventTypes(events, [
+        "RcaIncidentCreated",
+        "RcaRootCauseSelected",
+        "RcaCorrectiveActionCreated",
+        "RcaCorrectiveActionCompleted",
+        "RcaEvidenceAttached",
+        "RcaFactRecorded"
+    ]);
+
+    foreach (var integrationEvent in events)
+    {
+        if (string.IsNullOrWhiteSpace(integrationEvent.Id) ||
+            string.IsNullOrWhiteSpace(integrationEvent.Type) ||
+            integrationEvent.IncidentId != created.Data.Id ||
+            integrationEvent.TenantId != tenantId ||
+            integrationEvent.SourceSystem != "GANTT" ||
+            integrationEvent.ExternalTaskId != "TASK-001" ||
+            integrationEvent.ExternalEventId != "EVT-001" ||
+            integrationEvent.ExternalWorkOrderId != "WO-001")
+        {
+            throw new InvalidOperationException("Expected integration event envelope to preserve correlation fields.");
+        }
+    }
+
+    var createdEvent = RequireEvent(events, "RcaIncidentCreated");
+    AssertDataValue(createdEvent, "title", "Integration event contract");
+    AssertDataValue(createdEvent, "status", "Open");
+
+    var causeEvent = RequireEvent(events, "RcaRootCauseSelected");
+    AssertDataValue(causeEvent, "causeId", cause.Data.Id.ToString());
+    AssertDataValue(causeEvent, "isRootCause", "True");
+
+    var completedActionEvent = RequireEvent(events, "RcaCorrectiveActionCompleted");
+    AssertDataValue(completedActionEvent, "completedByUserId", "quality");
+    AssertDataValue(completedActionEvent, "validationNotes", "Event contract validation.");
+
+    var evidenceEvent = RequireEvent(events, "RcaEvidenceAttached");
+    AssertDataValue(evidenceEvent, "attachmentFileName", "evidence.jpg");
+    AssertDataValue(evidenceEvent, "attachmentSha256", new string('a', 64));
+
+    var factEvent = RequireEvent(events, "RcaFactRecorded");
+    AssertDataValue(factEvent, "externalSourceSystem", "SCADA");
+    AssertDataValue(factEvent, "externalEventId", "ALM-002");
+    AssertDataValue(factEvent, "alarmCode", "PRES-HIGH");
+
+    var afterCreated = await service.ListIntegrationEventsAsync(created.Data.Id, createdEvent.OccurredAt.AddTicks(1));
+    if (afterCreated.Data is null || afterCreated.Data.Any(x => x.Id == createdEvent.Id))
+    {
+        throw new InvalidOperationException("Expected since filter to exclude older processed events.");
+    }
 }
 
 static async Task AssertInMemoryAuditRecordsAsync()
@@ -225,6 +382,31 @@ static void AssertEmpty(IReadOnlyList<string> values)
     if (values.Count != 0)
     {
         throw new InvalidOperationException($"Expected no blockers. Actual: {string.Join(" | ", values)}");
+    }
+}
+
+static void AssertEventTypes(IReadOnlyList<RcaDomainEventDto> events, IReadOnlyList<string> expectedTypes)
+{
+    foreach (var expectedType in expectedTypes)
+    {
+        if (!events.Any(x => x.Type == expectedType))
+        {
+            throw new InvalidOperationException($"Expected integration event type '{expectedType}'. Actual: {string.Join(" | ", events.Select(x => x.Type))}");
+        }
+    }
+}
+
+static RcaDomainEventDto RequireEvent(IReadOnlyList<RcaDomainEventDto> events, string type)
+{
+    return events.FirstOrDefault(x => x.Type == type)
+        ?? throw new InvalidOperationException($"Expected integration event type '{type}'.");
+}
+
+static void AssertDataValue(RcaDomainEventDto integrationEvent, string key, string expected)
+{
+    if (!integrationEvent.Data.TryGetValue(key, out var actual) || actual != expected)
+    {
+        throw new InvalidOperationException($"Expected event '{integrationEvent.Type}' data '{key}' to be '{expected}'. Actual: '{actual}'.");
     }
 }
 

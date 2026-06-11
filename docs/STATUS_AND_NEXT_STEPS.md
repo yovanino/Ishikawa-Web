@@ -123,7 +123,10 @@ formal del feed de eventos RCA en `docs/INTEGRATION_EVENTS.md`. Ese documento
 define envelope `RcaDomainEventDto`, compatibilidad `/api/v1`, deduplicacion
 por `id`, polling por `occurredAt`, reglas para `data` extensible y la
 evolucion esperada hacia outbox, webhooks, SignalR o broker sin acoplar
-consumidores externos al modelo interno.
+consumidores externos al modelo interno. La suite liviana ahora cubre ese
+contrato contra el servicio in-memory para proteger envelope, correlacion
+externa, tipos de evento documentados, claves `data` criticas y filtro
+incremental `since`.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla

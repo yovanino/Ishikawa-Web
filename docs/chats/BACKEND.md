@@ -103,6 +103,9 @@ standalone.
   compatibilidad e instrucciones de consumo del feed derivado.
 - Marcado en roadmap el primer avance P2: versionado y compatibilidad de
   eventos.
+- Agregada cobertura liviana del contrato de eventos sobre
+  `InMemoryRcaIncidentService`, validando envelope, correlacion externa, tipos
+  documentados, claves `data` criticas y filtro `since`.
 
 ## Pendientes
 
@@ -226,6 +229,9 @@ standalone.
   auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
 - Para el ajuste P2 de compatibilidad de eventos, se validan build, tests
   livianos y `git diff --check` antes del commit.
+- Para la cobertura P2 de eventos, `dotnet build IshikawaRca.sln /m:1` y
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  pasan con 0 errores.
 
 ## Ultimo Cierre
 
@@ -234,5 +240,6 @@ standalone.
   del feed de eventos RCA, envelope `RcaDomainEventDto`, compatibilidad
   `/api/v1`, deduplicacion por `id`, polling por `occurredAt` y evolucion
   esperada hacia outbox/webhooks/SignalR sin acoplar consumidores externos al
-  modelo interno.
-- Commit sugerido: `docs(integration): document RCA event compatibility`.
+  modelo interno. Agregada prueba liviana que protege ese contrato antes de
+  avanzar a outbox o webhooks.
+- Commit sugerido: `test(integration): cover RCA event compatibility`.
