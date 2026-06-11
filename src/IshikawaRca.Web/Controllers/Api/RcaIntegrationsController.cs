@@ -68,4 +68,16 @@ public class RcaIntegrationsController : ControllerBase
 
         return Ok(ApiResult<RcaOutboxStatusDto>.Ok(status));
     }
+
+    [HttpGet("outbox/dead-letter")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaOutboxEventDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<RcaOutboxEventDto>>>> ListOutboxDeadLetters(
+        [FromQuery] int take = 100,
+        CancellationToken cancellationToken = default)
+    {
+        var events = await _rcaOutboxService.ListDeadLettersAsync(take, cancellationToken);
+
+        return Ok(ApiResult<IReadOnlyList<RcaOutboxEventDto>>.Ok(events));
+    }
 }

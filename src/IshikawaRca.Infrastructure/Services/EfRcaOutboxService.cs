@@ -123,6 +123,38 @@ public class EfRcaOutboxService : IRcaOutboxService
         };
     }
 
+    public async Task<IReadOnlyList<RcaOutboxEventDto>> ListDeadLettersAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        var boundedTake = Math.Clamp(take, 1, 500);
+
+        return await _dbContext.RcaOutboxEvents
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.Status == RcaOutboxEventStatus.DeadLetter)
+            .OrderByDescending(x => x.LastAttemptAt ?? x.CreatedAt)
+            .ThenByDescending(x => x.CreatedAt)
+            .Take(boundedTake)
+            .Select(x => new RcaOutboxEventDto
+            {
+                Id = x.Id,
+                TenantId = x.TenantId,
+                EventId = x.EventId,
+                EventType = x.EventType,
+                OccurredAt = x.OccurredAt,
+                IncidentId = x.IncidentId,
+                SourceSystem = x.SourceSystem,
+                ExternalTaskId = x.ExternalTaskId,
+                ExternalEventId = x.ExternalEventId,
+                ExternalWorkOrderId = x.ExternalWorkOrderId,
+                Status = x.Status.ToString(),
+                AttemptCount = x.AttemptCount,
+                NextAttemptAt = x.NextAttemptAt,
+                LastAttemptAt = x.LastAttemptAt,
+                PublishedAt = x.PublishedAt,
+                LastError = x.LastError
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
     {
         var outboxEvent = await GetRequiredAsync(id, cancellationToken);

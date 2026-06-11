@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox dead-letter endpoint
+
+Scope: expose read-only diagnostics for RCA outbox events in dead-letter state.
+
+Checks:
+
+- Added `RcaOutboxEventDto`.
+- Added `IRcaOutboxService.ListDeadLettersAsync`.
+- `EfRcaOutboxService.ListDeadLettersAsync` lists only non-deleted
+  `DeadLetter` events and bounds `take` between 1 and 500.
+- Added protected `GET /api/v1/integrations/rca/outbox/dead-letter?take=`.
+- Documented the endpoint as diagnostics-only.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 webhook configuration base
 
 Scope: prepare safe configuration for the future RCA outbox webhook publisher.

@@ -294,6 +294,7 @@ GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
 GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 GET /api/v1/integrations/rca/outbox/status
+GET /api/v1/integrations/rca/outbox/dead-letter?take=
 ```
 
 El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
@@ -312,6 +313,18 @@ Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
 de eventos y marcas temporales operativas (`oldestPendingAt`, `nextAttemptAt`,
 `lastAttemptAt`, `lastPublishedAt`). Es un endpoint de observabilidad; no
 publica eventos, no reintenta entregas y no modifica el outbox.
+
+Dead-letter operativo del outbox:
+
+```http
+GET /api/v1/integrations/rca/outbox/dead-letter?take=100
+```
+
+Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
+`ApiResult<IReadOnlyList<RcaOutboxEventDto>>` con eventos en estado
+`DeadLetter`, ordenados de mas reciente a mas antiguo segun ultimo intento o
+creacion. `take` se acota internamente entre 1 y 500. Es un endpoint de
+diagnostico; no reintenta, no republica y no cambia estado.
 
 ## APIs de Asistencia IA
 

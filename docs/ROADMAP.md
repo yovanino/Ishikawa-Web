@@ -342,6 +342,10 @@ Avance P2 2026-06-11: queda agregada la configuracion base
 default, sin secretos versionados, batch 50, 5 intentos maximos y timeout de
 5 segundos.
 
+Avance P2 2026-06-11: se agrega endpoint protegido de diagnostico
+`GET /api/v1/integrations/rca/outbox/dead-letter?take=`, que lista eventos en
+`DeadLetter` sin reintentar, republicar ni modificar estado.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

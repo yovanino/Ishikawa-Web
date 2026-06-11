@@ -131,6 +131,9 @@ standalone.
 - Agregada configuracion base `RcaIntegration` para futuro
   publicador/webhooks, con defaults seguros y webhooks deshabilitados por
   defecto.
+- Agregado endpoint protegido
+  `GET /api/v1/integrations/rca/outbox/dead-letter?take=` para diagnosticar
+  eventos outbox en `DeadLetter` sin reintentar ni cambiar estado.
 
 ## Pendientes
 
@@ -151,9 +154,9 @@ standalone.
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
 - Siguiente tarea P2: implementar publicador/webhooks o endpoints operativos de
-  reintento/dead-letter; el endpoint de eventos ya usa outbox + fallback
-  derivado, el endpoint de status ya cubre observabilidad y la configuracion
-  base de webhooks ya existe.
+  reintento; el endpoint de eventos ya usa outbox + fallback derivado, el
+  endpoint de status ya cubre observabilidad, dead-letter ya tiene consulta y
+  la configuracion base de webhooks ya existe.
 
 ## Riesgos
 
@@ -297,6 +300,9 @@ standalone.
 - Para configuracion base de webhooks, `dotnet build IshikawaRca.sln /m:1`
   pasa despues de cambiar a binding manual sin paquetes nuevos. Tests y
   `git diff --check` quedan pendientes antes del commit.
+- Para consulta dead-letter del outbox, `dotnet build IshikawaRca.sln /m:1`
+  pasa con 0 warnings y 0 errores. Tests y `git diff --check` quedan
+  pendientes antes del commit.
 
 ## Ultimo Cierre
 
@@ -317,5 +323,6 @@ standalone.
   feed derivado historico con deduplicacion por `id`. Agregado endpoint
   protegido de status del outbox para observabilidad operacional. Agregada
   configuracion base `RcaIntegration` para futuros webhooks, apagados por
-  default.
-- Commit sugerido: `feat(integration): add RCA webhook configuration`.
+  default. Agregada consulta protegida de dead-letter para diagnostico
+  operativo.
+- Commit sugerido: `feat(integration): expose RCA outbox dead letters`.

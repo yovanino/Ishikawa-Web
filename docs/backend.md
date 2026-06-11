@@ -104,6 +104,8 @@ El backend ya cuenta con:
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
   observar conteos y timestamps operativos del outbox sin publicar ni reintentar
   eventos.
+- Endpoint protegido `GET /api/v1/integrations/rca/outbox/dead-letter` para
+  diagnosticar eventos outbox en `DeadLetter` sin reintentar ni cambiar estado.
 - Configuracion `RcaIntegration` para futuro publicador outbox/webhooks, con
   webhooks deshabilitados por default y sin secretos versionados.
 
@@ -268,4 +270,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Agregadas opciones `RcaIntegrationOptions` / `RcaWebhookOptions`, binding
   manual en infraestructura y defaults seguros en `appsettings.json`:
   webhooks vacios, batch 50, 5 intentos maximos y timeout de 5 segundos.
+- Agregado DTO `RcaOutboxEventDto`, consulta `ListDeadLettersAsync` y endpoint
+  protegido `GET /api/v1/integrations/rca/outbox/dead-letter?take=` para
+  inspeccionar eventos en dead-letter con limite acotado entre 1 y 500.
 - El outbox todavia no publica webhooks ni broker/event bus.
