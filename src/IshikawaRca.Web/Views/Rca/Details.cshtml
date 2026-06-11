@@ -1243,7 +1243,7 @@
                                         var causeActionCount = Model.CorrectiveActions.Count(x => x.CauseId == cause.Id);
                                         var causeScore = cause.ProbabilityScore + cause.ImpactScore + cause.FrequencyScore;
 
-                                        <li class="cause-card @(cause.IsRootCause ? "root-cause" : "")">
+                                        <li class="cause-card @(cause.IsRootCause ? "root-cause" : "")" draggable="true" data-cause-card>
                                             <div class="cause-card-heading">
                                                 <strong>@cause.Title</strong>
                                                 @if (cause.IsRootCause)

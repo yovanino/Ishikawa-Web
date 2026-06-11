@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-11 - P1 visual cause reorder
+
+Scope: add visual drag/reorder behavior to fishbone cause cards.
+
+Checks:
+
+- Cause cards are draggable inside their own branch lane.
+- Reorder is client-side visual only; no persistence, API or backend contract
+  was introduced.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Browser drag validation intentionally deferred to the P1 cockpit/tablet
+  closure.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-11 - P1 responsive detail refinements
 
 Scope: refine tablet/mobile behavior for the RCA detail cockpit.

@@ -210,11 +210,13 @@ detalle RCA:
   loading visual en formularios, banner offline y errores MVC existentes.
 - 2026-06-11: se agregan reglas responsive/tablet para command bar, fishbone,
   timeline filters, CAPA, panel lateral y botones contextuales.
+- 2026-06-11: se agrega drag/reorder visual de tarjetas de causa dentro de la
+  misma rama, sin persistencia ni nuevo contrato backend.
 
 ## Pendientes
 
-- Continuar el corte P1 con drag/reorder de causas, edicion avanzada desde
-  panel lateral y regla formal de SLA visual.
+- Continuar el corte P1 con persistencia de orden si se define contrato,
+  edicion avanzada desde panel lateral y regla formal de SLA visual.
 - Mantener sincronizado este archivo luego de cada trabajo UI.
 - Registrar validaciones visuales y funcionales relevantes en
   `docs/VALIDATION_LOG.md`.
@@ -264,11 +266,14 @@ detalle RCA:
 - 2026-06-11: para responsive/tablet, `dotnet build IshikawaRca.sln /m:1`
   paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   paso en serie.
+- 2026-06-11: para drag/reorder visual de causas, `dotnet build IshikawaRca.sln /m:1`
+  paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  paso en serie.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-11.
 - Resumen: P1 avanza con command bar/KPI rail, CAPA board, tarjetas de causa,
   zoom/pan, timeline filtrable, panel lateral contextual y estados UI en el
-  detalle RCA, mas refuerzos responsive/tablet.
+  detalle RCA, mas refuerzos responsive/tablet y drag/reorder visual.
 - Commit: pendiente en este cierre.

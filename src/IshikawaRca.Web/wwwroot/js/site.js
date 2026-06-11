@@ -41,6 +41,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  document.querySelectorAll("[data-cause-card]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      if (event.target.closest("button, a")) {
+        event.preventDefault();
+        return;
+      }
+
+      card.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+    });
+  });
+
+  document.querySelectorAll(".cause-list").forEach((list) => {
+    list.addEventListener("dragover", (event) => {
+      const draggingCard = document.querySelector(".cause-card.is-dragging");
+
+      if (!draggingCard || draggingCard.parentElement !== list) {
+        return;
+      }
+
+      event.preventDefault();
+      const afterElement = [...list.querySelectorAll(".cause-card:not(.is-dragging)")]
+        .find((item) => event.clientY <= item.getBoundingClientRect().top + item.offsetHeight / 2);
+
+      if (afterElement) {
+        list.insertBefore(draggingCard, afterElement);
+      } else {
+        list.appendChild(draggingCard);
+      }
+    });
+  });
+
   const fishboneBoard = document.querySelector("[data-fishbone-board]");
   const fishboneViewport = document.querySelector("[data-fishbone-viewport]");
 

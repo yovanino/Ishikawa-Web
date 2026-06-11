@@ -115,14 +115,14 @@ gobernada y reportes corporativos de auditoria.
 El corte activo recomendado pasa a P1: experiencia visual industrial del detalle
 RCA. Ya avanzaron command bar, KPI rail, CAPA board, tarjetas enriquecidas del
 fishbone, zoom/pan del fishbone, timeline filtrable, panel lateral contextual,
-estados UI y refuerzos responsive/tablet, validados con build y tests livianos
-en serie. Para mantener velocidad, cada micro-ajuste UI se valida con
-build/tests/diff y la validacion visual completa se agrupa al cierre de bloques
-de cockpit o responsive.
+estados UI, refuerzos responsive/tablet y drag/reorder visual de causas,
+validados con build y tests livianos en serie. Para mantener velocidad, cada
+micro-ajuste UI se valida con build/tests/diff y la validacion visual completa
+se agrupa al cierre de bloques de cockpit o responsive.
 
-- Continuar P1 con drag/reorder de causas, edicion avanzada desde panel lateral,
-  regla formal de SLA visual y validacion visual completa cuando se levante app
-  + DB.
+- Continuar P1 con persistencia de orden si se define contrato, edicion
+  avanzada desde panel lateral, regla formal de SLA visual y validacion visual
+  completa cuando se levante app + DB.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,
   permisos productivos refinados e integracion futura con Identity/tenant
   corporativo.

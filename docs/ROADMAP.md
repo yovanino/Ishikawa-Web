@@ -220,7 +220,8 @@ cockpit industrial.
   de contencion, riesgo de recurrencia.
 - [x] Fishbone con tarjetas de causa enriquecidas.
 - [x] Interaccion avanzada del fishbone sobre tarjetas de causa.
-- [ ] Drag/reorder de causas.
+- [x] Drag/reorder visual de causas dentro de rama.
+- [ ] Persistencia de orden de causas si se define contrato.
 - [x] Zoom, pan y fit-to-screen.
 - [x] Panel lateral de detalle para causa/evidencia/accion.
 - [ ] Edicion avanzada desde panel lateral.
@@ -255,6 +256,9 @@ visual en submits, banner offline y se mantienen errores de validacion MVC.
 
 Avance P1 2026-06-11: se refuerzan reglas responsive/tablet para command bar,
 fishbone, timeline filters, panel lateral, CAPA y botones contextuales.
+
+Avance P1 2026-06-11: las tarjetas de causa del fishbone permiten drag/reorder
+visual dentro de la misma rama sin persistencia nueva ni contrato backend.
 
 Criterio de salida P1:
 

@@ -1331,6 +1331,14 @@ textarea.form-control {
   gap: 8px;
 }
 
+.cause-card[draggable="true"] {
+  cursor: grab;
+}
+
+.cause-card.is-dragging {
+  opacity: 0.55;
+}
+
 .cause-card-heading,
 .cause-score-strip,
 .cause-link-strip {
