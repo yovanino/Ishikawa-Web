@@ -131,7 +131,8 @@ incremental `since`.
 Tambien queda definida la especificacion tecnica inicial de outbox/webhooks en
 `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`. El
 siguiente incremento recomendado es crear entidad, mapping y migracion
-`RcaOutboxEvent`, sin reemplazar todavia el feed derivado.
+`RcaOutboxEvent`, sin reemplazar todavia el feed derivado. El plan ejecutable
+esta en `docs/superpowers/plans/2026-06-11-p2-rca-outbox-base.md`.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla

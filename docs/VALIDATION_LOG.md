@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox base implementation plan
+
+Scope: create an executable implementation plan for the first RCA outbox base
+cut.
+
+Checks:
+
+- Added `docs/superpowers/plans/2026-06-11-p2-rca-outbox-base.md`.
+- The plan splits the work into domain model, EF mapping/migration, outbox
+  service base and documentation closure.
+- The plan keeps webhook delivery and feed replacement out of the first code
+  cut.
+
+Validation:
+
+- Documentation review against the P2 outbox/webhooks design spec.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox webhooks design
 
 Scope: define the recommended technical design for RCA outbox and configurable

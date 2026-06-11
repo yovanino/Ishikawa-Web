@@ -108,6 +108,8 @@ standalone.
   documentados, claves `data` criticas y filtro `since`.
 - Especificado el diseno P2 de outbox transaccional y webhooks en
   `docs/superpowers/specs/2026-06-11-p2-rca-outbox-webhooks-design.md`.
+- Creado plan de implementacion para la base outbox en
+  `docs/superpowers/plans/2026-06-11-p2-rca-outbox-base.md`.
 
 ## Pendientes
 
@@ -126,6 +128,7 @@ standalone.
   configurables o canal live para timeline/estados.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
+- Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
 
 ## Riesgos
 
@@ -237,6 +240,7 @@ standalone.
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   pasan con 0 errores.
 - Para la spec P2 outbox/webhooks, validacion documental y `git diff --check`.
+- Para el plan P2 outbox base, validacion documental y `git diff --check`.
 
 ## Ultimo Cierre
 
@@ -247,5 +251,5 @@ standalone.
   esperada hacia outbox/webhooks/SignalR sin acoplar consumidores externos al
   modelo interno. Agregada prueba liviana que protege ese contrato antes de
   avanzar a outbox o webhooks. Definida spec tecnica para implementar outbox
-  primero y webhooks despues.
-- Commit sugerido: `docs(integration): design RCA outbox webhooks`.
+  primero y webhooks despues. Creado plan ejecutable para la base outbox.
+- Commit sugerido: `docs(integration): plan RCA outbox base`.
