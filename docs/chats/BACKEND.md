@@ -114,6 +114,8 @@ standalone.
   `RcaOutboxEvent`.
 - Agregado mapping EF y migracion `AddRcaOutboxEvents` para
   `rca_outbox_events`.
+- Agregado servicio base `IRcaOutboxService` / `EfRcaOutboxService` y registro
+  DI en infraestructura.
 
 ## Pendientes
 
@@ -133,8 +135,8 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea del plan: servicio base `IRcaOutboxService` +
-  `EfRcaOutboxService`.
+- Siguiente tarea del plan: cierre documental de la base outbox y luego captura
+  transaccional de eventos en operaciones RCA.
 
 ## Riesgos
 
@@ -254,6 +256,9 @@ standalone.
   `git diff --check` pasan. La primera migracion generada con `--no-build`
   quedo vacia por assembly desactualizado; se removio y regenero despues de
   compilar.
+- Para servicio base outbox, `dotnet build IshikawaRca.sln /m:1`,
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `git diff --check` pasan.
 
 ## Ultimo Cierre
 
@@ -266,5 +271,6 @@ standalone.
   avanzar a outbox o webhooks. Definida spec tecnica para implementar outbox
   primero y webhooks despues. Creado plan ejecutable para la base outbox y
   agregado el modelo de dominio inicial. Agregado mapping EF y migracion de
-  tabla outbox.
-- Commit sugerido: `feat(db): add RCA outbox events table`.
+  tabla outbox. Agregado servicio base outbox para enqueue idempotente y
+  cambios de estado de entrega.
+- Commit sugerido: `feat(integration): add RCA outbox service base`.

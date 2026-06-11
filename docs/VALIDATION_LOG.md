@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox service base
+
+Scope: add the base service for idempotent RCA outbox persistence and delivery
+state transitions.
+
+Checks:
+
+- Added `IRcaOutboxService`.
+- Added `EfRcaOutboxService` with idempotent enqueue by `TenantId + EventId`.
+- Added pending/failed event listing with bounded `take`.
+- Added published and failed state transitions with retry metadata.
+- Registered the service in infrastructure DI.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox EF mapping
 
 Scope: add EF persistence mapping and migration for RCA outbox events.

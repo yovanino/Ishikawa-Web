@@ -309,6 +309,11 @@ Avance P2 2026-06-11: se agrega mapping EF y migracion
 `TenantId + EventId` e indices para publicacion pendiente y consulta por RCA o
 tipo de evento.
 
+Avance P2 2026-06-11: se agrega servicio base de outbox para persistir
+`RcaDomainEventDto` de forma idempotente, listar pendientes y marcar eventos
+como publicados o fallidos. La captura automatica desde operaciones RCA queda
+como siguiente paso.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

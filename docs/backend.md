@@ -90,6 +90,8 @@ El backend ya cuenta con:
   `RcaOutboxEventStatus`.
 - Mapping EF y migracion `AddRcaOutboxEvents` para la tabla
   `rca_outbox_events`.
+- Servicio base `IRcaOutboxService` / `EfRcaOutboxService` para persistir y
+  administrar eventos outbox.
 
 ## Corte Backend P0
 
@@ -225,3 +227,9 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `TenantId + IncidentId + OccurredAt` y `TenantId + EventType + OccurredAt`.
 - Generada migracion `20260611123836_AddRcaOutboxEvents` para crear
   `rca_outbox_events`.
+- Agregado `IRcaOutboxService` con operaciones de enqueue idempotente, listado
+  de pendientes, marcado publicado y marcado fallido.
+- Agregado `EfRcaOutboxService`, que serializa `RcaDomainEventDto`, deduplica
+  por `TenantId + EventId`, lista eventos `Pending`/`Failed` elegibles y
+  registra estado de entrega/reintento.
+- Registrado el servicio outbox en `AddIshikawaRcaInfrastructure`.
