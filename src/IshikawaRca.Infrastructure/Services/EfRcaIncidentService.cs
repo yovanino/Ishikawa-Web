@@ -216,6 +216,30 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
 
         _dbContext.IshikawaCauses.Add(cause);
+
+        var incident = await _dbContext.RcaIncidents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+        if (incident is not null)
+        {
+            await AddOutboxEventAsync(
+                CreateEvent(
+                    $"rca-cause-created:{cause.Id}",
+                    cause.IsRootCause ? "RcaRootCauseSelected" : "RcaCauseCreated",
+                    cause.CreatedAt,
+                    incident,
+                    new Dictionary<string, string?>
+                    {
+                        ["causeId"] = cause.Id.ToString(),
+                        ["branchId"] = cause.BranchId.ToString(),
+                        ["parentCauseId"] = cause.ParentCauseId?.ToString(),
+                        ["title"] = cause.Title,
+                        ["isRootCause"] = cause.IsRootCause.ToString()
+                    }),
+                cancellationToken);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<IshikawaCauseDto>.Ok(ToCauseDto(cause), "Causa agregada.");
@@ -293,6 +317,21 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
 
         _dbContext.CorrectiveActions.Add(action);
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-action-created:{action.Id}",
+                "RcaCorrectiveActionCreated",
+                action.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["actionId"] = action.Id.ToString(),
+                    ["causeId"] = action.CauseId?.ToString(),
+                    ["title"] = action.Title,
+                    ["status"] = action.Status.ToString(),
+                    ["dueDate"] = action.DueDate?.ToString("O")
+                }),
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<CorrectiveActionDto>.Ok(ToActionDto(action), "Accion correctiva agregada.");
@@ -481,6 +520,32 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
 
         _dbContext.RcaEvidence.Add(evidence);
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-evidence-attached:{evidence.Id}",
+                "RcaEvidenceAttached",
+                evidence.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["evidenceId"] = evidence.Id.ToString(),
+                    ["causeId"] = evidence.CauseId?.ToString(),
+                    ["externalIntakeId"] = evidence.ExternalIntakeId?.ToString(),
+                    ["title"] = evidence.Title,
+                    ["evidenceType"] = evidence.EvidenceType,
+                    ["source"] = evidence.Source,
+                    ["sourceDetail"] = evidence.SourceDetail,
+                    ["tags"] = evidence.Tags,
+                    ["validationStatus"] = evidence.ValidationStatus,
+                    ["validatedByUserId"] = evidence.ValidatedByUserId,
+                    ["referenceUri"] = evidence.ReferenceUri,
+                    ["attachmentFileName"] = evidence.AttachmentFileName,
+                    ["attachmentContentType"] = evidence.AttachmentContentType,
+                    ["attachmentSizeBytes"] = evidence.AttachmentSizeBytes?.ToString(),
+                    ["attachmentStorageProvider"] = evidence.AttachmentStorageProvider,
+                    ["attachmentSha256"] = evidence.AttachmentSha256
+                }),
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaEvidenceDto>.Ok(ToEvidenceDto(evidence), "Evidencia agregada.");
@@ -1013,6 +1078,21 @@ public class EfRcaIncidentService : IRcaIncidentService
                 incident.EscalationReason
             });
 
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-incident-escalated-8d:{incident.Id}",
+                "RcaEscalatedTo8D",
+                incident.EscalatedTo8DAt.Value,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["status"] = incident.Status.ToString(),
+                    ["escalatedByUserId"] = incident.EscalatedTo8DByUserId,
+                    ["escalationReason"] = incident.EscalationReason
+                }),
+            cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA escalado a 8D.");
@@ -1054,6 +1134,21 @@ public class EfRcaIncidentService : IRcaIncidentService
         incident.WizardStepNotes = Normalize(request.Notes);
         incident.UpdatedAt = now;
         incident.UpdatedByUserId = Normalize(request.CompletedByUserId);
+
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-wizard-step-completed:{incident.Id}:{incident.WizardStep}",
+                "RcaWizardStepCompleted",
+                incident.WizardStepCompletedAt.Value,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["step"] = incident.WizardStep.ToString(),
+                    ["completedByUserId"] = incident.WizardStepCompletedByUserId,
+                    ["notes"] = incident.WizardStepNotes
+                }),
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

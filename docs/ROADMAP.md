@@ -319,6 +319,11 @@ para creacion de RCA, accion correctiva completada, fact operacional registrado
 y cierre RCA. El feed derivado sigue siendo la fuente publica hasta igualar
 cobertura completa del outbox.
 
+Avance P2 2026-06-11: la captura outbox del servicio RCA principal se extiende
+a causas, acciones creadas, evidencias, wizard y escalamiento 8D. Queda
+pendiente intake externo antes de considerar el outbox equivalente al feed
+derivado.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

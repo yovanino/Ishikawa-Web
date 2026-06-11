@@ -1,5 +1,28 @@
 # Validation Log
 
+## 2026-06-11 - P2 expanded RCA outbox capture
+
+Scope: expand outbox capture inside `EfRcaIncidentService` beyond the initial
+high-value events.
+
+Checks:
+
+- `AddCauseAsync` captures `RcaCauseCreated` or `RcaRootCauseSelected`.
+- `AddCorrectiveActionAsync` captures `RcaCorrectiveActionCreated`.
+- `AddEvidenceAsync` captures `RcaEvidenceAttached`.
+- `EscalateTo8DAsync` captures `RcaEscalatedTo8D`.
+- `CompleteWizardStepAsync` captures `RcaWizardStepCompleted`.
+- Intake external events remain pending in `EfRcaExternalIntakeService`.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 initial outbox event capture
 
 Scope: capture high-value RCA integration events into the outbox without

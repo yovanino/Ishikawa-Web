@@ -95,6 +95,8 @@ El backend ya cuenta con:
 - Captura automatica inicial hacia outbox para eventos de alto valor:
   `RcaIncidentCreated`, `RcaCorrectiveActionCompleted`, `RcaFactRecorded` y
   `RcaClosed`.
+- Cobertura outbox adicional en `EfRcaIncidentService` para causas, acciones
+  creadas, evidencias, wizard y escalamiento 8D.
 
 ## Corte Backend P0
 
@@ -239,5 +241,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - `EfRcaIncidentService` ahora agrega eventos outbox en la misma unidad de
   persistencia para creacion de RCA, accion completada, fact registrado y
   cierre RCA.
+- Extendida la captura outbox del servicio RCA principal para
+  `RcaCauseCreated`, `RcaRootCauseSelected`, `RcaCorrectiveActionCreated`,
+  `RcaEvidenceAttached`, `RcaWizardStepCompleted` y `RcaEscalatedTo8D`.
 - El endpoint `/api/v1/integrations/rca/events` sigue usando feed derivado; el
   outbox todavia no reemplaza el feed ni publica webhooks.
