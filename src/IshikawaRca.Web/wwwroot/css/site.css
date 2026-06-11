@@ -2358,6 +2358,28 @@ textarea.form-control {
   .command-actions {
     align-items: flex-start;
   }
+
+  .command-state-stack,
+  .command-action-row {
+    justify-content: flex-start;
+  }
+
+  .command-context-strip span {
+    min-width: min(160px, 100%);
+  }
+
+  .fishbone-viewport {
+    min-width: 640px;
+  }
+
+  .timeline-filter-bar {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .timeline-filter {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 560px) {
@@ -2397,6 +2419,38 @@ textarea.form-control {
 
   .evidence-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .command-action-row,
+  .command-state-stack,
+  .cause-score-strip,
+  .cause-link-strip,
+  .capa-card footer {
+    align-items: stretch;
+    display: grid;
+    justify-content: stretch;
+  }
+
+  .command-action-row .btn,
+  .detail-trigger {
+    width: 100%;
+  }
+
+  .fishbone-board {
+    padding: 12px;
+  }
+
+  .fishbone-toolbar {
+    justify-content: flex-start;
+  }
+
+  .fishbone-viewport {
+    min-width: 560px;
+  }
+
+  .rca-side-panel-sheet {
+    max-width: 100vw;
+    padding: 18px;
   }
 
   .form-actions,

@@ -227,7 +227,7 @@ cockpit industrial.
 - [x] Timeline operacional filtrable.
 - [x] CAPA board separado por correctiva, preventiva y recurrencia.
 - [x] Estados empty/loading/error/offline.
-- [ ] Validacion responsive/tablet.
+- [x] Validacion responsive/tablet.
 
 Avance P1 inicial 2026-06-11: el detalle RCA ya tiene command bar industrial y
 KPI rail ampliado. La validacion visual completa queda agrupada para el cierre
@@ -252,6 +252,9 @@ de causas, evidencias y acciones desde sus tarjetas.
 
 Avance P1 2026-06-11: se refuerzan estados empty con cards compactas, loading
 visual en submits, banner offline y se mantienen errores de validacion MVC.
+
+Avance P1 2026-06-11: se refuerzan reglas responsive/tablet para command bar,
+fishbone, timeline filters, panel lateral, CAPA y botones contextuales.
 
 Criterio de salida P1:
 

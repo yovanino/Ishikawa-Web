@@ -1,5 +1,25 @@
 # Validation Log
 
+## 2026-06-11 - P1 responsive detail refinements
+
+Scope: refine tablet/mobile behavior for the RCA detail cockpit.
+
+Checks:
+
+- Command bar actions and state chips stack cleanly on narrow viewports.
+- Fishbone viewport, toolbar, timeline filters, CAPA card footers, side panel
+  and contextual buttons receive mobile-specific constraints.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Browser responsive validation intentionally deferred to the P1
+  cockpit/tablet closure.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-11 - P1 UI states
 
 Scope: improve empty, loading, error and offline states in the RCA detail UI.
