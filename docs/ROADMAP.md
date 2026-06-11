@@ -134,9 +134,9 @@ storage documental productivo y AI Gateway HTTP.
 - [x] Exportacion PDF desde UI.
 - [x] Gestion visual de evidencias.
 - [x] Timeline unificado.
-- [ ] Drag and drop de causas.
-- [ ] Zoom y pan del canvas.
-- [ ] Panel lateral de edicion.
+- [x] Drag and drop visual de causas.
+- [x] Zoom y pan del canvas.
+- [x] Panel lateral contextual.
 - [ ] Context menu industrial.
 - [ ] Auto-layout del fishbone.
 - [ ] Comentarios colaborativos.
@@ -259,6 +259,10 @@ fishbone, timeline filters, panel lateral, CAPA y botones contextuales.
 
 Avance P1 2026-06-11: las tarjetas de causa del fishbone permiten drag/reorder
 visual dentro de la misma rama sin persistencia nueva ni contrato backend.
+
+Estado del corte: P1 visual queda cerrado como cockpit industrial standalone.
+Quedan fuera del corte, por requerir contrato/regla adicional, SLA formal,
+persistencia de orden de causas y edicion avanzada desde panel lateral.
 
 Criterio de salida P1:
 

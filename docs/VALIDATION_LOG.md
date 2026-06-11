@@ -1,5 +1,24 @@
 # Validation Log
 
+## 2026-06-11 - P1 visual closure
+
+Scope: close the P1 visual cockpit cut in project documentation.
+
+Checks:
+
+- `docs/ROADMAP.md` now marks the P1 visual cockpit capabilities as closed.
+- `docs/STATUS_AND_NEXT_STEPS.md` records that SLA visual, persisted cause
+  ordering and advanced side-panel editing need explicit rules/contracts before
+  implementation.
+- `docs/chats/UI.md` keeps continuity for future UI work.
+
+Validation:
+
+- Documentation-only closure; based on the successful build/tests recorded for
+  each P1 micro-adjustment on 2026-06-11.
+
+Result: passed.
+
 ## 2026-06-11 - P1 visual cause reorder
 
 Scope: add visual drag/reorder behavior to fishbone cause cards.

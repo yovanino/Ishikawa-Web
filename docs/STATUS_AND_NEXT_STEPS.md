@@ -112,7 +112,7 @@ gobernada y reportes corporativos de auditoria.
 
 ## Siguiente Corte Recomendado
 
-El corte activo recomendado pasa a P1: experiencia visual industrial del detalle
+El corte P1 visual queda cerrado como experiencia industrial del detalle
 RCA. Ya avanzaron command bar, KPI rail, CAPA board, tarjetas enriquecidas del
 fishbone, zoom/pan del fishbone, timeline filtrable, panel lateral contextual,
 estados UI, refuerzos responsive/tablet y drag/reorder visual de causas,
@@ -120,9 +120,11 @@ validados con build y tests livianos en serie. Para mantener velocidad, cada
 micro-ajuste UI se valida con build/tests/diff y la validacion visual completa
 se agrupa al cierre de bloques de cockpit o responsive.
 
-- Continuar P1 con persistencia de orden si se define contrato, edicion
-  avanzada desde panel lateral, regla formal de SLA visual y validacion visual
-  completa cuando se levante app + DB.
+- Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
+  desde panel lateral y regla formal de SLA visual requieren contrato/regla
+  antes de implementarse.
+- Validacion visual completa queda recomendada cuando se levante app + DB sin
+  penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,
   permisos productivos refinados e integracion futura con Identity/tenant
   corporativo.

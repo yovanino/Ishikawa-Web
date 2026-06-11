@@ -215,12 +215,14 @@ detalle RCA:
 
 ## Pendientes
 
-- Continuar el corte P1 con persistencia de orden si se define contrato,
-  edicion avanzada desde panel lateral y regla formal de SLA visual.
+- P1 visual queda cerrado como cockpit industrial standalone.
+- Persistencia de orden de causas, edicion avanzada desde panel lateral y SLA
+  visual formal quedan pendientes hasta definir contrato/regla.
 - Mantener sincronizado este archivo luego de cada trabajo UI.
 - Registrar validaciones visuales y funcionales relevantes en
   `docs/VALIDATION_LOG.md`.
-- Validar responsive/tablet del detalle RCA antes de ampliar interacciones.
+- Ejecutar validacion visual completa cuando se decida levantar app + DB para
+  cierre de QA visual.
 - Evaluar extraccion progresiva de secciones del detalle a parciales o
   componentes MVC para reducir riesgo de cambios sobre una vista monolitica.
 
@@ -269,11 +271,14 @@ detalle RCA:
 - 2026-06-11: para drag/reorder visual de causas, `dotnet build IshikawaRca.sln /m:1`
   paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   paso en serie.
+- 2026-06-11: cierre documental P1 visual basado en las validaciones anteriores
+  de cada micro-ajuste.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-11.
-- Resumen: P1 avanza con command bar/KPI rail, CAPA board, tarjetas de causa,
-  zoom/pan, timeline filtrable, panel lateral contextual y estados UI en el
-  detalle RCA, mas refuerzos responsive/tablet y drag/reorder visual.
-- Commit: pendiente en este cierre.
+- Resumen: P1 visual cerrado como cockpit industrial standalone. Quedan fuera
+  del corte las piezas que requieren contrato/regla: SLA formal, persistencia
+  de orden y edicion avanzada desde panel lateral.
+- Ultimos commits: `7afbd07`, `88f31ba`, `934e2b1`, `bec7eb9`, `b3cb7b1`,
+  `d02d604`, `b440f26`, `ff0a38f`, `8b74c28`.
