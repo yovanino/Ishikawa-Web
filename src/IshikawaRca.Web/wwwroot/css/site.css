@@ -1551,6 +1551,35 @@ textarea.form-control {
   padding: 12px 14px;
 }
 
+.timeline-filter-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.timeline-filter {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #4f6274;
+  font-size: 0.82rem;
+  font-weight: 820;
+  padding: 7px 10px;
+}
+
+.timeline-filter:hover,
+.timeline-filter.is-active {
+  background: var(--brand-soft);
+  border-color: #b7dede;
+  color: var(--brand-strong);
+}
+
+.unified-timeline-list li.is-hidden {
+  display: none;
+}
+
 .timeline-summary-grid strong,
 .timeline-summary-grid span {
   display: block;

@@ -223,7 +223,7 @@ cockpit industrial.
 - [ ] Drag/reorder de causas.
 - [ ] Zoom, pan y fit-to-screen.
 - [ ] Panel lateral de edicion para causa/evidencia/accion.
-- [ ] Timeline operacional filtrable.
+- [x] Timeline operacional filtrable.
 - [x] CAPA board separado por correctiva, preventiva y recurrencia.
 - [ ] Estados empty/loading/error/offline.
 - [ ] Validacion responsive/tablet.
@@ -239,6 +239,9 @@ acciones existentes y sin cambios de contrato.
 Avance P1 2026-06-11: el fishbone muestra tarjetas de causa con puntajes P/I/F,
 score total, subcausa, marca de causa raiz y trazabilidad a evidencias, hechos y
 acciones.
+
+Avance P1 2026-06-11: el timeline unificado incorpora filtros client-side por
+hechos, evidencias, acciones, wizard y eventos externos.
 
 Criterio de salida P1:
 

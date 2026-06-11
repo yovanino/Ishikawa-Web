@@ -200,11 +200,13 @@ detalle RCA:
 - 2026-06-11: se enriquecen las tarjetas de causa del fishbone con puntajes
   P/I/F, score total, causa padre, marca de raiz y conteos de evidencias,
   hechos y acciones vinculadas.
+- 2026-06-11: se agrega filtro client-side al timeline unificado por todos,
+  hechos, evidencias, acciones, wizard y eventos externos.
 
 ## Pendientes
 
-- Continuar el corte P1 con interaccion avanzada del fishbone, timeline
-  filtrable y luego responsive/tablet.
+- Continuar el corte P1 con interaccion avanzada del fishbone,
+  empty/loading/error/offline y luego responsive/tablet.
 - Mantener sincronizado este archivo luego de cada trabajo UI.
 - Registrar validaciones visuales y funcionales relevantes en
   `docs/VALIDATION_LOG.md`.
@@ -239,10 +241,13 @@ detalle RCA:
 - 2026-06-11: para fishbone cause cards, `dotnet build IshikawaRca.sln /m:1`
   paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
   paso en serie.
+- 2026-06-11: para timeline filtrable, `dotnet build IshikawaRca.sln /m:1`
+  paso con 0 warnings y 0 errores, y `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  paso en serie.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-11.
-- Resumen: P1 avanza con command bar/KPI rail, CAPA board y tarjetas de causa
-  enriquecidas en el detalle RCA.
+- Resumen: P1 avanza con command bar/KPI rail, CAPA board, tarjetas de causa
+  enriquecidas y timeline filtrable en el detalle RCA.
 - Commit: pendiente en este cierre.

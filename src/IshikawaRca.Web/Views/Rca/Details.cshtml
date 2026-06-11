@@ -689,10 +689,19 @@
             </article>
         </div>
 
+        <div class="timeline-filter-bar" data-timeline-filter-bar>
+            <button type="button" class="timeline-filter is-active" data-timeline-filter="all">Todos</button>
+            <button type="button" class="timeline-filter" data-timeline-filter="fact">Hechos</button>
+            <button type="button" class="timeline-filter" data-timeline-filter="evidence">Evidencias</button>
+            <button type="button" class="timeline-filter" data-timeline-filter="action">Acciones</button>
+            <button type="button" class="timeline-filter" data-timeline-filter="wizard">Wizard</button>
+            <button type="button" class="timeline-filter" data-timeline-filter="external">Externos</button>
+        </div>
+
         <ol class="timeline-list unified-timeline-list">
             @foreach (var timelineEvent in Model.UnifiedTimeline)
             {
-                <li>
+                <li data-timeline-kind="@timelineEvent.Kind">
                     <span class="timeline-dot timeline-dot-@timelineEvent.Kind"></span>
                     <div class="timeline-item-card timeline-item-@timelineEvent.Kind">
                         <div class="timeline-item-heading">
