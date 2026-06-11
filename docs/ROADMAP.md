@@ -218,7 +218,8 @@ cockpit industrial.
 - [ ] SLA visual del incidente cuando exista regla formal de SLA.
 - [x] KPI rail compacto: causas abiertas, evidencias, acciones vencidas, edad
   de contencion, riesgo de recurrencia.
-- [ ] Fishbone interactivo con tarjetas de causa.
+- [x] Fishbone con tarjetas de causa enriquecidas.
+- [ ] Interaccion avanzada del fishbone sobre tarjetas de causa.
 - [ ] Drag/reorder de causas.
 - [ ] Zoom, pan y fit-to-screen.
 - [ ] Panel lateral de edicion para causa/evidencia/accion.
@@ -234,6 +235,10 @@ del bloque cockpit/tablet, no para cada micro-ajuste UI.
 Avance P1 2026-06-11: la seccion de resolucion incorpora CAPA board separado
 por accion correctiva, preventiva y preventiva de recurrencia, reutilizando las
 acciones existentes y sin cambios de contrato.
+
+Avance P1 2026-06-11: el fishbone muestra tarjetas de causa con puntajes P/I/F,
+score total, subcausa, marca de causa raiz y trazabilidad a evidencias, hechos y
+acciones.
 
 Criterio de salida P1:
 

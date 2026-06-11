@@ -1234,6 +1234,58 @@ textarea.form-control {
   border-left-color: var(--accent);
 }
 
+.cause-card {
+  display: grid;
+  gap: 8px;
+}
+
+.cause-card-heading,
+.cause-score-strip,
+.cause-link-strip {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cause-card-heading {
+  justify-content: space-between;
+}
+
+.cause-root-chip {
+  background: #fff7df;
+  border: 1px solid #efcf88;
+  border-radius: 999px;
+  color: #8a5a00;
+  font-size: 0.68rem;
+  font-weight: 850;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
+.cause-score-strip span,
+.cause-score-strip strong,
+.cause-link-strip span {
+  background: #f6f8fa;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #48586a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 7px;
+}
+
+.cause-score-strip strong {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.cause-parent {
+  color: #4f6274;
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
 .cause-list strong,
 .cause-list span,
 .cause-list small,
@@ -1252,6 +1304,17 @@ textarea.form-control {
 
 .cause-list small {
   margin-top: 4px;
+}
+
+.cause-card .cause-score-strip span,
+.cause-card .cause-score-strip strong,
+.cause-card .cause-link-strip span {
+  color: #48586a;
+  font-size: 0.72rem;
+}
+
+.cause-card .cause-score-strip strong {
+  color: var(--brand-strong);
 }
 
 .score-grid {

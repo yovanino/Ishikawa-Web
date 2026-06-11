@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-11 - P1 fishbone cause cards
+
+Scope: enrich the fishbone cause cards in the RCA detail screen.
+
+Checks:
+
+- Cause cards now show P/I/F scores, total score, root-cause marker, parent
+  cause, evidence summary and traceability counts for evidence, facts and
+  actions.
+- The fishbone still uses existing server-rendered MVC data; no backend
+  contracts, persistence or API behavior changed.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Visual browser validation intentionally deferred to the P1 cockpit/tablet
+  closure.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-11 - P1 CAPA board
 
 Scope: add an operational CAPA board to the RCA detail screen.

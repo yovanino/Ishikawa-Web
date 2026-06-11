@@ -1211,19 +1211,38 @@
                                 @foreach (var cause in causes)
                                 {
                                     causesById.TryGetValue(cause.ParentCauseId ?? Guid.Empty, out var parentCause);
-                                    <li class="@(cause.IsRootCause ? "root-cause" : "")">
-                                        <strong>@cause.Title</strong>
-                                        <span>
-                                            P@cause.ProbabilityScore I@cause.ImpactScore F@cause.FrequencyScore
-                                            @if (parentCause is not null)
+                                    var causeEvidenceCount = Model.Evidence.Count(x => x.CauseId == cause.Id);
+                                    var causeFactCount = Model.Facts.Count(x => x.CauseId == cause.Id);
+                                    var causeActionCount = Model.CorrectiveActions.Count(x => x.CauseId == cause.Id);
+                                    var causeScore = cause.ProbabilityScore + cause.ImpactScore + cause.FrequencyScore;
+
+                                    <li class="cause-card @(cause.IsRootCause ? "root-cause" : "")">
+                                        <div class="cause-card-heading">
+                                            <strong>@cause.Title</strong>
+                                            @if (cause.IsRootCause)
                                             {
-                                                <text> | Subcausa de @parentCause.Title</text>
+                                                <span class="cause-root-chip">Raiz</span>
                                             }
-                                        </span>
+                                        </div>
+                                        <div class="cause-score-strip" aria-label="Puntajes de causa">
+                                            <span>P @cause.ProbabilityScore</span>
+                                            <span>I @cause.ImpactScore</span>
+                                            <span>F @cause.FrequencyScore</span>
+                                            <strong>@causeScore</strong>
+                                        </div>
+                                        @if (parentCause is not null)
+                                        {
+                                            <span class="cause-parent">Subcausa de @parentCause.Title</span>
+                                        }
                                         @if (!string.IsNullOrWhiteSpace(cause.EvidenceSummary))
                                         {
                                             <small>@cause.EvidenceSummary</small>
                                         }
+                                        <div class="cause-link-strip" aria-label="Trazabilidad de causa">
+                                            <span>@causeEvidenceCount evid.</span>
+                                            <span>@causeFactCount hechos</span>
+                                            <span>@causeActionCount acc.</span>
+                                        </div>
                                     </li>
                                 }
                             </ul>

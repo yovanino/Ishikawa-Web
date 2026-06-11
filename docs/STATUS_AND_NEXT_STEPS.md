@@ -113,12 +113,12 @@ gobernada y reportes corporativos de auditoria.
 ## Siguiente Corte Recomendado
 
 El corte activo recomendado pasa a P1: experiencia visual industrial del detalle
-RCA. Ya avanzaron command bar, KPI rail y CAPA board del cockpit, validados con
-build y tests livianos en serie. Para mantener velocidad, cada micro-ajuste UI
-se valida con build/tests/diff y la validacion visual completa se agrupa al
-cierre de bloques de cockpit o responsive.
+RCA. Ya avanzaron command bar, KPI rail, CAPA board y tarjetas enriquecidas del
+fishbone, validados con build y tests livianos en serie. Para mantener
+velocidad, cada micro-ajuste UI se valida con build/tests/diff y la validacion
+visual completa se agrupa al cierre de bloques de cockpit o responsive.
 
-- Continuar P1 con fishbone de tarjetas, timeline filtrable y
+- Continuar P1 con interaccion avanzada del fishbone, timeline filtrable y
   responsive/tablet.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,
   permisos productivos refinados e integracion futura con Identity/tenant
