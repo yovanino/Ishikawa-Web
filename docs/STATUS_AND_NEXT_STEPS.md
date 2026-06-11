@@ -137,15 +137,17 @@ La primera tarea del plan ya agrego el modelo de dominio `RcaOutboxEvent` y
 `RcaOutboxEventStatus`. Tambien quedo agregada la migracion
 `AddRcaOutboxEvents` para crear `rca_outbox_events`. El servicio base
 `IRcaOutboxService` / `EfRcaOutboxService` ya existe para enqueue idempotente y
-cambios de estado, pero todavia no captura eventos automaticamente desde las
-operaciones RCA.
+cambios de estado. La primera captura automatica ya se conecto para eventos de
+alto valor: RCA creado, accion completada, fact registrado y RCA cerrado. El
+feed `/api/v1/integrations/rca/events` sigue derivado hasta que el outbox iguale
+su cobertura.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: conectar la captura transaccional de eventos
-  RCA de alto valor al outbox, dejando webhooks configurables para un corte
-  posterior.
+- Siguiente paso P2 recomendado: ampliar cobertura outbox al resto del feed
+  derivado antes de activar webhooks configurables o reemplazar la fuente del
+  endpoint de eventos.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

@@ -92,6 +92,9 @@ El backend ya cuenta con:
   `rca_outbox_events`.
 - Servicio base `IRcaOutboxService` / `EfRcaOutboxService` para persistir y
   administrar eventos outbox.
+- Captura automatica inicial hacia outbox para eventos de alto valor:
+  `RcaIncidentCreated`, `RcaCorrectiveActionCompleted`, `RcaFactRecorded` y
+  `RcaClosed`.
 
 ## Corte Backend P0
 
@@ -233,3 +236,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   por `TenantId + EventId`, lista eventos `Pending`/`Failed` elegibles y
   registra estado de entrega/reintento.
 - Registrado el servicio outbox en `AddIshikawaRcaInfrastructure`.
+- `EfRcaIncidentService` ahora agrega eventos outbox en la misma unidad de
+  persistencia para creacion de RCA, accion completada, fact registrado y
+  cierre RCA.
+- El endpoint `/api/v1/integrations/rca/events` sigue usando feed derivado; el
+  outbox todavia no reemplaza el feed ni publica webhooks.

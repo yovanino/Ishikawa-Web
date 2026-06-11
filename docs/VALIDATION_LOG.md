@@ -1,5 +1,32 @@
 # Validation Log
 
+## 2026-06-11 - P2 initial outbox event capture
+
+Scope: capture high-value RCA integration events into the outbox without
+changing the public derived event feed.
+
+Checks:
+
+- `EfRcaIncidentService.CreateAsync` adds `RcaIncidentCreated` to
+  `rca_outbox_events`.
+- `EfRcaIncidentService.UpdateCorrectiveActionStatusAsync` adds
+  `RcaCorrectiveActionCompleted` when an action transitions to completed.
+- `EfRcaIncidentService.AddFactAsync` adds `RcaFactRecorded` for new facts.
+- `EfRcaIncidentService.CloseAsync` adds `RcaClosed` during formal closure.
+- Outbox rows are added to the same `RcaDbContext` before `SaveChangesAsync`
+  and deduplicated by `TenantId + EventId`.
+- `/api/v1/integrations/rca/events` remains backed by the existing derived
+  feed until outbox coverage is complete.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox service base
 
 Scope: add the base service for idempotent RCA outbox persistence and delivery

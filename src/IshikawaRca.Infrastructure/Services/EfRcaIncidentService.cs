@@ -12,6 +12,8 @@ namespace IshikawaRca.Infrastructure.Services;
 
 public class EfRcaIncidentService : IRcaIncidentService
 {
+    private static readonly JsonSerializerOptions OutboxSerializerOptions = new(JsonSerializerDefaults.Web);
+
     private static readonly HashSet<string> EvidenceValidationStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         "PendingReview",
@@ -61,6 +63,22 @@ public class EfRcaIncidentService : IRcaIncidentService
         AddDefaultBranches(incident);
 
         _dbContext.RcaIncidents.Add(incident);
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-incident-created:{incident.Id}",
+                "RcaIncidentCreated",
+                incident.CreatedAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["severity"] = incident.Severity.ToString(),
+                    ["status"] = incident.Status.ToString(),
+                    ["claimScope"] = incident.ClaimScope.ToString(),
+                    ["claimActorType"] = incident.ClaimActorType.ToString(),
+                    ["claimOwnerName"] = incident.ClaimOwnerName
+                }),
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaIncidentDto>.Ok(ToDto(incident), "Incidente RCA creado.");
@@ -333,6 +351,33 @@ public class EfRcaIncidentService : IRcaIncidentService
                 action.CompletedByUserId,
                 action.ValidationNotes
             });
+
+        if (status == CorrectiveActionStatus.Completed && previousStatus != CorrectiveActionStatus.Completed)
+        {
+            var incident = await _dbContext.RcaIncidents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == incidentId && !x.IsDeleted, cancellationToken);
+
+            if (incident is not null)
+            {
+                await AddOutboxEventAsync(
+                    CreateEvent(
+                        $"rca-action-completed:{action.Id}",
+                        "RcaCorrectiveActionCompleted",
+                        action.CompletedAt ?? now,
+                        incident,
+                        new Dictionary<string, string?>
+                        {
+                            ["actionId"] = action.Id.ToString(),
+                            ["causeId"] = action.CauseId?.ToString(),
+                            ["title"] = action.Title,
+                            ["status"] = action.Status.ToString(),
+                            ["completedByUserId"] = action.CompletedByUserId,
+                            ["validationNotes"] = action.ValidationNotes
+                        }),
+                    cancellationToken);
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -748,6 +793,40 @@ public class EfRcaIncidentService : IRcaIncidentService
         };
 
         _dbContext.RcaFacts.Add(fact);
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-fact-recorded:{fact.Id}",
+                "RcaFactRecorded",
+                fact.OccurredAt,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["factId"] = fact.Id.ToString(),
+                    ["causeId"] = fact.CauseId?.ToString(),
+                    ["evidenceId"] = fact.EvidenceId?.ToString(),
+                    ["correctiveActionId"] = fact.CorrectiveActionId?.ToString(),
+                    ["externalIntakeId"] = fact.ExternalIntakeId?.ToString(),
+                    ["title"] = fact.Title,
+                    ["factType"] = fact.FactType,
+                    ["source"] = fact.Source,
+                    ["sourceDetail"] = fact.SourceDetail,
+                    ["externalSourceSystem"] = fact.ExternalSourceSystem,
+                    ["externalEventId"] = fact.ExternalEventId,
+                    ["externalRecordUri"] = fact.ExternalRecordUri,
+                    ["factSeverity"] = fact.FactSeverity,
+                    ["shiftCode"] = fact.ShiftCode,
+                    ["machineCode"] = fact.MachineCode,
+                    ["lineCode"] = fact.LineCode,
+                    ["workOrderCode"] = fact.WorkOrderCode,
+                    ["materialCode"] = fact.MaterialCode,
+                    ["batchOrLot"] = fact.BatchOrLot,
+                    ["alarmCode"] = fact.AlarmCode,
+                    ["measurementName"] = fact.MeasurementName,
+                    ["measurementValue"] = fact.MeasurementValue?.ToString(),
+                    ["measurementUnit"] = fact.MeasurementUnit,
+                    ["capturedByUserId"] = fact.CapturedByUserId
+                }),
+            cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return ApiResult<RcaFactDto>.Ok(ToFactDto(fact), "Hecho agregado a la linea RCA.");
@@ -864,6 +943,21 @@ public class EfRcaIncidentService : IRcaIncidentService
                 incident.ClosedByUserId,
                 incident.ClosureSummary
             });
+
+        await AddOutboxEventAsync(
+            CreateEvent(
+                $"rca-incident-closed:{incident.Id}",
+                "RcaClosed",
+                incident.ClosedAt.Value,
+                incident,
+                new Dictionary<string, string?>
+                {
+                    ["title"] = incident.Title,
+                    ["status"] = incident.Status.ToString(),
+                    ["closedByUserId"] = incident.ClosedByUserId,
+                    ["closureSummary"] = incident.ClosureSummary
+                }),
+            cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -2203,6 +2297,47 @@ public class EfRcaIncidentService : IRcaIncidentService
             ExternalWorkOrderId = incident.ExternalWorkOrderId,
             Data = data
         };
+    }
+
+    private async Task AddOutboxEventAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken)
+    {
+        var alreadyTracked = _dbContext.RcaOutboxEvents.Local.Any(x =>
+            x.TenantId == integrationEvent.TenantId &&
+            x.EventId == integrationEvent.Id &&
+            !x.IsDeleted);
+
+        if (alreadyTracked)
+        {
+            return;
+        }
+
+        var exists = await _dbContext.RcaOutboxEvents
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.TenantId == integrationEvent.TenantId &&
+                    x.EventId == integrationEvent.Id &&
+                    !x.IsDeleted,
+                cancellationToken);
+
+        if (exists)
+        {
+            return;
+        }
+
+        _dbContext.RcaOutboxEvents.Add(new RcaOutboxEvent
+        {
+            TenantId = integrationEvent.TenantId,
+            EventId = integrationEvent.Id,
+            EventType = integrationEvent.Type,
+            OccurredAt = integrationEvent.OccurredAt,
+            IncidentId = integrationEvent.IncidentId,
+            SourceSystem = integrationEvent.SourceSystem,
+            ExternalTaskId = integrationEvent.ExternalTaskId,
+            ExternalEventId = integrationEvent.ExternalEventId,
+            ExternalWorkOrderId = integrationEvent.ExternalWorkOrderId,
+            PayloadJson = JsonSerializer.Serialize(integrationEvent, OutboxSerializerOptions),
+            Status = RcaOutboxEventStatus.Pending
+        });
     }
 
     private static void AddExternalIntakeEvents(List<RcaDomainEventDto> events, RcaIncident incident, RcaExternalIntakeRequest intake)

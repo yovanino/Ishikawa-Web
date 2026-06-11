@@ -314,6 +314,11 @@ Avance P2 2026-06-11: se agrega servicio base de outbox para persistir
 como publicados o fallidos. La captura automatica desde operaciones RCA queda
 como siguiente paso.
 
+Avance P2 2026-06-11: `EfRcaIncidentService` comienza a capturar eventos outbox
+para creacion de RCA, accion correctiva completada, fact operacional registrado
+y cierre RCA. El feed derivado sigue siendo la fuente publica hasta igualar
+cobertura completa del outbox.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

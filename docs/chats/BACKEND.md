@@ -116,6 +116,8 @@ standalone.
   `rca_outbox_events`.
 - Agregado servicio base `IRcaOutboxService` / `EfRcaOutboxService` y registro
   DI en infraestructura.
+- Agregada captura automatica inicial al outbox para `RcaIncidentCreated`,
+  `RcaCorrectiveActionCompleted`, `RcaFactRecorded` y `RcaClosed`.
 
 ## Pendientes
 
@@ -135,8 +137,9 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea del plan: cierre documental de la base outbox y luego captura
-  transaccional de eventos en operaciones RCA.
+- Siguiente tarea P2: ampliar cobertura outbox al resto del feed derivado
+  (causas, acciones creadas, evidencias, wizard, 8D e intake externo) antes de
+  reemplazar el feed o publicar webhooks.
 
 ## Riesgos
 
@@ -259,6 +262,9 @@ standalone.
 - Para servicio base outbox, `dotnet build IshikawaRca.sln /m:1`,
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
   `git diff --check` pasan.
+- Para captura inicial de eventos outbox, `dotnet build IshikawaRca.sln /m:1`,
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `git diff --check` pasan.
 
 ## Ultimo Cierre
 
@@ -272,5 +278,6 @@ standalone.
   primero y webhooks despues. Creado plan ejecutable para la base outbox y
   agregado el modelo de dominio inicial. Agregado mapping EF y migracion de
   tabla outbox. Agregado servicio base outbox para enqueue idempotente y
-  cambios de estado de entrega.
-- Commit sugerido: `feat(integration): add RCA outbox service base`.
+  cambios de estado de entrega. Agregada captura outbox inicial de eventos de
+  alto valor sin reemplazar el feed derivado.
+- Commit sugerido: `feat(integration): capture RCA events in outbox`.
