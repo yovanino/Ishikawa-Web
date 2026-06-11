@@ -1,5 +1,28 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox status endpoint
+
+Scope: expose operational visibility for the RCA outbox without publishing or
+retrying events.
+
+Checks:
+
+- Added `RcaOutboxStatusDto`.
+- Added `IRcaOutboxService.GetStatusAsync`.
+- `EfRcaOutboxService.GetStatusAsync` reports total events, counts by delivery
+  status and operational timestamps.
+- Added protected `GET /api/v1/integrations/rca/outbox/status`.
+- Documented the API contract as observability-only.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox event feed merge
 
 Scope: make the integration event endpoint read persisted outbox events while

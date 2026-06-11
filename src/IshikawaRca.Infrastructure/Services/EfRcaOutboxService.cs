@@ -74,6 +74,55 @@ public class EfRcaOutboxService : IRcaOutboxService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var rows = await _dbContext.RcaOutboxEvents
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
+            .Select(x => new
+            {
+                x.Status,
+                x.CreatedAt,
+                x.NextAttemptAt,
+                x.LastAttemptAt,
+                x.PublishedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var pendingRows = rows
+            .Where(x => x.Status is RcaOutboxEventStatus.Pending or RcaOutboxEventStatus.Failed)
+            .ToList();
+
+        return new RcaOutboxStatusDto
+        {
+            TotalEvents = rows.Count,
+            PendingCount = rows.Count(x => x.Status == RcaOutboxEventStatus.Pending),
+            PublishingCount = rows.Count(x => x.Status == RcaOutboxEventStatus.Publishing),
+            PublishedCount = rows.Count(x => x.Status == RcaOutboxEventStatus.Published),
+            FailedCount = rows.Count(x => x.Status == RcaOutboxEventStatus.Failed),
+            DeadLetterCount = rows.Count(x => x.Status == RcaOutboxEventStatus.DeadLetter),
+            OldestPendingAt = pendingRows
+                .OrderBy(x => x.CreatedAt)
+                .Select(x => (DateTimeOffset?)x.CreatedAt)
+                .FirstOrDefault(),
+            NextAttemptAt = pendingRows
+                .Where(x => x.NextAttemptAt.HasValue)
+                .OrderBy(x => x.NextAttemptAt)
+                .Select(x => x.NextAttemptAt)
+                .FirstOrDefault(),
+            LastAttemptAt = rows
+                .Where(x => x.LastAttemptAt.HasValue)
+                .OrderByDescending(x => x.LastAttemptAt)
+                .Select(x => x.LastAttemptAt)
+                .FirstOrDefault(),
+            LastPublishedAt = rows
+                .Where(x => x.PublishedAt.HasValue)
+                .OrderByDescending(x => x.PublishedAt)
+                .Select(x => x.PublishedAt)
+                .FirstOrDefault()
+        };
+    }
+
     public async Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
     {
         var outboxEvent = await GetRequiredAsync(id, cancellationToken);

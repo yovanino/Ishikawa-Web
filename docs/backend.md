@@ -101,6 +101,9 @@ El backend ya cuenta con:
   `EfRcaExternalIntakeService`.
 - El feed de eventos de integracion combina outbox y feed derivado con
   deduplicacion por `id`.
+- Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
+  observar conteos y timestamps operativos del outbox sin publicar ni reintentar
+  eventos.
 
 ## Corte Backend P0
 
@@ -256,4 +259,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   persistidos y los combina con el feed derivado historico. Si un evento existe
   en ambas fuentes, se conserva una sola entrada por `id`, priorizando el
   payload del outbox.
+- Agregado endpoint protegido
+  `GET /api/v1/integrations/rca/outbox/status`, que devuelve total, conteos por
+  estado y marcas temporales de pendientes, reintentos, intentos y publicaciones
+  para observabilidad operacional del outbox.
 - El outbox todavia no publica webhooks ni broker/event bus.

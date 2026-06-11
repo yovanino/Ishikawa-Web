@@ -1,6 +1,8 @@
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
+using IshikawaRca.Web.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IshikawaRca.Web.Controllers.Api;
@@ -10,10 +12,12 @@ namespace IshikawaRca.Web.Controllers.Api;
 public class RcaIntegrationsController : ControllerBase
 {
     private readonly IRcaIncidentService _rcaIncidentService;
+    private readonly IRcaOutboxService _rcaOutboxService;
 
-    public RcaIntegrationsController(IRcaIncidentService rcaIncidentService)
+    public RcaIntegrationsController(IRcaIncidentService rcaIncidentService, IRcaOutboxService rcaOutboxService)
     {
         _rcaIncidentService = rcaIncidentService;
+        _rcaOutboxService = rcaOutboxService;
     }
 
     [HttpGet("snapshots")]
@@ -53,5 +57,15 @@ public class RcaIntegrationsController : ControllerBase
         var result = await _rcaIncidentService.ListIntegrationEventsAsync(incidentId, since, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpGet("outbox/status")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaOutboxStatusDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResult<RcaOutboxStatusDto>>> GetOutboxStatus(CancellationToken cancellationToken)
+    {
+        var status = await _rcaOutboxService.GetStatusAsync(cancellationToken);
+
+        return Ok(ApiResult<RcaOutboxStatusDto>.Ok(status));
     }
 }

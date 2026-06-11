@@ -146,13 +146,17 @@ fue conectado al outbox para created/opened/submitted/reviewed/rejected/revoked/
 expired, por lo que la captura cubre los tipos actuales del feed derivado.
 El endpoint `/api/v1/integrations/rca/events` ahora combina outbox y feed
 derivado historico con deduplicacion por `id`. Siguen pendientes publicador,
-webhooks y endpoints operativos de reintento/dead-letter.
+webhooks y endpoints operativos de reintento/dead-letter. Ya existe
+observabilidad basica del outbox mediante
+`GET /api/v1/integrations/rca/outbox/status`, protegido por roles de gobierno
+de calidad.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
 - Siguiente paso P2 recomendado: implementar publicador/webhooks o endpoints
-  operativos de outbox para reintentos y dead-letter.
+  operativos de outbox para reintentos y dead-letter; la observabilidad de
+  estado ya quedo cubierta.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

@@ -293,11 +293,25 @@ Estas APIs son la superficie recomendada para Gantt, gateway industrial, OEE, An
 GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
 GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
+GET /api/v1/integrations/rca/outbox/status
 ```
 
 El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
 consumidores externos quedan documentados en
 `docs/INTEGRATION_EVENTS.md`.
+
+Estado operativo del outbox:
+
+```http
+GET /api/v1/integrations/rca/outbox/status
+```
+
+Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
+`ApiResult<RcaOutboxStatusDto>` con conteos por estado (`pendingCount`,
+`publishingCount`, `publishedCount`, `failedCount`, `deadLetterCount`), total
+de eventos y marcas temporales operativas (`oldestPendingAt`, `nextAttemptAt`,
+`lastAttemptAt`, `lastPublishedAt`). Es un endpoint de observabilidad; no
+publica eventos, no reintenta entregas y no modifica el outbox.
 
 ## APIs de Asistencia IA
 

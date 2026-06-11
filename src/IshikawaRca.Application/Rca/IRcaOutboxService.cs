@@ -9,6 +9,8 @@ public interface IRcaOutboxService
 
     Task<IReadOnlyList<RcaOutboxEvent>> ListPendingAsync(int take = 100, CancellationToken cancellationToken = default);
 
+    Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default);
+
     Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default);
 
     Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default);

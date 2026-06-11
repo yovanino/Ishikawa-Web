@@ -333,6 +333,10 @@ Avance P2 2026-06-11: el endpoint de eventos de integracion combina eventos
 outbox persistidos con el feed derivado historico y deduplica por `id`. Quedan
 pendientes publicador, webhooks y operaciones de reintento/dead-letter.
 
+Avance P2 2026-06-11: se agrega endpoint protegido de observabilidad
+`GET /api/v1/integrations/rca/outbox/status`, con conteos por estado y marcas
+temporales del outbox. No publica eventos ni ejecuta reintentos.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder
