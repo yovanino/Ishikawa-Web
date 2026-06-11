@@ -1,3 +1,4 @@
+using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 
@@ -12,6 +13,8 @@ public interface IRcaOutboxService
     Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<RcaOutboxEventDto>> ListDeadLettersAsync(int take = 100, CancellationToken cancellationToken = default);
+
+    Task<ApiResult<RcaOutboxEventDto>> ScheduleRetryAsync(Guid id, RetryRcaOutboxEventRequest request, CancellationToken cancellationToken = default);
 
     Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default);
 

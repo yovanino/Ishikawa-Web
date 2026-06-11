@@ -1,5 +1,6 @@
 using System.Text.Json;
 using IshikawaRca.Application.Rca;
+using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
@@ -155,6 +156,49 @@ public class EfRcaOutboxService : IRcaOutboxService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<ApiResult<RcaOutboxEventDto>> ScheduleRetryAsync(
+        Guid id,
+        RetryRcaOutboxEventRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var outboxEvent = await _dbContext.RcaOutboxEvents
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+
+        if (outboxEvent is null)
+        {
+            return ApiResult<RcaOutboxEventDto>.Fail(
+                "No se encontro el evento outbox RCA.",
+                new ApiError
+                {
+                    Field = nameof(id),
+                    Code = "OUTBOX_EVENT_NOT_FOUND",
+                    Message = "No se encontro el evento outbox RCA."
+                });
+        }
+
+        if (outboxEvent.Status is not (RcaOutboxEventStatus.Failed or RcaOutboxEventStatus.DeadLetter))
+        {
+            return ApiResult<RcaOutboxEventDto>.Fail(
+                "Solo se pueden reprogramar eventos outbox fallidos o en dead-letter.",
+                new ApiError
+                {
+                    Field = nameof(outboxEvent.Status),
+                    Code = "OUTBOX_EVENT_NOT_RETRYABLE",
+                    Message = "Solo se pueden reprogramar eventos outbox fallidos o en dead-letter."
+                });
+        }
+
+        outboxEvent.Status = RcaOutboxEventStatus.Pending;
+        outboxEvent.NextAttemptAt = request.NextAttemptAt ?? DateTimeOffset.UtcNow;
+        outboxEvent.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return ApiResult<RcaOutboxEventDto>.Ok(ToDto(outboxEvent));
+    }
+
     public async Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
     {
         var outboxEvent = await GetRequiredAsync(id, cancellationToken);
@@ -198,5 +242,28 @@ public class EfRcaOutboxService : IRcaOutboxService
         }
 
         return value[..maxLength];
+    }
+
+    private static RcaOutboxEventDto ToDto(RcaOutboxEvent outboxEvent)
+    {
+        return new RcaOutboxEventDto
+        {
+            Id = outboxEvent.Id,
+            TenantId = outboxEvent.TenantId,
+            EventId = outboxEvent.EventId,
+            EventType = outboxEvent.EventType,
+            OccurredAt = outboxEvent.OccurredAt,
+            IncidentId = outboxEvent.IncidentId,
+            SourceSystem = outboxEvent.SourceSystem,
+            ExternalTaskId = outboxEvent.ExternalTaskId,
+            ExternalEventId = outboxEvent.ExternalEventId,
+            ExternalWorkOrderId = outboxEvent.ExternalWorkOrderId,
+            Status = outboxEvent.Status.ToString(),
+            AttemptCount = outboxEvent.AttemptCount,
+            NextAttemptAt = outboxEvent.NextAttemptAt,
+            LastAttemptAt = outboxEvent.LastAttemptAt,
+            PublishedAt = outboxEvent.PublishedAt,
+            LastError = outboxEvent.LastError
+        };
     }
 }

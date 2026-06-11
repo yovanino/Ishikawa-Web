@@ -106,6 +106,8 @@ El backend ya cuenta con:
   eventos.
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/dead-letter` para
   diagnosticar eventos outbox en `DeadLetter` sin reintentar ni cambiar estado.
+- Endpoint protegido `POST /api/v1/integrations/rca/outbox/{id}/retry` para
+  reprogramar eventos `Failed` o `DeadLetter` a `Pending` sin publicar.
 - Configuracion `RcaIntegration` para futuro publicador outbox/webhooks, con
   webhooks deshabilitados por default y sin secretos versionados.
 
@@ -273,4 +275,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Agregado DTO `RcaOutboxEventDto`, consulta `ListDeadLettersAsync` y endpoint
   protegido `GET /api/v1/integrations/rca/outbox/dead-letter?take=` para
   inspeccionar eventos en dead-letter con limite acotado entre 1 y 500.
+- Agregado `RetryRcaOutboxEventRequest`, servicio `ScheduleRetryAsync` y
+  endpoint protegido `POST /api/v1/integrations/rca/outbox/{id}/retry`, que
+  reprograma eventos `Failed`/`DeadLetter` a `Pending` y responde errores
+  `OUTBOX_EVENT_NOT_FOUND` u `OUTBOX_EVENT_NOT_RETRYABLE`.
 - El outbox todavia no publica webhooks ni broker/event bus.

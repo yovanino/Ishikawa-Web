@@ -80,4 +80,26 @@ public class RcaIntegrationsController : ControllerBase
 
         return Ok(ApiResult<IReadOnlyList<RcaOutboxEventDto>>.Ok(events));
     }
+
+    [HttpPost("outbox/{id:guid}/retry")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaOutboxEventDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaOutboxEventDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<RcaOutboxEventDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaOutboxEventDto>>> RetryOutboxEvent(
+        Guid id,
+        RetryRcaOutboxEventRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _rcaOutboxService.ScheduleRetryAsync(id, request, cancellationToken);
+
+        if (result.Success)
+        {
+            return Ok(result);
+        }
+
+        return result.Errors.Any(x => x.Code == "OUTBOX_EVENT_NOT_FOUND")
+            ? NotFound(result)
+            : BadRequest(result);
+    }
 }

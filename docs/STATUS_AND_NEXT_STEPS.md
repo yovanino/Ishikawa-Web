@@ -152,14 +152,16 @@ observabilidad basica del outbox mediante
 de calidad. Tambien queda preparada la configuracion `RcaIntegration` para el
 futuro publicador/webhooks, con webhooks vacios y apagados por default. La
 consulta read-only `GET /api/v1/integrations/rca/outbox/dead-letter?take=`
-permite diagnosticar eventos enviados a dead-letter.
+permite diagnosticar eventos enviados a dead-letter, y
+`POST /api/v1/integrations/rca/outbox/{id}/retry` permite reprogramar eventos
+fallidos o dead-letter a `Pending`.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: implementar publicador/webhooks o endpoint
-  operativo de reintento; la observabilidad de estado y la consulta
-  dead-letter ya quedaron cubiertas.
+- Siguiente paso P2 recomendado: implementar publicador/webhooks; la
+  observabilidad de estado, consulta dead-letter y reprogramacion manual ya
+  quedaron cubiertas.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

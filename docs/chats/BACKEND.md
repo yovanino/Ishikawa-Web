@@ -134,6 +134,9 @@ standalone.
 - Agregado endpoint protegido
   `GET /api/v1/integrations/rca/outbox/dead-letter?take=` para diagnosticar
   eventos outbox en `DeadLetter` sin reintentar ni cambiar estado.
+- Agregado endpoint protegido
+  `POST /api/v1/integrations/rca/outbox/{id}/retry` para reprogramar eventos
+  `Failed` o `DeadLetter` a `Pending` sin publicar.
 
 ## Pendientes
 
@@ -153,10 +156,10 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: implementar publicador/webhooks o endpoints operativos de
-  reintento; el endpoint de eventos ya usa outbox + fallback derivado, el
-  endpoint de status ya cubre observabilidad, dead-letter ya tiene consulta y
-  la configuracion base de webhooks ya existe.
+- Siguiente tarea P2: implementar publicador/webhooks; el endpoint de eventos
+  ya usa outbox + fallback derivado, el endpoint de status ya cubre
+  observabilidad, dead-letter ya tiene consulta, el retry manual ya existe y la
+  configuracion base de webhooks ya existe.
 
 ## Riesgos
 
@@ -303,6 +306,9 @@ standalone.
 - Para consulta dead-letter del outbox, `dotnet build IshikawaRca.sln /m:1`
   pasa con 0 warnings y 0 errores. Tests y `git diff --check` quedan
   pendientes antes del commit.
+- Para retry manual del outbox, `dotnet build IshikawaRca.sln /m:1` pasa con
+  0 warnings y 0 errores. Tests y `git diff --check` quedan pendientes antes
+  del commit.
 
 ## Ultimo Cierre
 
@@ -324,5 +330,6 @@ standalone.
   protegido de status del outbox para observabilidad operacional. Agregada
   configuracion base `RcaIntegration` para futuros webhooks, apagados por
   default. Agregada consulta protegida de dead-letter para diagnostico
-  operativo.
-- Commit sugerido: `feat(integration): expose RCA outbox dead letters`.
+  operativo. Agregado retry manual protegido para reprogramar eventos
+  `Failed`/`DeadLetter`.
+- Commit sugerido: `feat(integration): add RCA outbox retry`.

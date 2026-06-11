@@ -295,6 +295,7 @@ GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 GET /api/v1/integrations/rca/outbox/status
 GET /api/v1/integrations/rca/outbox/dead-letter?take=
+POST /api/v1/integrations/rca/outbox/{id}/retry
 ```
 
 El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
@@ -325,6 +326,25 @@ Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
 `DeadLetter`, ordenados de mas reciente a mas antiguo segun ultimo intento o
 creacion. `take` se acota internamente entre 1 y 500. Es un endpoint de
 diagnostico; no reintenta, no republica y no cambia estado.
+
+Reprogramacion de evento outbox:
+
+```http
+POST /api/v1/integrations/rca/outbox/{id}/retry
+```
+
+```json
+{
+  "nextAttemptAt": "2026-06-11T18:00:00Z"
+}
+```
+
+Requiere rol `Supervisor`, `Quality` o `Administrator`. Solo acepta eventos en
+estado `Failed` o `DeadLetter`; si el evento no existe devuelve
+`OUTBOX_EVENT_NOT_FOUND`, y si el estado no es reintentable devuelve
+`OUTBOX_EVENT_NOT_RETRYABLE`. Al reprogramar, el evento vuelve a `Pending` y
+`nextAttemptAt` queda en el valor informado o en la hora actual. No publica el
+evento por si mismo.
 
 ## APIs de Asistencia IA
 

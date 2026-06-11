@@ -346,6 +346,10 @@ Avance P2 2026-06-11: se agrega endpoint protegido de diagnostico
 `GET /api/v1/integrations/rca/outbox/dead-letter?take=`, que lista eventos en
 `DeadLetter` sin reintentar, republicar ni modificar estado.
 
+Avance P2 2026-06-11: se agrega endpoint protegido
+`POST /api/v1/integrations/rca/outbox/{id}/retry`, que reprograma eventos
+`Failed` o `DeadLetter` a `Pending` sin publicar por si mismo.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

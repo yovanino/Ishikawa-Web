@@ -1,5 +1,30 @@
 # Validation Log
 
+## 2026-06-11 - P2 outbox manual retry endpoint
+
+Scope: allow authorized operators to reprogram failed/dead-letter RCA outbox
+events without publishing them immediately.
+
+Checks:
+
+- Added `RetryRcaOutboxEventRequest`.
+- Added `IRcaOutboxService.ScheduleRetryAsync`.
+- `EfRcaOutboxService.ScheduleRetryAsync` returns `OUTBOX_EVENT_NOT_FOUND` for
+  missing events and `OUTBOX_EVENT_NOT_RETRYABLE` for non-failed states.
+- Retryable events move from `Failed` or `DeadLetter` to `Pending` and receive
+  `NextAttemptAt` from the request or current time.
+- Added protected `POST /api/v1/integrations/rca/outbox/{id}/retry`.
+- Documented the endpoint as reprogramming-only; it does not publish.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox dead-letter endpoint
 
 Scope: expose read-only diagnostics for RCA outbox events in dead-letter state.
