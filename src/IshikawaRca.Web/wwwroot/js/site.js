@@ -97,4 +97,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
   fishboneViewport.addEventListener("pointerup", stopPanning);
   fishboneViewport.addEventListener("pointercancel", stopPanning);
+
+  const detailPanel = document.querySelector("[data-detail-panel]");
+  const detailTitle = document.querySelector("[data-detail-title]");
+  const detailKicker = document.querySelector("[data-detail-kicker]");
+  const detailBody = document.querySelector("[data-detail-body]");
+  const detailMeta = document.querySelector("[data-detail-meta]");
+
+  if (!detailPanel || !detailTitle || !detailKicker || !detailBody || !detailMeta) {
+    return;
+  }
+
+  const closeDetailPanel = () => {
+    detailPanel.classList.remove("is-open");
+    detailPanel.setAttribute("aria-hidden", "true");
+  };
+
+  document.querySelectorAll(".detail-trigger").forEach((button) => {
+    button.addEventListener("click", () => {
+      detailTitle.textContent = button.dataset.detailTitle || "Detalle";
+      detailKicker.textContent = button.dataset.detailKicker || "RCA";
+      detailBody.textContent = button.dataset.detailBody || "Sin detalle cargado.";
+      detailMeta.textContent = button.dataset.detailMeta || "";
+      detailPanel.classList.add("is-open");
+      detailPanel.setAttribute("aria-hidden", "false");
+    });
+  });
+
+  document.querySelectorAll("[data-detail-close]").forEach((button) => {
+    button.addEventListener("click", closeDetailPanel);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeDetailPanel();
+    }
+  });
 });

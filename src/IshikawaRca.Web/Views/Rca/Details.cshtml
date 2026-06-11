@@ -864,6 +864,14 @@
                             {
                                 <small>@evidence.ValidationNotes</small>
                             }
+                            <button type="button"
+                                    class="detail-trigger"
+                                    data-detail-title="@evidence.Title"
+                                    data-detail-kicker="Evidencia"
+                                    data-detail-body="@(evidence.Summary ?? evidence.SourceDetail ?? "Sin resumen cargado.")"
+                                    data-detail-meta="@(linkedCause?.Title ?? "Sin causa asociada") | @GetEvidenceValidationLabel(evidence.ValidationStatus) | @evidence.CapturedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")">
+                                Detalle
+                            </button>
                             <details class="evidence-manage">
                                 <summary>Gestionar evidencia</summary>
                                 <form class="evidence-edit-form" asp-controller="Rca" asp-action="UpdateEvidence" asp-route-id="@incident.Id" method="post">
@@ -1258,6 +1266,14 @@
                                                 <span>@causeFactCount hechos</span>
                                                 <span>@causeActionCount acc.</span>
                                             </div>
+                                            <button type="button"
+                                                    class="detail-trigger"
+                                                    data-detail-title="@cause.Title"
+                                                    data-detail-kicker="Causa"
+                                                    data-detail-body="@(cause.EvidenceSummary ?? cause.Description ?? "Sin evidencia resumida.")"
+                                                    data-detail-meta="P @cause.ProbabilityScore | I @cause.ImpactScore | F @cause.FrequencyScore | Score @causeScore">
+                                                Detalle
+                                            </button>
                                         </li>
                                     }
                                 </ul>
@@ -1384,6 +1400,14 @@
                                         <small>@(action.AssignedToUserId ?? "Sin responsable")</small>
                                         <small>@(action.DueDate?.LocalDateTime.ToString("dd/MM/yyyy") ?? "Sin vencimiento")</small>
                                     </footer>
+                                    <button type="button"
+                                            class="detail-trigger"
+                                            data-detail-title="@action.Title"
+                                            data-detail-kicker="@GetActionTypeLabel(action.ActionType)"
+                                            data-detail-body="@(action.Description ?? action.ValidationNotes ?? "Sin descripcion cargada.")"
+                                            data-detail-meta="@(linkedCause?.Title ?? "Sin causa asociada") | @action.Status | @(action.AssignedToUserId ?? "Sin responsable")">
+                                        Detalle
+                                    </button>
                                 </article>
                             }
                         </div>
@@ -1574,6 +1598,17 @@
         </form>
     </aside>
 </section>
+
+<aside class="rca-side-panel" data-detail-panel aria-hidden="true">
+    <div class="rca-side-panel-scrim" data-detail-close></div>
+    <section class="rca-side-panel-sheet" role="dialog" aria-modal="true" aria-label="Detalle contextual RCA">
+        <button type="button" class="side-panel-close" data-detail-close aria-label="Cerrar">x</button>
+        <span class="side-panel-kicker" data-detail-kicker></span>
+        <h2 data-detail-title>Detalle</h2>
+        <p data-detail-body></p>
+        <div class="side-panel-meta" data-detail-meta></div>
+    </section>
+</aside>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

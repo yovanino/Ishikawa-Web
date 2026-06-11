@@ -1179,6 +1179,25 @@ textarea.form-control {
   color: var(--brand-strong);
 }
 
+.detail-trigger {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 850;
+  justify-content: center;
+  padding: 7px 9px;
+  width: fit-content;
+}
+
+.detail-trigger:hover {
+  background: var(--brand-soft);
+  border-color: #b7dede;
+}
+
 .fishbone-viewport {
   cursor: grab;
   min-width: 720px;
@@ -1494,6 +1513,88 @@ textarea.form-control {
   font-weight: 850;
   padding: 5px 8px;
   text-transform: uppercase;
+}
+
+.rca-side-panel {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  transition: opacity 160ms ease;
+  z-index: 50;
+}
+
+.rca-side-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rca-side-panel-scrim {
+  background: rgba(10, 20, 28, 0.32);
+  inset: 0;
+  position: absolute;
+}
+
+.rca-side-panel-sheet {
+  background: #fff;
+  border-left: 1px solid var(--line);
+  box-shadow: -18px 0 42px rgba(15, 23, 42, 0.18);
+  display: grid;
+  gap: 12px;
+  height: 100%;
+  margin-left: auto;
+  max-width: min(430px, 92vw);
+  padding: 24px;
+  position: relative;
+  transform: translateX(24px);
+  transition: transform 160ms ease;
+  width: 100%;
+}
+
+.rca-side-panel.is-open .rca-side-panel-sheet {
+  transform: translateX(0);
+}
+
+.side-panel-close {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 850;
+  height: 34px;
+  justify-content: center;
+  justify-self: end;
+  width: 34px;
+}
+
+.side-panel-kicker {
+  color: var(--brand-strong);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.rca-side-panel h2 {
+  color: var(--ink);
+  font-size: 1.35rem;
+  font-weight: 880;
+  margin: 0;
+}
+
+.rca-side-panel p,
+.side-panel-meta {
+  color: #5f6f80;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.side-panel-meta {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .resolution-columns {

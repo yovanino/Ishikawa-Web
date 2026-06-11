@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-11 - P1 contextual side panel
+
+Scope: add a reusable contextual side panel to the RCA detail screen.
+
+Checks:
+
+- Added detail triggers on cause, evidence and CAPA action cards.
+- Added a reusable side panel populated from `data-*` attributes.
+- The panel is read-only; existing edit forms and backend behavior remain
+  unchanged.
+
+Validation:
+
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed when run in series.
+- Browser interaction validation intentionally deferred to the P1
+  cockpit/tablet closure.
+
+Result: passed for fast P1 adjustment.
+
 ## 2026-06-11 - P1 fishbone zoom and pan
 
 Scope: add client-side navigation controls to the fishbone board.

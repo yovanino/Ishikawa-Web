@@ -222,7 +222,8 @@ cockpit industrial.
 - [x] Interaccion avanzada del fishbone sobre tarjetas de causa.
 - [ ] Drag/reorder de causas.
 - [x] Zoom, pan y fit-to-screen.
-- [ ] Panel lateral de edicion para causa/evidencia/accion.
+- [x] Panel lateral de detalle para causa/evidencia/accion.
+- [ ] Edicion avanzada desde panel lateral.
 - [x] Timeline operacional filtrable.
 - [x] CAPA board separado por correctiva, preventiva y recurrencia.
 - [ ] Estados empty/loading/error/offline.
@@ -245,6 +246,9 @@ hechos, evidencias, acciones, wizard y eventos externos.
 
 Avance P1 2026-06-11: el fishbone incorpora toolbar client-side para acercar,
 alejar, ajustar y paneo por arrastre dentro del tablero.
+
+Avance P1 2026-06-11: se agrega panel lateral contextual para consultar detalle
+de causas, evidencias y acciones desde sus tarjetas.
 
 Criterio de salida P1:
 
