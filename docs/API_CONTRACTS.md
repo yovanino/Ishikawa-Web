@@ -295,6 +295,10 @@ GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 ```
 
+El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
+consumidores externos quedan documentados en
+`docs/INTEGRATION_EVENTS.md`.
+
 ## APIs de Asistencia IA
 
 Estas APIs son opt-in. El RCA debe seguir funcionando aunque la IA este apagada o en modo stub.
@@ -377,7 +381,8 @@ Para compatibilidad, si un consumidor viejo envia `claimScope = External` sin `c
 
 ## Eventos de Dominio
 
-Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
+Eventos expuestos por el feed derivado actual y previstos para publicar a
+futuro por Event Bus, webhook o SignalR:
 
 - `RcaIncidentCreated`
 - `RcaWizardStepCompleted`
@@ -393,11 +398,16 @@ Eventos previstos para publicar a futuro por Event Bus, webhook o SignalR:
 - `RcaExternalIntakeRevoked`
 - `RcaExternalIntakeExpired`
 - `RcaEvidenceAttached`
-- `RcaSeverityChanged`
 - `RcaEscalatedTo8D`
 - `RcaClosed`
 
-En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed derivado de la informacion persistida. Incluye incidentes, wizard, causas, acciones, evidencia e intake externo cliente/proveedor. En fases posteriores puede reemplazarse por outbox transaccional, webhook, SignalR o broker de eventos sin cambiar los consumidores externos.
+En esta etapa el endpoint `/api/v1/integrations/rca/events` expone un feed
+derivado de la informacion persistida. Incluye incidentes, wizard, causas,
+acciones, evidencia, facts operacionales e intake externo cliente/proveedor.
+En fases posteriores puede reemplazarse por outbox transaccional, webhook,
+SignalR o broker de eventos sin cambiar los consumidores externos. El envelope
+estable es `RcaDomainEventDto`; los consumidores deben deduplicar por `id`,
+avanzar por `occurredAt` y tratar `data` como diccionario extensible.
 
 ## Regla de Compatibilidad
 

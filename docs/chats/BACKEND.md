@@ -43,6 +43,8 @@ standalone.
   directo con modulos futuros.
 - Las integraciones deben mantenerse por API, snapshots, eventos derivados o
   contratos versionados.
+- El frente P2 debe evolucionar el feed derivado hacia outbox/webhooks/canal
+  live sin romper `RcaDomainEventDto` ni acoplar consumidores a tablas internas.
 
 ## Cambios Realizados
 
@@ -95,6 +97,12 @@ standalone.
   `ISHIKAWA_RCA_CONNECTION` queda para EF design-time.
 - Actualizado `docs/STATUS_AND_NEXT_STEPS.md` para reflejar el estado P0
   alcanzado y los pendientes inmediatos vigentes.
+- Documentado el contrato de eventos de integracion RCA en
+  `docs/INTEGRATION_EVENTS.md`.
+- Actualizado `docs/API_CONTRACTS.md` para referenciar envelope, reglas de
+  compatibilidad e instrucciones de consumo del feed derivado.
+- Marcado en roadmap el primer avance P2: versionado y compatibilidad de
+  eventos.
 
 ## Pendientes
 
@@ -109,6 +117,8 @@ standalone.
   defina politica documental productiva.
 - Mantener smoke API + DB en cada corte backend significativo.
 - Registrar validaciones en `docs/VALIDATION_LOG.md` cuando se ejecuten.
+- Elegir el siguiente incremento P2: outbox transaccional, webhooks
+  configurables o canal live para timeline/estados.
 
 ## Riesgos
 
@@ -214,17 +224,15 @@ standalone.
   10`: correcto; incluye `smoke-audit-records.ps1`.
 - `docs/STATUS_AND_NEXT_STEPS.md` alineado con P0 actual: auth/tenant/roles,
   auditoria inicial, errores API, hardening inicial de adjuntos y smokes.
+- Para el ajuste P2 de compatibilidad de eventos, se validan build, tests
+  livianos y `git diff --check` antes del commit.
 
 ## Ultimo Cierre
 
-- Fecha: 2026-06-10.
-- Resumen: creada base de autenticacion/autorizacion standalone, tenant
-  configurable para MVC/API, proteccion por roles y auditoria inicial para
-  operaciones sensibles; aplicado hardening inicial de adjuntos, smoke API +
-  DB critico, normalizacion de 401/403 API, preflight de SDK para validacion
-  local, smoke repetible para errores API de modelo y autorizacion, smoke de
-  adjuntos de evidencia, smoke de auditoria, smoke de facts externos,
-  aclaracion de configuracion local, estado P0 actualizado, validacion estricta
-  de descarga controlada de adjuntos, consulta protegida de auditoria y cierre
-  documental del corte P0 standalone.
-- Commit sugerido: `docs(roadmap): close p0 standalone cut`.
+- Fecha: 2026-06-11.
+- Resumen: iniciado P2 de integracion operacional real con documentacion formal
+  del feed de eventos RCA, envelope `RcaDomainEventDto`, compatibilidad
+  `/api/v1`, deduplicacion por `id`, polling por `occurredAt` y evolucion
+  esperada hacia outbox/webhooks/SignalR sin acoplar consumidores externos al
+  modelo interno.
+- Commit sugerido: `docs(integration): document RCA event compatibility`.

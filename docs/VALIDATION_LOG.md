@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-11 - P2 integration event compatibility
+
+Scope: document the RCA integration event feed compatibility contract.
+
+Checks:
+
+- Added `docs/INTEGRATION_EVENTS.md` with endpoint, envelope, event families,
+  compatibility rules and consumer guidance.
+- Updated `docs/API_CONTRACTS.md` to point consumers to the event contract and
+  clarify current derived-feed semantics.
+- Updated roadmap/status/backend continuity docs to mark the first P2
+  integration compatibility increment.
+
+Validation:
+
+- Static inspection of `RcaDomainEventDto`,
+  `RcaIntegrationsController.GetEvents`, and event generation in RCA services.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P1 visual closure
 
 Scope: close the P1 visual cockpit cut in project documentation.

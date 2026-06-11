@@ -282,7 +282,12 @@ Objetivo: conectar el RCA con otros modulos/sistemas sin acoplamiento directo.
 - [ ] Integracion API concreta con Gantt.
 - [ ] Integracion API concreta con Gateway/SCADA para facts.
 - [ ] Estados y auditoria ampliada para consumidores externos.
-- [ ] Documentar versionado y compatibilidad de eventos.
+- [x] Documentar versionado y compatibilidad de eventos.
+
+Avance P2 2026-06-11: queda documentado el contrato de eventos de integracion,
+incluyendo envelope `RcaDomainEventDto`, reglas de compatibilidad `/api/v1`,
+deduplicacion por `id`, polling por `occurredAt` y evolucion futura hacia
+outbox/webhooks/SignalR sin acoplar consumidores al modelo interno.
 
 Criterio de salida P2:
 

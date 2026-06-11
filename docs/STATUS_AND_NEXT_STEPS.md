@@ -112,17 +112,24 @@ gobernada y reportes corporativos de auditoria.
 
 ## Siguiente Corte Recomendado
 
-El corte P1 visual queda cerrado como experiencia industrial del detalle
-RCA. Ya avanzaron command bar, KPI rail, CAPA board, tarjetas enriquecidas del
+El corte P1 visual queda cerrado como experiencia industrial del detalle RCA.
+Ya avanzaron command bar, KPI rail, CAPA board, tarjetas enriquecidas del
 fishbone, zoom/pan del fishbone, timeline filtrable, panel lateral contextual,
 estados UI, refuerzos responsive/tablet y drag/reorder visual de causas,
-validados con build y tests livianos en serie. Para mantener velocidad, cada
-micro-ajuste UI se valida con build/tests/diff y la validacion visual completa
-se agrupa al cierre de bloques de cockpit o responsive.
+validados con build y tests livianos en serie.
+
+El corte P2 de integracion operacional real queda iniciado con la documentacion
+formal del feed de eventos RCA en `docs/INTEGRATION_EVENTS.md`. Ese documento
+define envelope `RcaDomainEventDto`, compatibilidad `/api/v1`, deduplicacion
+por `id`, polling por `occurredAt`, reglas para `data` extensible y la
+evolucion esperada hacia outbox, webhooks, SignalR o broker sin acoplar
+consumidores externos al modelo interno.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
+- Siguiente paso P2 recomendado: elegir entre outbox transaccional, webhooks
+  configurables o canal live para timeline/estados.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

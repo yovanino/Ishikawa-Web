@@ -21,6 +21,8 @@ Actualizar este archivo cuando una tarea modifique:
 - IA asistida, cliente AI Gateway o fallback stub.
 - Auditoria, manejo de errores, logging o trazabilidad.
 - Tests backend, smoke API/DB, scripts o configuracion operativa.
+- Contratos documentales de integracion operativa, eventos y compatibilidad
+  `/api/v1`.
 
 La bitacora del frente backend es `docs/chats/BACKEND.md` y tambien debe
 actualizarse al cerrar cada tarea backend. Si el cambio altera contratos
@@ -78,6 +80,8 @@ El backend ya cuenta con:
 - Tabla `rca_audit_records` para auditoria inicial de operaciones sensibles.
 - Endpoint protegido `GET /api/v1/rca/incidents/{id}/audit` para consultar la
   auditoria persistida de un RCA.
+- Contrato documentado de eventos de integracion en
+  `docs/INTEGRATION_EVENTS.md`, basado en `RcaDomainEventDto`.
 
 ## Corte Backend P0
 
@@ -186,3 +190,15 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - `scripts/smoke-external-facts.ps1` valida ingestion de facts externos por API,
   idempotencia por sistema/evento y rechazo de correlacion incompleta.
 - Validado con `run-local-validation.ps1` contra DB local.
+
+### 2026-06-11 - Compatibilidad de eventos P2
+
+- Iniciado el frente P2 de integracion operacional real con documentacion del
+  feed `GET /api/v1/integrations/rca/events`.
+- Documentado `RcaDomainEventDto` como envelope estable para consumidores
+  externos.
+- Formalizadas reglas de compatibilidad `/api/v1`: cambios aditivos en `data`,
+  ignorar claves/eventos desconocidos, deduplicacion por `id` y avance de
+  polling por `occurredAt`.
+- Registrada la evolucion esperada hacia outbox transaccional, webhooks,
+  SignalR o broker preservando compatibilidad standalone.
