@@ -39,6 +39,16 @@ public static class DependencyInjection
             provider.GetRequiredService<IOptions<RcaIntegrationOptions>>()));
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
+        services.Configure<RcaAiGatewayOptions>(options =>
+        {
+            var section = configuration.GetSection(RcaAiGatewayOptions.SectionName);
+
+            options.Mode = section["Mode"] ?? options.Mode;
+            options.BaseUrl = section["BaseUrl"] ?? options.BaseUrl;
+            options.ApiKey = section["ApiKey"] ?? options.ApiKey;
+            options.TimeoutSeconds = ReadInt(section["TimeoutSeconds"], options.TimeoutSeconds);
+            options.UseFallbackOnFailure = ReadBool(section["UseFallbackOnFailure"], options.UseFallbackOnFailure);
+        });
         services.Configure<RcaIntegrationOptions>(options =>
         {
             var section = configuration.GetSection(RcaIntegrationOptions.SectionName);
@@ -70,6 +80,13 @@ public static class DependencyInjection
     private static int ReadInt(string? value, int fallback)
     {
         return int.TryParse(value, out var parsed) && parsed > 0
+            ? parsed
+            : fallback;
+    }
+
+    private static bool ReadBool(string? value, bool fallback)
+    {
+        return bool.TryParse(value, out var parsed)
             ? parsed
             : fallback;
     }

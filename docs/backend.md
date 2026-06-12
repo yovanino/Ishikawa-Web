@@ -65,6 +65,8 @@ El backend ya cuenta con:
   revision interna, rechazo e importacion opcional.
 - Snapshots y feed derivado de eventos para integracion con otros modulos.
 - Contratos de IA y cliente stub local.
+- Base `HttpRcaAiGatewayClient` para AI Gateway real, aun sin activacion por
+  runtime.
 - Tests livianos para politica de resolucion y facts externos.
 - Autenticacion standalone configurable para operar sin Identity global.
 - Contexto backend de usuario/tenant con tenant configurado y overrides por
@@ -339,3 +341,17 @@ live, outbox o webhooks versionados.
 - Timeout configurado cubierto por prueba liviana y DI de infraestructura.
 - Agregado endpoint live SSE `GET /api/v1/integrations/rca/events/live`, con
   polling configurable, cursor `since` y payload `RcaDomainEventDto`.
+
+### 2026-06-12 - Base HTTP para AI Gateway P3
+
+- Agregada opcion `RcaAiGatewayOptions` con `Mode`, `BaseUrl`,
+  `TimeoutSeconds`, `ApiKey` y `UseFallbackOnFailure`.
+- Agregado `HttpRcaAiGatewayClient` para publicar `RcaAiContextDto` a
+  `/ai/rca/suggest-causes`, `/ai/rca/suggest-actions` y
+  `/ai/rca/summarize`.
+- El cliente HTTP aplica bearer opcional, timeout por request y fallos
+  controlados para configuracion invalida, gateway no disponible o respuesta
+  JSON vacia/invalida.
+- Infraestructura ya bindea `AiGateway` a opciones, pero el runtime sigue
+  registrado sobre `StubRcaAiGatewayClient` hasta implementar la seleccion por
+  modo/fallback en la Task 2.

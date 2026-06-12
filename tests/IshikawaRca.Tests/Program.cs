@@ -1,9 +1,11 @@
+using IshikawaRca.Application.Ai;
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
+using IshikawaRca.Infrastructure.Ai;
 using IshikawaRca.Infrastructure.Services;
 using IshikawaRca.Web.Controllers.Api;
 using IshikawaRca.Web.Services;
@@ -60,6 +62,7 @@ await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync();
+await AssertHttpAiGatewayClientPostsCauseContextAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -570,6 +573,68 @@ static async Task AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync
     }
 }
 
+static async Task AssertHttpAiGatewayClientPostsCauseContextAsync()
+{
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK)
+    {
+        ResponseContent = """
+        {
+          "incidentId":"11111111-1111-1111-1111-111111111111",
+          "summary":"Gateway causes",
+          "suggestions":[
+            {
+              "branchName":"Metodo",
+              "title":"Verificar estandar",
+              "reasoning":"Patron historico similar.",
+              "confidenceScore":82,
+              "suggestedImpactScore":4,
+              "suggestedProbabilityScore":3,
+              "suggestedFrequencyScore":2
+            }
+          ],
+          "metadata":{
+            "provider":"Gateway",
+            "model":"rca-v1",
+            "isFallback":false,
+            "generatedAt":"2026-06-12T00:00:00Z"
+          }
+        }
+        """
+    };
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(handler),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local",
+            TimeoutSeconds = 5,
+            ApiKey = "secret-token"
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Title = "AI RCA",
+            ProblemDescription = "Problem"
+        }
+    });
+
+    var request = handler.Requests.Single();
+    var hasAuth = request.Headers.Authorization?.Scheme == "Bearer" &&
+        request.Headers.Authorization.Parameter == "secret-token";
+
+    if (!result.Success ||
+        result.Data?.Suggestions.Single().Title != "Verificar estandar" ||
+        request.Method != HttpMethod.Post ||
+        request.RequestUri?.ToString() != "https://ai.example.local/ai/rca/suggest-causes" ||
+        !hasAuth ||
+        !handler.Bodies.Single().Contains("\"title\":\"AI RCA\"", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException("Expected HTTP AI Gateway client to POST RCA context and map cause suggestions.");
+    }
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -1035,6 +1100,7 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
 
     public List<HttpRequestMessage> Requests { get; } = [];
     public List<string> Bodies { get; } = [];
+    public string ResponseContent { get; set; } = "{}";
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -1043,7 +1109,10 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
             ? string.Empty
             : await request.Content.ReadAsStringAsync(cancellationToken));
 
-        return new HttpResponseMessage(_statusCode);
+        return new HttpResponseMessage(_statusCode)
+        {
+            Content = new StringContent(ResponseContent, Encoding.UTF8, "application/json")
+        };
     }
 }
 

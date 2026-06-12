@@ -75,12 +75,30 @@ Configuracion actual:
   "AiGateway": {
     "Mode": "Stub",
     "BaseUrl": "",
-    "TimeoutSeconds": 30
+    "TimeoutSeconds": 30,
+    "ApiKey": "",
+    "UseFallbackOnFailure": true
   }
 }
 ```
 
-Cuando exista el AI Gateway compartido, se reemplaza la implementacion de `IRcaAiGatewayClient` por un cliente HTTP. Los controladores, contratos publicos y servicio de aplicacion no necesitan cambiar.
+## Base HTTP disponible
+
+Desde el ajuste P3 del 2026-06-12 existe la base `HttpRcaAiGatewayClient`.
+
+- Publica el `RcaAiContextDto` por JSON a `/ai/rca/suggest-causes`,
+  `/ai/rca/suggest-actions` y `/ai/rca/summarize`.
+- Usa `AiGateway:BaseUrl` como URL absoluta.
+- Envia `Authorization: Bearer <ApiKey>` cuando `AiGateway:ApiKey` tiene valor.
+- Aplica timeout por request usando `AiGateway:TimeoutSeconds`.
+- Devuelve fallos controlados:
+  `AI_GATEWAY_CONFIGURATION_INVALID`, `AI_GATEWAY_UNAVAILABLE` y
+  `AI_GATEWAY_INVALID_RESPONSE`.
+
+En este corte el runtime del modulo sigue registrado sobre
+`StubRcaAiGatewayClient`. La seleccion por `Mode = Http` y el fallback gobernado
+quedan para la Task 2, sin cambiar controladores, contratos publicos ni el
+servicio de aplicacion.
 
 ## Fallback
 

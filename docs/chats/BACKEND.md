@@ -161,6 +161,12 @@ standalone.
   `RcaIntegration:MaxPublishAttempts`.
 - Agregado endpoint protegido `POST /api/v1/integrations/rca/outbox/publish`
   para disparar manualmente `IRcaOutboxPublisher`.
+- Agregada la base P3 `RcaAiGatewayOptions` + `HttpRcaAiGatewayClient` para
+  publicar contexto RCA al AI Gateway por HTTP JSON, con bearer opcional,
+  timeout y fallos controlados.
+- Infraestructura ya carga la seccion `AiGateway`, pero el runtime sigue usando
+  `StubRcaAiGatewayClient`; la seleccion por modo/fallback queda para la
+  Task 2 del plan P3.
 
 ## Pendientes
 
@@ -376,6 +382,10 @@ standalone.
   `RcaIntegrationsController.StreamEvents` no existia. Luego `dotnet run
   --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
+- Para la base HTTP del AI Gateway P3, se agrego primero una prueba RED que
+  fallaba por `HttpRcaAiGatewayClient` y `RcaAiGatewayOptions` inexistentes.
+  Luego `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`,
+  `dotnet build IshikawaRca.sln /m:1` y `git diff --check` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -408,5 +418,8 @@ standalone.
   configurado para webhooks y canal live SSE para timeline/estados. Cerrada la
   matriz P2 standalone con outbox, webhooks, contratos broker-ready, Gantt por
   snapshots/correlacion, Gateway/SCADA por facts idempotentes y estados
-  operativos para consumidores externos.
-- Commit sugerido: `docs(roadmap): close P2 integration scope`.
+  operativos para consumidores externos. Iniciada Task 1 de P3 con
+  `RcaAiGatewayOptions`, `HttpRcaAiGatewayClient`, prueba RED/GREEN del POST de
+  contexto RCA y binding de `AiGateway`, manteniendo stub como runtime actual
+  hasta la seleccion por modo/fallback de la Task 2.
+- Commit sugerido: `feat(ai): add HTTP RCA AI gateway client`.

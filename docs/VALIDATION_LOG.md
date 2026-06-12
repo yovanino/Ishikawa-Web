@@ -1,5 +1,39 @@
 # Validation Log
 
+## 2026-06-12 - P3 HTTP RCA AI gateway client base
+
+Scope: add the first real HTTP AI Gateway client base for RCA suggestions while
+keeping stub mode as the active runtime registration.
+
+Checks:
+
+- Added `RcaAiGatewayOptions` with `Mode`, `BaseUrl`, `TimeoutSeconds`,
+  `ApiKey` and `UseFallbackOnFailure`.
+- Added `HttpRcaAiGatewayClient` for `suggest-causes`, `suggest-actions` and
+  `summarize`.
+- Client posts `RcaAiContextDto` JSON, adds bearer auth when configured and
+  applies per-request timeout.
+- Client returns controlled failures for invalid configuration, unavailable
+  gateway and empty/invalid JSON.
+- Infrastructure binds `AiGateway` options but still registers
+  `StubRcaAiGatewayClient` as `IRcaAiGatewayClient` until Task 2 mode
+  selection.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `HttpRcaAiGatewayClient` and `RcaAiGatewayOptions` did not
+  exist.
+- First implementation attempt failed to compile because this infrastructure
+  project does not expose the `Configure<T>(IConfigurationSection)` overload.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after switching the new `AiGateway` binding to the same manual pattern
+  already used for `RcaIntegration`.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 outbox publish endpoint
 
 Scope: expose a protected manual endpoint to run the RCA outbox publisher.
