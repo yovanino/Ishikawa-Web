@@ -1,4 +1,5 @@
 using System.Text;
+using System.Security.Cryptography;
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Domain.Entities;
 
@@ -31,6 +32,16 @@ public class RcaHttpWebhookSender : IRcaWebhookSender
         request.Headers.TryAddWithoutValidation("X-RCA-Event-Id", outboxEvent.EventId);
         request.Headers.TryAddWithoutValidation("X-RCA-Event-Type", outboxEvent.EventType);
         request.Headers.TryAddWithoutValidation("X-RCA-Outbox-Id", outboxEvent.Id.ToString());
+
+        if (!string.IsNullOrWhiteSpace(webhook.Secret))
+        {
+            var signature = Convert.ToHexString(
+                HMACSHA256.HashData(
+                    Encoding.UTF8.GetBytes(webhook.Secret),
+                    Encoding.UTF8.GetBytes(outboxEvent.PayloadJson)))
+                .ToLowerInvariant();
+            request.Headers.TryAddWithoutValidation("X-RCA-Signature", "sha256=" + signature);
+        }
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)

@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 var rootOnlyActions = new[]
 {
@@ -53,6 +55,7 @@ AssertRcaIntegrationOptionsDefaults();
 await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
+await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -444,6 +447,44 @@ static async Task AssertHttpWebhookSenderPostsPayloadAsync()
         actualEventType != "RcaClosed")
     {
         throw new InvalidOperationException("Expected HTTP webhook sender to POST the outbox payload with event headers.");
+    }
+}
+
+static async Task AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync()
+{
+    var payload = "{\"id\":\"event-002\",\"type\":\"RcaClosed\"}";
+    var secret = "local-secret";
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK);
+    var sender = new RcaHttpWebhookSender(new HttpClient(handler));
+    var outboxEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-002",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = payload
+    };
+
+    var result = await sender.SendAsync(
+        new RcaWebhookOptions
+        {
+            Name = "signed-http",
+            Url = "https://example.local/rca/events",
+            Secret = secret
+        },
+        outboxEvent);
+
+    var expectedSignature = Convert.ToHexString(
+        HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes(payload)))
+        .ToLowerInvariant();
+    var hasSignature = handler.Requests[0].Headers.TryGetValues("X-RCA-Signature", out var signatures);
+    var actualSignature = hasSignature ? signatures?.SingleOrDefault() : null;
+
+    if (!result.Success || actualSignature != "sha256=" + expectedSignature)
+    {
+        throw new InvalidOperationException("Expected HTTP webhook sender to sign payloads when a secret exists.");
     }
 }
 

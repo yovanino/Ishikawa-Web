@@ -160,15 +160,15 @@ solo valida el camino seguro sin webhooks habilitados, evitando leer pendientes
 o modificar el outbox. Tambien existe `IRcaWebhookSender` y el publicador ya
 puede marcar eventos como `Published` si un sender abstracto entrega con exito
 a todos los webhooks aplicables. El sender HTTP real `RcaHttpWebhookSender`
-publica por POST el payload outbox y headers de evento.
+publica por POST el payload outbox, headers de evento y firma HMAC SHA-256
+cuando el webhook tiene `Secret`.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: agregar firma HMAC cuando exista secreto y
-  politica de fallos/backoff/dead-letter al publicador; la entrega HTTP basica,
-  observabilidad, dead-letter, retry manual y base del publicador ya quedaron
-  cubiertas.
+- Siguiente paso P2 recomendado: agregar politica de fallos/backoff/dead-letter
+  al publicador; la entrega HTTP basica, firma HMAC, observabilidad,
+  dead-letter, retry manual y base del publicador ya quedaron cubiertas.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

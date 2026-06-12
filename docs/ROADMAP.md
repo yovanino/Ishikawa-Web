@@ -366,6 +366,9 @@ el `PayloadJson` a la URL del webhook con headers `X-RCA-Event-Id`,
 `X-RCA-Event-Type` y `X-RCA-Outbox-Id`. Quedan pendientes firma HMAC, timeout
 configurado y politica de fallos/backoff/dead-letter.
 
+Avance P2 2026-06-12: `RcaHttpWebhookSender` firma payloads con HMAC SHA-256
+en `X-RCA-Signature: sha256=<hex>` cuando el webhook configura `Secret`.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

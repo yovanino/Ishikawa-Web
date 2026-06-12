@@ -117,6 +117,7 @@ El backend ya cuenta con:
 - Sender HTTP `RcaHttpWebhookSender` que publica `PayloadJson` por POST a la
   URL configurada y envia headers `X-RCA-Event-Id`, `X-RCA-Event-Type` y
   `X-RCA-Outbox-Id`.
+- Firma HMAC SHA-256 en `X-RCA-Signature` cuando el webhook tiene `Secret`.
 
 ## Corte Backend P0
 
@@ -294,5 +295,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `RcaHttpWebhookSender`. El publicador filtra webhooks por `EventTypes`,
   invoca el sender HTTP y marca el evento como `Published` si todos los
   destinos aplicables responden OK.
-- Pendiente: firma HMAC, timeout configurado y tratamiento de fallos con
-  backoff/dead-letter.
+- `RcaHttpWebhookSender` firma el payload con HMAC SHA-256 en
+  `X-RCA-Signature: sha256=<hex>` cuando `Secret` esta configurado.
+- Pendiente: timeout configurado y tratamiento de fallos con backoff/dead-
+  letter.

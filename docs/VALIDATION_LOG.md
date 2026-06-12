@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-12 - P2 webhook HMAC signature
+
+Scope: sign RCA webhook payloads when a webhook secret is configured.
+
+Checks:
+
+- `RcaHttpWebhookSender` computes HMAC SHA-256 over the exact JSON payload.
+- Sender emits `X-RCA-Signature` as `sha256=<hex>`.
+- Unsigned webhooks remain supported when `Secret` is blank.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `X-RCA-Signature` was absent.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 HTTP webhook sender
 
 Scope: add real HTTP POST delivery for RCA webhook outbox events.
