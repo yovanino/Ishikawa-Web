@@ -1,8 +1,10 @@
 using IshikawaRca.Application.Rca;
+using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
+using IshikawaRca.Infrastructure.Services;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -47,6 +49,7 @@ await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
 AssertOutboxEventDomainDefaults();
 AssertRcaIntegrationOptionsDefaults();
+await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -330,6 +333,28 @@ static void AssertRcaIntegrationOptionsDefaults()
     }
 }
 
+static async Task AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync()
+{
+    var outboxService = new ThrowingOutboxService();
+    var publisher = new RcaOutboxPublisher(
+        outboxService,
+        Options.Create(new RcaIntegrationOptions
+        {
+            Webhooks = []
+        }));
+
+    var result = await publisher.PublishPendingAsync();
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.EnabledWebhookCount != 0 ||
+        result.Data.AttemptedEventCount != 0 ||
+        outboxService.ListPendingCalls != 0)
+    {
+        throw new InvalidOperationException("Expected publisher to skip outbox reads when no webhooks are enabled.");
+    }
+}
+
 static async Task AssertInMemoryAuditRecordsAsync()
 {
     var service = new InMemoryRcaIncidentService();
@@ -520,4 +545,45 @@ internal sealed class TestWebHostEnvironment : IWebHostEnvironment
     public string WebRootPath { get; set; }
 
     public IFileProvider WebRootFileProvider { get; set; }
+}
+
+internal sealed class ThrowingOutboxService : IRcaOutboxService
+{
+    public int ListPendingCalls { get; private set; }
+
+    public Task<RcaOutboxEvent> EnqueueAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEvent>> ListPendingAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        ListPendingCalls++;
+        throw new InvalidOperationException("ListPendingAsync should not be called when no webhooks are enabled.");
+    }
+
+    public Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEventDto>> ListDeadLettersAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<ApiResult<RcaOutboxEventDto>> ScheduleRetryAsync(Guid id, RetryRcaOutboxEventRequest request, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
 }

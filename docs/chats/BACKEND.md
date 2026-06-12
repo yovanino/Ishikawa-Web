@@ -137,6 +137,9 @@ standalone.
 - Agregado endpoint protegido
   `POST /api/v1/integrations/rca/outbox/{id}/retry` para reprogramar eventos
   `Failed` o `DeadLetter` a `Pending` sin publicar.
+- Agregada base `IRcaOutboxPublisher` / `RcaOutboxPublisher` con resultado
+  `RcaOutboxPublishResultDto`. Por ahora, si no hay webhooks habilitados, el
+  publicador retorna sin consultar pendientes ni modificar el outbox.
 
 ## Pendientes
 
@@ -156,10 +159,11 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: implementar publicador/webhooks; el endpoint de eventos
-  ya usa outbox + fallback derivado, el endpoint de status ya cubre
-  observabilidad, dead-letter ya tiene consulta, el retry manual ya existe y la
-  configuracion base de webhooks ya existe.
+- Siguiente tarea P2: implementar entrega HTTP real en el publicador; el
+  endpoint de eventos ya usa outbox + fallback derivado, el endpoint de status
+  ya cubre observabilidad, dead-letter ya tiene consulta, el retry manual ya
+  existe, la configuracion base de webhooks ya existe y la base del publicador
+  ya esta registrada.
 
 ## Riesgos
 
@@ -309,6 +313,10 @@ standalone.
 - Para retry manual del outbox, `dotnet build IshikawaRca.sln /m:1` pasa con
   0 warnings y 0 errores. Tests y `git diff --check` quedan pendientes antes
   del commit.
+- Para base del publicador outbox, se agrego primero una prueba RED que fallaba
+  por `RcaOutboxPublisher` inexistente. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -331,5 +339,6 @@ standalone.
   configuracion base `RcaIntegration` para futuros webhooks, apagados por
   default. Agregada consulta protegida de dead-letter para diagnostico
   operativo. Agregado retry manual protegido para reprogramar eventos
-  `Failed`/`DeadLetter`.
-- Commit sugerido: `feat(integration): add RCA outbox retry`.
+  `Failed`/`DeadLetter`. Agregada base del publicador outbox con comportamiento
+  seguro cuando no hay webhooks habilitados.
+- Commit sugerido: `feat(integration): add RCA outbox publisher base`.

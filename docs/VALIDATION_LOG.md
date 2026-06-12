@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-12 - P2 outbox publisher base
+
+Scope: introduce the base RCA outbox publisher without real HTTP delivery yet.
+
+Checks:
+
+- Added `RcaOutboxPublishResultDto`.
+- Added `IRcaOutboxPublisher`.
+- Added `RcaOutboxPublisher` and registered it in infrastructure DI.
+- Added TDD coverage confirming that with no enabled webhooks, the publisher
+  succeeds without reading pending outbox events.
+- Real webhook HTTP delivery remains pending.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaOutboxPublisher` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-11 - P2 outbox manual retry endpoint
 
 Scope: allow authorized operators to reprogram failed/dead-letter RCA outbox

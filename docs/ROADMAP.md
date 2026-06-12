@@ -350,6 +350,12 @@ Avance P2 2026-06-11: se agrega endpoint protegido
 `POST /api/v1/integrations/rca/outbox/{id}/retry`, que reprograma eventos
 `Failed` o `DeadLetter` a `Pending` sin publicar por si mismo.
 
+Avance P2 2026-06-12: inicia la base del publicador outbox con
+`IRcaOutboxPublisher` / `RcaOutboxPublisher` y resultado
+`RcaOutboxPublishResultDto`. El primer comportamiento validado es seguro para
+standalone: si no hay webhooks habilitados, el publicador no lee pendientes ni
+modifica el outbox.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

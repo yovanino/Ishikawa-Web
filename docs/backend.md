@@ -110,6 +110,8 @@ El backend ya cuenta con:
   reprogramar eventos `Failed` o `DeadLetter` a `Pending` sin publicar.
 - Configuracion `RcaIntegration` para futuro publicador outbox/webhooks, con
   webhooks deshabilitados por default y sin secretos versionados.
+- Base de publicador `IRcaOutboxPublisher` / `RcaOutboxPublisher`, que por
+  ahora retorna sin leer pendientes cuando no hay webhooks habilitados.
 
 ## Corte Backend P0
 
@@ -279,4 +281,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   endpoint protegido `POST /api/v1/integrations/rca/outbox/{id}/retry`, que
   reprograma eventos `Failed`/`DeadLetter` a `Pending` y responde errores
   `OUTBOX_EVENT_NOT_FOUND` u `OUTBOX_EVENT_NOT_RETRYABLE`.
-- El outbox todavia no publica webhooks ni broker/event bus.
+- Agregada base `IRcaOutboxPublisher` / `RcaOutboxPublisher` con resultado
+  `RcaOutboxPublishResultDto`. El primer comportamiento validado es
+  standalone-safe: si no hay webhooks habilitados, no lee eventos pendientes ni
+  modifica el outbox.
+- El outbox todavia no envia HTTP real, webhooks ni broker/event bus.

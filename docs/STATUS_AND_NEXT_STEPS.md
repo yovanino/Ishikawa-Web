@@ -155,13 +155,16 @@ consulta read-only `GET /api/v1/integrations/rca/outbox/dead-letter?take=`
 permite diagnosticar eventos enviados a dead-letter, y
 `POST /api/v1/integrations/rca/outbox/{id}/retry` permite reprogramar eventos
 fallidos o dead-letter a `Pending`.
+El publicador outbox ya tiene base de servicio y resultado; en el estado actual
+solo valida el camino seguro sin webhooks habilitados, evitando leer pendientes
+o modificar el outbox.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: implementar publicador/webhooks; la
-  observabilidad de estado, consulta dead-letter y reprogramacion manual ya
-  quedaron cubiertas.
+- Siguiente paso P2 recomendado: implementar entrega HTTP real de webhooks en
+  el publicador; la observabilidad de estado, consulta dead-letter,
+  reprogramacion manual y base del publicador ya quedaron cubiertas.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,
