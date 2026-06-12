@@ -377,6 +377,10 @@ Avance P2 2026-06-12: el publicador mueve eventos a `DeadLetter` cuando el
 intento actual alcanza `RcaIntegration:MaxPublishAttempts`, evitando reintentos
 indefinidos.
 
+Avance P2 2026-06-12: se agrega endpoint protegido
+`POST /api/v1/integrations/rca/outbox/publish` para disparar manualmente el
+publicador outbox y devolver `RcaOutboxPublishResultDto`.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

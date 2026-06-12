@@ -13,11 +13,16 @@ public class RcaIntegrationsController : ControllerBase
 {
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaOutboxService _rcaOutboxService;
+    private readonly IRcaOutboxPublisher _rcaOutboxPublisher;
 
-    public RcaIntegrationsController(IRcaIncidentService rcaIncidentService, IRcaOutboxService rcaOutboxService)
+    public RcaIntegrationsController(
+        IRcaIncidentService rcaIncidentService,
+        IRcaOutboxService rcaOutboxService,
+        IRcaOutboxPublisher rcaOutboxPublisher)
     {
         _rcaIncidentService = rcaIncidentService;
         _rcaOutboxService = rcaOutboxService;
+        _rcaOutboxPublisher = rcaOutboxPublisher;
     }
 
     [HttpGet("snapshots")]
@@ -79,6 +84,16 @@ public class RcaIntegrationsController : ControllerBase
         var events = await _rcaOutboxService.ListDeadLettersAsync(take, cancellationToken);
 
         return Ok(ApiResult<IReadOnlyList<RcaOutboxEventDto>>.Ok(events));
+    }
+
+    [HttpPost("outbox/publish")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaOutboxPublishResultDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResult<RcaOutboxPublishResultDto>>> PublishOutbox(CancellationToken cancellationToken)
+    {
+        var result = await _rcaOutboxPublisher.PublishPendingAsync(cancellationToken);
+
+        return Ok(result);
     }
 
     [HttpPost("outbox/{id:guid}/retry")]

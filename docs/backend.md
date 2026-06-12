@@ -108,6 +108,8 @@ El backend ya cuenta con:
   diagnosticar eventos outbox en `DeadLetter` sin reintentar ni cambiar estado.
 - Endpoint protegido `POST /api/v1/integrations/rca/outbox/{id}/retry` para
   reprogramar eventos `Failed` o `DeadLetter` a `Pending` sin publicar.
+- Endpoint protegido `POST /api/v1/integrations/rca/outbox/publish` para
+  ejecutar publicacion manual del outbox.
 - Configuracion `RcaIntegration` para futuro publicador outbox/webhooks, con
   webhooks deshabilitados por default y sin secretos versionados.
 - Base de publicador `IRcaOutboxPublisher` / `RcaOutboxPublisher`, que por
@@ -306,4 +308,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Agregado `MarkDeadLetterAsync`; cuando el intento actual alcanza
   `MaxPublishAttempts`, el publicador marca el evento como `DeadLetter` en vez
   de reprogramarlo.
+- Agregado endpoint protegido `POST /api/v1/integrations/rca/outbox/publish`,
+  que invoca `IRcaOutboxPublisher.PublishPendingAsync` y devuelve
+  `RcaOutboxPublishResultDto`.
 - Pendiente: timeout configurado.

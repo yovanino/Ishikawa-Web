@@ -295,6 +295,7 @@ GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 GET /api/v1/integrations/rca/outbox/status
 GET /api/v1/integrations/rca/outbox/dead-letter?take=
+POST /api/v1/integrations/rca/outbox/publish
 POST /api/v1/integrations/rca/outbox/{id}/retry
 ```
 
@@ -326,6 +327,17 @@ Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
 `DeadLetter`, ordenados de mas reciente a mas antiguo segun ultimo intento o
 creacion. `take` se acota internamente entre 1 y 500. Es un endpoint de
 diagnostico; no reintenta, no republica y no cambia estado.
+
+Publicacion manual del outbox:
+
+```http
+POST /api/v1/integrations/rca/outbox/publish
+```
+
+Requiere rol `Supervisor`, `Quality` o `Administrator`. Invoca el publicador
+manual de eventos `Pending`/`Failed` elegibles y devuelve
+`ApiResult<RcaOutboxPublishResultDto>` con cantidad de webhooks habilitados,
+eventos intentados, publicados, fallidos y enviados a dead-letter.
 
 Reprogramacion de evento outbox:
 

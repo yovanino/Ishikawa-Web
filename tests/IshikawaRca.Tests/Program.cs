@@ -5,9 +5,11 @@ using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
 using IshikawaRca.Infrastructure.Services;
+using IshikawaRca.Web.Controllers.Api;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using System.Net;
@@ -56,6 +58,7 @@ await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
+await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertInMemoryAuditRecordsAsync();
@@ -496,6 +499,23 @@ static async Task AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReac
     }
 }
 
+static async Task AssertOutboxPublishEndpointInvokesPublisherAsync()
+{
+    var publisher = new RecordingOutboxPublisher();
+    var controller = new RcaIntegrationsController(null!, null!, publisher);
+
+    var response = await controller.PublishOutbox(CancellationToken.None);
+    var ok = response.Result as OkObjectResult
+        ?? throw new InvalidOperationException("Expected outbox publish endpoint to return 200 OK.");
+    var result = ok.Value as ApiResult<RcaOutboxPublishResultDto>
+        ?? throw new InvalidOperationException("Expected outbox publish endpoint to return ApiResult<RcaOutboxPublishResultDto>.");
+
+    if (!publisher.WasCalled || !result.Success || result.Data?.PublishedEventCount != 2)
+    {
+        throw new InvalidOperationException("Expected outbox publish endpoint to invoke the publisher.");
+    }
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -885,6 +905,22 @@ internal sealed class RecordingWebhookSender : IRcaWebhookSender
     {
         SentEventIds.Add(outboxEvent.Id);
         return Task.FromResult(RcaWebhookSendResult.Succeeded());
+    }
+}
+
+internal sealed class RecordingOutboxPublisher : IRcaOutboxPublisher
+{
+    public bool WasCalled { get; private set; }
+
+    public Task<ApiResult<RcaOutboxPublishResultDto>> PublishPendingAsync(CancellationToken cancellationToken = default)
+    {
+        WasCalled = true;
+        return Task.FromResult(ApiResult<RcaOutboxPublishResultDto>.Ok(new RcaOutboxPublishResultDto
+        {
+            EnabledWebhookCount = 1,
+            AttemptedEventCount = 2,
+            PublishedEventCount = 2
+        }));
     }
 }
 

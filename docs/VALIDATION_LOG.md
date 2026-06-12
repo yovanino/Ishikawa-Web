@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-12 - P2 outbox publish endpoint
+
+Scope: expose a protected manual endpoint to run the RCA outbox publisher.
+
+Checks:
+
+- Added `IRcaOutboxPublisher` dependency to `RcaIntegrationsController`.
+- Added protected `POST /api/v1/integrations/rca/outbox/publish`.
+- Endpoint returns `ApiResult<RcaOutboxPublishResultDto>`.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because the controller constructor/action did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 webhook max attempts dead-letter
 
 Scope: move RCA outbox events to dead-letter when webhook publish attempts are

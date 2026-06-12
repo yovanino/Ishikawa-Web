@@ -153,6 +153,8 @@ standalone.
   `NextAttemptAt` a 1 minuto.
 - Agregado paso a `DeadLetter` cuando el intento actual alcanza
   `RcaIntegration:MaxPublishAttempts`.
+- Agregado endpoint protegido `POST /api/v1/integrations/rca/outbox/publish`
+  para disparar manualmente `IRcaOutboxPublisher`.
 
 ## Pendientes
 
@@ -172,11 +174,12 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: agregar timeout configurado y endpoint manual de publish;
+- Siguiente tarea P2: agregar timeout configurado y smoke manual de webhook;
   el endpoint de eventos ya usa outbox + fallback derivado, el endpoint de
   status ya cubre observabilidad, dead-letter ya tiene consulta, el retry
   manual ya existe y la entrega HTTP basica con firma HMAC, fallo inicial y
-  dead-letter por maximos intentos ya esta registrada.
+  dead-letter por maximos intentos ya esta registrada. El endpoint publish
+  manual ya existe.
 
 ## Riesgos
 
@@ -350,6 +353,10 @@ standalone.
   esperaba `MarkDeadLetterAsync`. Luego `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
+- Para endpoint manual publish, se agrego primero una prueba RED que fallaba
+  por constructor/action faltantes en `RcaIntegrationsController`. Luego
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `dotnet build IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -378,5 +385,5 @@ standalone.
   Agregado sender HTTP real para POST de payload outbox y firma HMAC cuando hay
   secreto configurado. Agregado fallo inicial del publicador con `Failed` y
   `NextAttemptAt` a 1 minuto. Agregado paso a `DeadLetter` por maximos
-  intentos.
-- Commit sugerido: `feat(integration): dead-letter RCA webhook failures`.
+  intentos. Agregado endpoint manual publish del outbox.
+- Commit sugerido: `feat(integration): add RCA outbox publish endpoint`.
