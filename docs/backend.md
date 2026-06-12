@@ -114,6 +114,9 @@ El backend ya cuenta con:
   ahora retorna sin leer pendientes cuando no hay webhooks habilitados.
 - Sender abstracto `IRcaWebhookSender` con flujo de publicacion que marca
   eventos como `Published` cuando todos los webhooks aplicables responden OK.
+- Sender HTTP `RcaHttpWebhookSender` que publica `PayloadJson` por POST a la
+  URL configurada y envia headers `X-RCA-Event-Id`, `X-RCA-Event-Type` y
+  `X-RCA-Outbox-Id`.
 
 ## Corte Backend P0
 
@@ -287,8 +290,9 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `RcaOutboxPublishResultDto`. El primer comportamiento validado es
   standalone-safe: si no hay webhooks habilitados, no lee eventos pendientes ni
   modifica el outbox.
-- Agregado `IRcaWebhookSender`, resultado `RcaWebhookSendResult` y sender
-  deshabilitado por default. El publicador filtra webhooks por `EventTypes`,
-  invoca el sender abstracto y marca el evento como `Published` si todos los
+- Agregado `IRcaWebhookSender`, resultado `RcaWebhookSendResult` y
+  `RcaHttpWebhookSender`. El publicador filtra webhooks por `EventTypes`,
+  invoca el sender HTTP y marca el evento como `Published` si todos los
   destinos aplicables responden OK.
-- El outbox todavia no envia HTTP real ni broker/event bus.
+- Pendiente: firma HMAC, timeout configurado y tratamiento de fallos con
+  backoff/dead-letter.

@@ -143,6 +143,9 @@ standalone.
 - Agregado `IRcaWebhookSender` / `RcaWebhookSendResult` y flujo de publicacion
   contra sender abstracto. El publicador filtra por `EventTypes` y marca
   eventos `Published` cuando todos los destinos aplicables responden OK.
+- Agregado `RcaHttpWebhookSender`, que publica `PayloadJson` por POST a la URL
+  configurada e incluye headers `X-RCA-Event-Id`, `X-RCA-Event-Type` y
+  `X-RCA-Outbox-Id`.
 
 ## Pendientes
 
@@ -162,11 +165,11 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: implementar entrega HTTP real en el publicador; el
-  endpoint de eventos ya usa outbox + fallback derivado, el endpoint de status
-  ya cubre observabilidad, dead-letter ya tiene consulta, el retry manual ya
-  existe, la configuracion base de webhooks ya existe y la base del publicador
-  ya esta registrada con sender abstracto.
+- Siguiente tarea P2: agregar firma HMAC y politica de fallos/backoff/dead-
+  letter al publicador; el endpoint de eventos ya usa outbox + fallback
+  derivado, el endpoint de status ya cubre observabilidad, dead-letter ya tiene
+  consulta, el retry manual ya existe y la entrega HTTP basica ya esta
+  registrada.
 
 ## Riesgos
 
@@ -324,6 +327,10 @@ standalone.
   fallaba por `IRcaWebhookSender` / `RcaWebhookSendResult` inexistentes. Luego
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
   `dotnet build IshikawaRca.sln /m:1` pasan en serie.
+- Para sender HTTP real, se agrego primero una prueba RED que fallaba por
+  `RcaHttpWebhookSender` inexistente. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -349,4 +356,5 @@ standalone.
   `Failed`/`DeadLetter`. Agregada base del publicador outbox con comportamiento
   seguro cuando no hay webhooks habilitados. Agregado sender abstracto y flujo
   para marcar eventos como publicados cuando la entrega abstracta tiene exito.
-- Commit sugerido: `feat(integration): add RCA webhook sender flow`.
+  Agregado sender HTTP real para POST de payload outbox.
+- Commit sugerido: `feat(integration): add RCA HTTP webhook sender`.

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using System.Net;
 
 var rootOnlyActions = new[]
 {
@@ -51,6 +52,7 @@ AssertOutboxEventDomainDefaults();
 AssertRcaIntegrationOptionsDefaults();
 await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
+await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -402,6 +404,49 @@ static async Task AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsy
     }
 }
 
+static async Task AssertHttpWebhookSenderPostsPayloadAsync()
+{
+    var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+    var sender = new RcaHttpWebhookSender(new HttpClient(handler));
+    var outboxEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-001",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = payload
+    };
+
+    var result = await sender.SendAsync(
+        new RcaWebhookOptions
+        {
+            Name = "test-http",
+            Url = "https://example.local/rca/events"
+        },
+        outboxEvent);
+
+    var hasEventId = handler.Requests[0].Headers.TryGetValues("X-RCA-Event-Id", out var eventIds);
+    var hasEventType = handler.Requests[0].Headers.TryGetValues("X-RCA-Event-Type", out var eventTypes);
+    var actualEventId = hasEventId ? eventIds?.SingleOrDefault() : null;
+    var actualEventType = hasEventType ? eventTypes?.SingleOrDefault() : null;
+
+    if (!result.Success ||
+        handler.Requests.Count != 1 ||
+        handler.Requests[0].Method != HttpMethod.Post ||
+        handler.Requests[0].RequestUri?.ToString() != "https://example.local/rca/events" ||
+        handler.Bodies.SingleOrDefault() != payload ||
+        !hasEventId ||
+        actualEventId != "event-001" ||
+        !hasEventType ||
+        actualEventType != "RcaClosed")
+    {
+        throw new InvalidOperationException("Expected HTTP webhook sender to POST the outbox payload with event headers.");
+    }
+}
+
 static async Task AssertInMemoryAuditRecordsAsync()
 {
     var service = new InMemoryRcaIncidentService();
@@ -691,5 +736,28 @@ internal sealed class RecordingWebhookSender : IRcaWebhookSender
     {
         SentEventIds.Add(outboxEvent.Id);
         return Task.FromResult(RcaWebhookSendResult.Succeeded());
+    }
+}
+
+internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
+{
+    private readonly HttpStatusCode _statusCode;
+
+    public RecordingHttpMessageHandler(HttpStatusCode statusCode)
+    {
+        _statusCode = statusCode;
+    }
+
+    public List<HttpRequestMessage> Requests { get; } = [];
+    public List<string> Bodies { get; } = [];
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        Requests.Add(request);
+        Bodies.Add(request.Content is null
+            ? string.Empty
+            : await request.Content.ReadAsStringAsync(cancellationToken));
+
+        return new HttpResponseMessage(_statusCode);
     }
 }

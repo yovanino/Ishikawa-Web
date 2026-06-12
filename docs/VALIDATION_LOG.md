@@ -1,5 +1,30 @@
 # Validation Log
 
+## 2026-06-12 - P2 HTTP webhook sender
+
+Scope: add real HTTP POST delivery for RCA webhook outbox events.
+
+Checks:
+
+- Added `RcaHttpWebhookSender`.
+- Sender posts `RcaOutboxEvent.PayloadJson` as `application/json`.
+- Sender includes `X-RCA-Event-Id`, `X-RCA-Event-Type` and
+  `X-RCA-Outbox-Id` headers.
+- Sender reports success for HTTP 2xx responses.
+- Infrastructure DI now uses `RcaHttpWebhookSender`.
+- HMAC signature, configured timeout and failure/backoff policy remain pending.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaHttpWebhookSender` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 webhook sender flow
 
 Scope: add the abstract webhook sender flow used by the RCA outbox publisher.

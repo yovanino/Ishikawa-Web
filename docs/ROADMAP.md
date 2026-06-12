@@ -361,6 +361,11 @@ contra sender abstracto. El publicador filtra destinos por `EventTypes` y marca
 eventos como `Published` cuando todos los webhooks aplicables responden OK. El
 sender HTTP real queda pendiente.
 
+Avance P2 2026-06-12: se agrega `RcaHttpWebhookSender` para publicar por POST
+el `PayloadJson` a la URL del webhook con headers `X-RCA-Event-Id`,
+`X-RCA-Event-Type` y `X-RCA-Outbox-Id`. Quedan pendientes firma HMAC, timeout
+configurado y politica de fallos/backoff/dead-letter.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder
