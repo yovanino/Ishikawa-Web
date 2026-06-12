@@ -157,14 +157,17 @@ permite diagnosticar eventos enviados a dead-letter, y
 fallidos o dead-letter a `Pending`.
 El publicador outbox ya tiene base de servicio y resultado; en el estado actual
 solo valida el camino seguro sin webhooks habilitados, evitando leer pendientes
-o modificar el outbox.
+o modificar el outbox. Tambien existe `IRcaWebhookSender` y el publicador ya
+puede marcar eventos como `Published` si un sender abstracto entrega con exito
+a todos los webhooks aplicables.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: implementar entrega HTTP real de webhooks en
-  el publicador; la observabilidad de estado, consulta dead-letter,
-  reprogramacion manual y base del publicador ya quedaron cubiertas.
+- Siguiente paso P2 recomendado: reemplazar el sender deshabilitado por entrega
+  HTTP real de webhooks, con firma HMAC si hay secreto; la observabilidad,
+  dead-letter, retry manual, base del publicador y flujo contra sender abstracto
+  ya quedaron cubiertos.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

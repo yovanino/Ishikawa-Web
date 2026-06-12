@@ -356,6 +356,11 @@ Avance P2 2026-06-12: inicia la base del publicador outbox con
 standalone: si no hay webhooks habilitados, el publicador no lee pendientes ni
 modifica el outbox.
 
+Avance P2 2026-06-12: se agrega `IRcaWebhookSender` y el flujo de publicacion
+contra sender abstracto. El publicador filtra destinos por `EventTypes` y marca
+eventos como `Published` cuando todos los webhooks aplicables responden OK. El
+sender HTTP real queda pendiente.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

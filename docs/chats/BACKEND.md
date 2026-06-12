@@ -140,6 +140,9 @@ standalone.
 - Agregada base `IRcaOutboxPublisher` / `RcaOutboxPublisher` con resultado
   `RcaOutboxPublishResultDto`. Por ahora, si no hay webhooks habilitados, el
   publicador retorna sin consultar pendientes ni modificar el outbox.
+- Agregado `IRcaWebhookSender` / `RcaWebhookSendResult` y flujo de publicacion
+  contra sender abstracto. El publicador filtra por `EventTypes` y marca
+  eventos `Published` cuando todos los destinos aplicables responden OK.
 
 ## Pendientes
 
@@ -163,7 +166,7 @@ standalone.
   endpoint de eventos ya usa outbox + fallback derivado, el endpoint de status
   ya cubre observabilidad, dead-letter ya tiene consulta, el retry manual ya
   existe, la configuracion base de webhooks ya existe y la base del publicador
-  ya esta registrada.
+  ya esta registrada con sender abstracto.
 
 ## Riesgos
 
@@ -317,6 +320,10 @@ standalone.
   por `RcaOutboxPublisher` inexistente. Luego `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
+- Para sender abstracto del publicador, se agrego primero una prueba RED que
+  fallaba por `IRcaWebhookSender` / `RcaWebhookSendResult` inexistentes. Luego
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
+  `dotnet build IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -340,5 +347,6 @@ standalone.
   default. Agregada consulta protegida de dead-letter para diagnostico
   operativo. Agregado retry manual protegido para reprogramar eventos
   `Failed`/`DeadLetter`. Agregada base del publicador outbox con comportamiento
-  seguro cuando no hay webhooks habilitados.
-- Commit sugerido: `feat(integration): add RCA outbox publisher base`.
+  seguro cuando no hay webhooks habilitados. Agregado sender abstracto y flujo
+  para marcar eventos como publicados cuando la entrega abstracta tiene exito.
+- Commit sugerido: `feat(integration): add RCA webhook sender flow`.

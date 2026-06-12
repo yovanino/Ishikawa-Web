@@ -50,6 +50,7 @@ await AssertIntegrationEventCompatibilityAsync();
 AssertOutboxEventDomainDefaults();
 AssertRcaIntegrationOptionsDefaults();
 await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
+await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -338,6 +339,7 @@ static async Task AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync()
     var outboxService = new ThrowingOutboxService();
     var publisher = new RcaOutboxPublisher(
         outboxService,
+        new RecordingWebhookSender(),
         Options.Create(new RcaIntegrationOptions
         {
             Webhooks = []
@@ -352,6 +354,51 @@ static async Task AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync()
         outboxService.ListPendingCalls != 0)
     {
         throw new InvalidOperationException("Expected publisher to skip outbox reads when no webhooks are enabled.");
+    }
+}
+
+static async Task AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync()
+{
+    var pendingEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-001",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = "{\"type\":\"RcaClosed\"}",
+        Status = RcaOutboxEventStatus.Pending
+    };
+    var outboxService = new RecordingOutboxService([pendingEvent]);
+    var webhookSender = new RecordingWebhookSender();
+    var publisher = new RcaOutboxPublisher(
+        outboxService,
+        webhookSender,
+        Options.Create(new RcaIntegrationOptions
+        {
+            Webhooks =
+            [
+                new RcaWebhookOptions
+                {
+                    Name = "test-webhook",
+                    Url = "https://example.local/rca/events",
+                    Enabled = true,
+                    EventTypes = ["RcaClosed"]
+                }
+            ]
+        }));
+
+    var result = await publisher.PublishPendingAsync();
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.AttemptedEventCount != 1 ||
+        result.Data.PublishedEventCount != 1 ||
+        webhookSender.SentEventIds.SingleOrDefault() != pendingEvent.Id ||
+        outboxService.PublishedEventIds.SingleOrDefault() != pendingEvent.Id)
+    {
+        throw new InvalidOperationException("Expected successful webhook delivery to mark the outbox event as published.");
     }
 }
 
@@ -585,5 +632,64 @@ internal sealed class ThrowingOutboxService : IRcaOutboxService
     public Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException();
+    }
+}
+
+internal sealed class RecordingOutboxService : IRcaOutboxService
+{
+    private readonly IReadOnlyList<RcaOutboxEvent> _pendingEvents;
+
+    public RecordingOutboxService(IReadOnlyList<RcaOutboxEvent> pendingEvents)
+    {
+        _pendingEvents = pendingEvents;
+    }
+
+    public List<Guid> PublishedEventIds { get; } = [];
+
+    public Task<RcaOutboxEvent> EnqueueAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEvent>> ListPendingAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_pendingEvents);
+    }
+
+    public Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEventDto>> ListDeadLettersAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<ApiResult<RcaOutboxEventDto>> ScheduleRetryAsync(Guid id, RetryRcaOutboxEventRequest request, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
+    {
+        PublishedEventIds.Add(id);
+        return Task.CompletedTask;
+    }
+
+    public Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+}
+
+internal sealed class RecordingWebhookSender : IRcaWebhookSender
+{
+    public List<Guid> SentEventIds { get; } = [];
+
+    public Task<RcaWebhookSendResult> SendAsync(RcaWebhookOptions webhook, RcaOutboxEvent outboxEvent, CancellationToken cancellationToken = default)
+    {
+        SentEventIds.Add(outboxEvent.Id);
+        return Task.FromResult(RcaWebhookSendResult.Succeeded());
     }
 }

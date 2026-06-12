@@ -112,6 +112,8 @@ El backend ya cuenta con:
   webhooks deshabilitados por default y sin secretos versionados.
 - Base de publicador `IRcaOutboxPublisher` / `RcaOutboxPublisher`, que por
   ahora retorna sin leer pendientes cuando no hay webhooks habilitados.
+- Sender abstracto `IRcaWebhookSender` con flujo de publicacion que marca
+  eventos como `Published` cuando todos los webhooks aplicables responden OK.
 
 ## Corte Backend P0
 
@@ -285,4 +287,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `RcaOutboxPublishResultDto`. El primer comportamiento validado es
   standalone-safe: si no hay webhooks habilitados, no lee eventos pendientes ni
   modifica el outbox.
-- El outbox todavia no envia HTTP real, webhooks ni broker/event bus.
+- Agregado `IRcaWebhookSender`, resultado `RcaWebhookSendResult` y sender
+  deshabilitado por default. El publicador filtra webhooks por `EventTypes`,
+  invoca el sender abstracto y marca el evento como `Published` si todos los
+  destinos aplicables responden OK.
+- El outbox todavia no envia HTTP real ni broker/event bus.

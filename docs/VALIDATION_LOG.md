@@ -1,5 +1,30 @@
 # Validation Log
 
+## 2026-06-12 - P2 webhook sender flow
+
+Scope: add the abstract webhook sender flow used by the RCA outbox publisher.
+
+Checks:
+
+- Added `IRcaWebhookSender`.
+- Added `RcaWebhookSendResult`.
+- Added disabled default sender for DI while real HTTP delivery is pending.
+- `RcaOutboxPublisher` now filters enabled webhooks by `EventTypes`.
+- Successful delivery to all applicable webhooks marks the outbox event as
+  `Published`.
+- Real HTTP delivery remains pending.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `IRcaWebhookSender` and `RcaWebhookSendResult` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 outbox publisher base
 
 Scope: introduce the base RCA outbox publisher without real HTTP delivery yet.

@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IRcaExternalIntakeService, EfRcaExternalIntakeService>();
         services.AddScoped<IRcaOutboxService, EfRcaOutboxService>();
         services.AddScoped<IRcaOutboxPublisher, RcaOutboxPublisher>();
+        services.AddScoped<IRcaWebhookSender, DisabledRcaWebhookSender>();
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
         services.Configure<RcaIntegrationOptions>(options =>
