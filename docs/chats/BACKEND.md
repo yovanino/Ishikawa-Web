@@ -171,6 +171,14 @@ standalone.
   de path en `AiGateway:BaseUrl`, encapsula timeout durante lectura del body
   como fallo controlado y agrega cobertura para configuracion invalida, HTTP no
   exitoso, JSON invalido y timeout de deserializacion.
+- Agregado `ConfiguredRcaAiGatewayClient` para seleccionar `Mode = Stub` o
+  `Mode = Http` segun `AiGateway`, con fallback opcional al stub cuando falla
+  HTTP.
+- Actualizado `DependencyInjection` para registrar `StubRcaAiGatewayClient` y
+  `HttpRcaAiGatewayClient` como concretos y exponer `IRcaAiGatewayClient`
+  mediante el wrapper configurado.
+- Agregada cobertura liviana para fallback a stub, modo stub forzado y retorno
+  de fallo HTTP cuando el fallback esta deshabilitado.
 
 ## Pendientes
 
@@ -397,6 +405,11 @@ standalone.
   simulacion no soportada; corregido el harness, `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` pasa y quedan pendientes
   build + `git diff --check` finales antes del commit.
+- Para la Task 2 de seleccion de modo/fallback IA, se agregaron pruebas RED
+  que fallaban por `ConfiguredRcaAiGatewayClient` inexistente. Luego
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`,
+  `dotnet build IshikawaRca.sln /m:1` y `git diff --check` deben pasar en
+  serie antes del commit.
 
 ## Ultimo Cierre
 
@@ -436,3 +449,8 @@ standalone.
   cliente por review: preserva prefijos del `BaseUrl`, controla timeout durante
   deserializacion y amplía cobertura de fallos.
 - Commit sugerido: `fix(ai): harden HTTP AI gateway client`.
+- Actualizacion Task 2 P3: agregado `ConfiguredRcaAiGatewayClient`, activada la
+  seleccion por `AiGateway:Mode = Stub/Http`, definido fallback controlado por
+  `UseFallbackOnFailure` y agregadas pruebas livianas para fallback a stub,
+  modo stub directo y devolucion de fallo HTTP sin fallback.
+- Commit sugerido: `feat(ai): select AI gateway mode with fallback`.

@@ -95,10 +95,19 @@ Desde el ajuste P3 del 2026-06-12 existe la base `HttpRcaAiGatewayClient`.
   `AI_GATEWAY_CONFIGURATION_INVALID`, `AI_GATEWAY_UNAVAILABLE` y
   `AI_GATEWAY_INVALID_RESPONSE`.
 
-En este corte el runtime del modulo sigue registrado sobre
-`StubRcaAiGatewayClient`. La seleccion por `Mode = Http` y el fallback gobernado
-quedan para la Task 2, sin cambiar controladores, contratos publicos ni el
-servicio de aplicacion.
+## Seleccion de modo y fallback
+
+Desde la Task 2 del 2026-06-12 el runtime ya no queda fijado al stub.
+
+- `AiGateway:Mode = "Stub"` ejecuta `StubRcaAiGatewayClient` de forma directa.
+- `AiGateway:Mode = "Http"` ejecuta `HttpRcaAiGatewayClient`.
+- Si `Mode = "Http"` y la llamada HTTP falla, `UseFallbackOnFailure = true`
+  hace fallback al stub.
+- Si `Mode = "Http"` y `UseFallbackOnFailure = false`, el modulo devuelve la
+  falla original del gateway HTTP.
+
+La seleccion se resuelve en `ConfiguredRcaAiGatewayClient`, sin cambiar
+controladores, contratos publicos ni `RcaAiAssistantService`.
 
 ## Fallback
 

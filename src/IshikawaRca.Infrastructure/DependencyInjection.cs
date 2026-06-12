@@ -38,7 +38,14 @@ public static class DependencyInjection
             new HttpClient(),
             provider.GetRequiredService<IOptions<RcaIntegrationOptions>>()));
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
-        services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
+        services.AddScoped<StubRcaAiGatewayClient>();
+        services.AddScoped<HttpRcaAiGatewayClient>(provider => new HttpRcaAiGatewayClient(
+            new HttpClient(),
+            provider.GetRequiredService<IOptions<RcaAiGatewayOptions>>()));
+        services.AddScoped<IRcaAiGatewayClient>(provider => new ConfiguredRcaAiGatewayClient(
+            provider.GetRequiredService<HttpRcaAiGatewayClient>(),
+            provider.GetRequiredService<StubRcaAiGatewayClient>(),
+            provider.GetRequiredService<IOptions<RcaAiGatewayOptions>>()));
         services.Configure<RcaAiGatewayOptions>(options =>
         {
             var section = configuration.GetSection(RcaAiGatewayOptions.SectionName);

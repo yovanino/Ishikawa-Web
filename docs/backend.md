@@ -65,8 +65,9 @@ El backend ya cuenta con:
   revision interna, rechazo e importacion opcional.
 - Snapshots y feed derivado de eventos para integracion con otros modulos.
 - Contratos de IA y cliente stub local.
-- Base `HttpRcaAiGatewayClient` para AI Gateway real, aun sin activacion por
-  runtime.
+- Base `HttpRcaAiGatewayClient` para AI Gateway real.
+- Seleccion de runtime IA por `ConfiguredRcaAiGatewayClient`, con modo
+  `Stub`/`Http` y fallback opcional al stub cuando falla el gateway HTTP.
 - Tests livianos para politica de resolucion y facts externos.
 - Autenticacion standalone configurable para operar sin Identity global.
 - Contexto backend de usuario/tenant con tenant configurado y overrides por
@@ -352,6 +353,17 @@ live, outbox o webhooks versionados.
 - El cliente HTTP aplica bearer opcional, timeout por request y fallos
   controlados para configuracion invalida, gateway no disponible o respuesta
   JSON vacia/invalida.
-- Infraestructura ya bindea `AiGateway` a opciones, pero el runtime sigue
-  registrado sobre `StubRcaAiGatewayClient` hasta implementar la seleccion por
-  modo/fallback en la Task 2.
+- Infraestructura ya bindea `AiGateway` a opciones.
+
+### 2026-06-12 - Seleccion de modo IA y fallback P3
+
+- Agregado `ConfiguredRcaAiGatewayClient` como wrapper de runtime para
+  `IRcaAiGatewayClient`.
+- `AiGateway:Mode = Stub` ejecuta `StubRcaAiGatewayClient` sin intentar HTTP.
+- `AiGateway:Mode = Http` ejecuta `HttpRcaAiGatewayClient`.
+- Si el cliente HTTP falla y `UseFallbackOnFailure = true`, el wrapper vuelve
+  al stub y mantiene el modulo operativo.
+- Si el cliente HTTP falla y `UseFallbackOnFailure = false`, se preserva la
+  falla original del gateway.
+- DI ahora registra `StubRcaAiGatewayClient` y `HttpRcaAiGatewayClient` como
+  concretos, y expone `IRcaAiGatewayClient` mediante el wrapper configurado.

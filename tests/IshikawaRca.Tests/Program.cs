@@ -68,6 +68,9 @@ await AssertHttpAiGatewayClientRejectsInvalidBaseUrlAsync();
 await AssertHttpAiGatewayClientReturnsUnavailableForNonSuccessStatusAsync();
 await AssertHttpAiGatewayClientReturnsInvalidResponseForInvalidJsonAsync();
 await AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTimesOutAsync();
+await AssertConfiguredAiGatewayFallsBackWhenHttpFailsAsync();
+await AssertConfiguredAiGatewayUsesStubModeEvenWhenHttpWouldFailAsync();
+await AssertConfiguredAiGatewayReturnsHttpFailureWhenFallbackIsDisabledAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -791,6 +794,81 @@ static async Task AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTim
     AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_UNAVAILABLE");
 }
 
+static async Task AssertConfiguredAiGatewayFallsBackWhenHttpFailsAsync()
+{
+    var fallback = new StubRcaAiGatewayClient();
+    var failing = new FailingAiGatewayClient();
+    var client = new ConfiguredRcaAiGatewayClient(
+        failing,
+        fallback,
+        Options.Create(new RcaAiGatewayOptions
+        {
+            Mode = "Http",
+            UseFallbackOnFailure = true
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto { Id = Guid.NewGuid(), Title = "Fallback", Severity = "High" },
+        Canvas = new IshikawaCanvasDto()
+    });
+
+    if (!result.Success || result.Data?.Metadata.IsFallback != true)
+    {
+        throw new InvalidOperationException("Expected configured AI client to fall back to stub when HTTP mode fails.");
+    }
+}
+
+static async Task AssertConfiguredAiGatewayUsesStubModeEvenWhenHttpWouldFailAsync()
+{
+    var fallback = new StubRcaAiGatewayClient();
+    var failing = new FailingAiGatewayClient();
+    var client = new ConfiguredRcaAiGatewayClient(
+        failing,
+        fallback,
+        Options.Create(new RcaAiGatewayOptions
+        {
+            Mode = "Stub",
+            UseFallbackOnFailure = false
+        }));
+
+    var result = await client.SuggestActionsAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto { Id = Guid.NewGuid(), Title = "Stub mode", Severity = "Medium" },
+        Canvas = new IshikawaCanvasDto()
+    });
+
+    if (!result.Success || result.Data?.Metadata.IsFallback != true)
+    {
+        throw new InvalidOperationException("Expected configured AI client to use stub mode directly.");
+    }
+}
+
+static async Task AssertConfiguredAiGatewayReturnsHttpFailureWhenFallbackIsDisabledAsync()
+{
+    var fallback = new StubRcaAiGatewayClient();
+    var failing = new FailingAiGatewayClient();
+    var client = new ConfiguredRcaAiGatewayClient(
+        failing,
+        fallback,
+        Options.Create(new RcaAiGatewayOptions
+        {
+            Mode = "Http",
+            UseFallbackOnFailure = false
+        }));
+
+    var result = await client.SummarizeAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto { Id = Guid.NewGuid(), Title = "No fallback", Severity = "High" },
+        Canvas = new IshikawaCanvasDto()
+    });
+
+    if (result.Success || result.Errors.All(x => x.Code != "AI_GATEWAY_UNAVAILABLE"))
+    {
+        throw new InvalidOperationException("Expected configured AI client to return the HTTP failure when fallback is disabled.");
+    }
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -1242,6 +1320,24 @@ internal sealed class FailingWebhookSender : IRcaWebhookSender
     public Task<RcaWebhookSendResult> SendAsync(RcaWebhookOptions webhook, RcaOutboxEvent outboxEvent, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(RcaWebhookSendResult.Failed(_error));
+    }
+}
+
+internal sealed class FailingAiGatewayClient : IRcaAiGatewayClient
+{
+    public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiCauseSuggestionResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
+    }
+
+    public Task<ApiResult<RcaAiActionSuggestionResultDto>> SuggestActionsAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiActionSuggestionResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
+    }
+
+    public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
     }
 }
 

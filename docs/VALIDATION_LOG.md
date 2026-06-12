@@ -1,5 +1,33 @@
 # Validation Log
 
+## 2026-06-12 - P3 AI gateway mode selection and fallback
+
+Scope: activate runtime selection between RCA stub and HTTP AI gateway clients
+with optional fallback to stub on HTTP failure.
+
+Checks:
+
+- Added `ConfiguredRcaAiGatewayClient`.
+- `AiGateway:Mode = Stub` uses `StubRcaAiGatewayClient` directly.
+- `AiGateway:Mode = Http` uses `HttpRcaAiGatewayClient`.
+- `AiGateway:UseFallbackOnFailure = true` falls back to stub when HTTP mode
+  returns a failure.
+- `AiGateway:UseFallbackOnFailure = false` preserves the original HTTP failure.
+- Infrastructure DI now registers stub and HTTP concrete clients, and exposes
+  `IRcaAiGatewayClient` through the configured wrapper.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first because `ConfiguredRcaAiGatewayClient` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after adding the wrapper and DI wiring.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-12 - P3 HTTP AI gateway client hardening
 
 Scope: harden the RCA HTTP AI Gateway client after quality review findings on
