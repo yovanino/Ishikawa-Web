@@ -51,7 +51,7 @@ public class HttpRcaAiGatewayClient : IRcaAiGatewayClient
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, _options.TimeoutSeconds)));
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, path))
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildRequestUri(baseUri, path))
         {
             Content = JsonContent.Create(context)
         };
@@ -107,7 +107,17 @@ public class HttpRcaAiGatewayClient : IRcaAiGatewayClient
                         Field = "AiGateway"
                     });
             }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                return GatewayUnavailable<T>();
+            }
         }
+    }
+
+    private static Uri BuildRequestUri(Uri baseUri, string path)
+    {
+        var baseWithTrailingSlash = baseUri.AbsoluteUri.TrimEnd('/') + "/";
+        return new Uri(baseWithTrailingSlash + path.TrimStart('/'), UriKind.Absolute);
     }
 
     private static ApiResult<T> GatewayUnavailable<T>(string message = "AI Gateway no esta disponible.")

@@ -63,6 +63,11 @@ await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync();
 await AssertHttpAiGatewayClientPostsCauseContextAsync();
+await AssertHttpAiGatewayClientPreservesBaseUrlPrefixAsync();
+await AssertHttpAiGatewayClientRejectsInvalidBaseUrlAsync();
+await AssertHttpAiGatewayClientReturnsUnavailableForNonSuccessStatusAsync();
+await AssertHttpAiGatewayClientReturnsInvalidResponseForInvalidJsonAsync();
+await AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTimesOutAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -635,6 +640,157 @@ static async Task AssertHttpAiGatewayClientPostsCauseContextAsync()
     }
 }
 
+static async Task AssertHttpAiGatewayClientPreservesBaseUrlPrefixAsync()
+{
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK)
+    {
+        ResponseContent = """
+        {
+          "incidentId":"11111111-1111-1111-1111-111111111111",
+          "summary":"Gateway causes",
+          "suggestions":[],
+          "metadata":{
+            "provider":"Gateway",
+            "model":"rca-v1",
+            "isFallback":false,
+            "generatedAt":"2026-06-12T00:00:00Z"
+          }
+        }
+        """
+    };
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(handler),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local/prefix",
+            TimeoutSeconds = 5
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Title = "AI RCA"
+        }
+    });
+
+    if (!result.Success ||
+        handler.Requests.Single().RequestUri?.ToString() != "https://ai.example.local/prefix/ai/rca/suggest-causes")
+    {
+        throw new InvalidOperationException("Expected HTTP AI Gateway client to preserve BaseUrl path prefixes.");
+    }
+}
+
+static async Task AssertHttpAiGatewayClientRejectsInvalidBaseUrlAsync()
+{
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(new RecordingHttpMessageHandler(HttpStatusCode.OK)),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "not-a-url"
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "AI RCA"
+        }
+    });
+
+    AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_CONFIGURATION_INVALID");
+}
+
+static async Task AssertHttpAiGatewayClientReturnsUnavailableForNonSuccessStatusAsync()
+{
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(new RecordingHttpMessageHandler(HttpStatusCode.BadGateway)),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local",
+            TimeoutSeconds = 5
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "AI RCA"
+        }
+    });
+
+    AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_UNAVAILABLE");
+}
+
+static async Task AssertHttpAiGatewayClientReturnsInvalidResponseForInvalidJsonAsync()
+{
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK)
+    {
+        ResponseContent = "{ invalid json"
+    };
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(handler),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local",
+            TimeoutSeconds = 5
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "AI RCA"
+        }
+    });
+
+    AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_INVALID_RESPONSE");
+}
+
+static async Task AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTimesOutAsync()
+{
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK)
+    {
+        ResponseBodyFactory = _ => new DelayedReadJsonContent(
+            """
+            {
+              "incidentId":"11111111-1111-1111-1111-111111111111",
+              "summary":"Gateway causes",
+              "suggestions":[],
+              "metadata":{
+                "provider":"Gateway",
+                "model":"rca-v1",
+                "isFallback":false,
+                "generatedAt":"2026-06-12T00:00:00Z"
+              }
+            }
+            """,
+            TimeSpan.FromMilliseconds(1500))
+    };
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(handler),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local",
+            TimeoutSeconds = 1
+        }));
+
+    var result = await client.SuggestCausesAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "AI RCA"
+        }
+    });
+
+    AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_UNAVAILABLE");
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -1101,6 +1257,7 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
     public List<HttpRequestMessage> Requests { get; } = [];
     public List<string> Bodies { get; } = [];
     public string ResponseContent { get; set; } = "{}";
+    public Func<HttpRequestMessage, HttpContent>? ResponseBodyFactory { get; set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -1111,7 +1268,7 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
 
         return new HttpResponseMessage(_statusCode)
         {
-            Content = new StringContent(ResponseContent, Encoding.UTF8, "application/json")
+            Content = ResponseBodyFactory?.Invoke(request) ?? new StringContent(ResponseContent, Encoding.UTF8, "application/json")
         };
     }
 }
@@ -1140,5 +1297,57 @@ internal sealed class SlowHttpMessageHandler : HttpMessageHandler
         }
 
         return new HttpResponseMessage(HttpStatusCode.OK);
+    }
+}
+
+internal sealed class DelayedReadJsonContent : HttpContent
+{
+    private readonly byte[] _bytes;
+    private readonly TimeSpan _delay;
+
+    public DelayedReadJsonContent(string json, TimeSpan delay)
+    {
+        _bytes = Encoding.UTF8.GetBytes(json);
+        _delay = delay;
+        Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+    }
+
+    protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+    {
+        return SerializeToStreamAsync(stream, context, CancellationToken.None);
+    }
+
+    protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+    {
+        await Task.Delay(_delay, cancellationToken);
+        await stream.WriteAsync(_bytes, cancellationToken);
+    }
+
+    protected override bool TryComputeLength(out long length)
+    {
+        length = _bytes.Length;
+        return true;
+    }
+
+    protected override Task<Stream> CreateContentReadStreamAsync()
+    {
+        return Task.FromResult<Stream>(new DelayedReadMemoryStream(_bytes, _delay));
+    }
+}
+
+internal sealed class DelayedReadMemoryStream : MemoryStream
+{
+    private readonly TimeSpan _delay;
+
+    public DelayedReadMemoryStream(byte[] buffer, TimeSpan delay)
+        : base(buffer, writable: false)
+    {
+        _delay = delay;
+    }
+
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        await Task.Delay(_delay, cancellationToken);
+        return await base.ReadAsync(buffer, cancellationToken);
     }
 }

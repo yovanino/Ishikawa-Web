@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-12 - P3 HTTP AI gateway client hardening
+
+Scope: harden the RCA HTTP AI Gateway client after quality review findings on
+BaseUrl path handling, response-read timeout handling and thin failure tests.
+
+Checks:
+
+- Preserved `AiGateway:BaseUrl` path prefixes when composing
+  `/ai/rca/suggest-causes`, `/ai/rca/suggest-actions` and
+  `/ai/rca/summarize`.
+- Added controlled handling for `OperationCanceledException` during response
+  body deserialization when the linked timeout expires, while keeping explicit
+  caller cancellation propagating.
+- Added lightweight coverage for invalid `BaseUrl`, non-2xx responses, invalid
+  JSON and response-read timeout.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first on the missing BaseUrl prefix preservation check.
+- The first timeout-test harness attempt failed incorrectly with
+  `NotSupportedException`; the test content was corrected to simulate a
+  cancelable delayed body read instead of an unsupported response content.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after the client hardening and corrected timeout harness.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P3 HTTP RCA AI gateway client base
 
 Scope: add the first real HTTP AI Gateway client base for RCA suggestions while

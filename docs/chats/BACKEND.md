@@ -167,6 +167,10 @@ standalone.
 - Infraestructura ya carga la seccion `AiGateway`, pero el runtime sigue usando
   `StubRcaAiGatewayClient`; la seleccion por modo/fallback queda para la
   Task 2 del plan P3.
+- Hardening post-review para `HttpRcaAiGatewayClient`: ahora preserva prefijos
+  de path en `AiGateway:BaseUrl`, encapsula timeout durante lectura del body
+  como fallo controlado y agrega cobertura para configuracion invalida, HTTP no
+  exitoso, JSON invalido y timeout de deserializacion.
 
 ## Pendientes
 
@@ -386,6 +390,13 @@ standalone.
   fallaba por `HttpRcaAiGatewayClient` y `RcaAiGatewayOptions` inexistentes.
   Luego `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`,
   `dotnet build IshikawaRca.sln /m:1` y `git diff --check` pasan en serie.
+- Para el hardening post-review del cliente HTTP IA, se agregaron pruebas RED
+  para preservacion de prefijo en `BaseUrl`, `AI_GATEWAY_CONFIGURATION_INVALID`,
+  `AI_GATEWAY_UNAVAILABLE`, `AI_GATEWAY_INVALID_RESPONSE` y timeout durante
+  lectura del body. El primer intento del harness de timeout fallo por una
+  simulacion no soportada; corregido el harness, `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` pasa y quedan pendientes
+  build + `git diff --check` finales antes del commit.
 
 ## Ultimo Cierre
 
@@ -421,5 +432,7 @@ standalone.
   operativos para consumidores externos. Iniciada Task 1 de P3 con
   `RcaAiGatewayOptions`, `HttpRcaAiGatewayClient`, prueba RED/GREEN del POST de
   contexto RCA y binding de `AiGateway`, manteniendo stub como runtime actual
-  hasta la seleccion por modo/fallback de la Task 2.
-- Commit sugerido: `feat(ai): add HTTP RCA AI gateway client`.
+  hasta la seleccion por modo/fallback de la Task 2. Luego se endurece el
+  cliente por review: preserva prefijos del `BaseUrl`, controla timeout durante
+  deserializacion y amplía cobertura de fallos.
+- Commit sugerido: `fix(ai): harden HTTP AI gateway client`.
