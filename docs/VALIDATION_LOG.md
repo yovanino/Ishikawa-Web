@@ -1349,6 +1349,28 @@ Checks:
 
 Result: passed.
 
+## 2026-06-12 - RCA webhook configured timeout
+
+Scope: validate configured timeout handling for outbound RCA webhooks.
+
+Checks:
+
+- Added RED test for a slow HTTP webhook destination using
+  `RcaIntegration:PublishTimeoutSeconds = 1`.
+- Confirmed the RED failure because `RcaHttpWebhookSender` did not accept
+  integration options yet.
+- Implemented per-request timeout and controlled failure result for slow
+  destinations.
+- Wired infrastructure DI to pass configured `RcaIntegrationOptions`.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-04 - RCA evidence validation metadata
 
 Scope: validate stronger RCA evidence metadata for tags, detailed source, and validation status.

@@ -120,6 +120,8 @@ El backend ya cuenta con:
   URL configurada y envia headers `X-RCA-Event-Id`, `X-RCA-Event-Type` y
   `X-RCA-Outbox-Id`.
 - Firma HMAC SHA-256 en `X-RCA-Signature` cuando el webhook tiene `Secret`.
+- Timeout configurable por `RcaIntegration:PublishTimeoutSeconds` para evitar
+  que un destino lento bloquee la publicacion manual del outbox.
 - Fallos de entrega webhook vuelven el evento a `Failed` con error resumido y
   `NextAttemptAt` inicial de 1 minuto.
 - Eventos que alcanzan `RcaIntegration:MaxPublishAttempts` pasan a
@@ -303,6 +305,8 @@ tests MVC/UI, CI/CD y storage documental productivo.
   destinos aplicables responden OK.
 - `RcaHttpWebhookSender` firma el payload con HMAC SHA-256 en
   `X-RCA-Signature: sha256=<hex>` cuando `Secret` esta configurado.
+- `RcaHttpWebhookSender` aplica `RcaIntegration:PublishTimeoutSeconds` por
+  request y devuelve fallo controlado si el destino no responde a tiempo.
 - El publicador marca `Failed` cuando algun destino aplicable falla, conserva
   el error resumido y programa `NextAttemptAt` con backoff inicial de 1 minuto.
 - Agregado `MarkDeadLetterAsync`; cuando el intento actual alcanza
@@ -311,4 +315,4 @@ tests MVC/UI, CI/CD y storage documental productivo.
 - Agregado endpoint protegido `POST /api/v1/integrations/rca/outbox/publish`,
   que invoca `IRcaOutboxPublisher.PublishPendingAsync` y devuelve
   `RcaOutboxPublishResultDto`.
-- Pendiente: timeout configurado.
+- Timeout configurado cubierto por prueba liviana y DI de infraestructura.

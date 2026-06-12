@@ -166,13 +166,16 @@ Si algun destino aplicable falla, el publicador marca el evento como `Failed`,
 guarda el error resumido y programa un reintento inicial a 1 minuto.
 Al alcanzar `RcaIntegration:MaxPublishAttempts`, el evento pasa a `DeadLetter`.
 El endpoint protegido `POST /api/v1/integrations/rca/outbox/publish` permite
-disparar manualmente el publicador.
+disparar manualmente el publicador. El sender HTTP aplica
+`RcaIntegration:PublishTimeoutSeconds` por request y transforma destinos lentos
+en fallos controlados del outbox.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: agregar timeout configurado y smoke manual de
-  webhook; la entrega HTTP basica, firma HMAC, fallo con backoff inicial,
+- Siguiente paso P2 recomendado: agregar smoke manual de webhook y decidir si
+  el canal live se resuelve en este repo o por consumidor externo; la entrega
+  HTTP basica, firma HMAC, timeout configurado, fallo con backoff inicial,
   dead-letter por maximos intentos, observabilidad, dead-letter, retry manual,
   endpoint publish y base del publicador ya quedaron cubiertas.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin

@@ -148,6 +148,9 @@ standalone.
   `X-RCA-Outbox-Id`.
 - Agregada firma HMAC SHA-256 de webhooks en `X-RCA-Signature` cuando el
   webhook tiene `Secret`.
+- Agregado timeout configurable por `RcaIntegration:PublishTimeoutSeconds` en
+  `RcaHttpWebhookSender`, con fallo controlado cuando el destino HTTP no
+  responde a tiempo.
 - Agregado manejo inicial de fallo en publicador: si un webhook aplicable
   falla, el evento se marca `Failed`, guarda error resumido y queda con
   `NextAttemptAt` a 1 minuto.
@@ -174,12 +177,12 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: agregar timeout configurado y smoke manual de webhook;
+- Siguiente tarea P2: agregar smoke manual de webhook y revisar cierre P2;
   el endpoint de eventos ya usa outbox + fallback derivado, el endpoint de
   status ya cubre observabilidad, dead-letter ya tiene consulta, el retry
-  manual ya existe y la entrega HTTP basica con firma HMAC, fallo inicial y
-  dead-letter por maximos intentos ya esta registrada. El endpoint publish
-  manual ya existe.
+  manual ya existe y la entrega HTTP basica con firma HMAC, timeout configurado,
+  fallo inicial y dead-letter por maximos intentos ya esta registrada. El
+  endpoint publish manual ya existe.
 
 ## Riesgos
 
@@ -357,6 +360,11 @@ standalone.
   por constructor/action faltantes en `RcaIntegrationsController`. Luego
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y
   `dotnet build IshikawaRca.sln /m:1` pasan en serie.
+- Para timeout configurado del sender HTTP, se agrego primero una prueba RED
+  que fallaba porque `RcaHttpWebhookSender` no aceptaba opciones de
+  `RcaIntegration`. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 

@@ -337,7 +337,9 @@ POST /api/v1/integrations/rca/outbox/publish
 Requiere rol `Supervisor`, `Quality` o `Administrator`. Invoca el publicador
 manual de eventos `Pending`/`Failed` elegibles y devuelve
 `ApiResult<RcaOutboxPublishResultDto>` con cantidad de webhooks habilitados,
-eventos intentados, publicados, fallidos y enviados a dead-letter.
+eventos intentados, publicados, fallidos y enviados a dead-letter. Cada entrega
+HTTP respeta `RcaIntegration:PublishTimeoutSeconds`; un destino lento se trata
+como fallo de publicacion y conserva el modulo standalone operativo.
 
 Reprogramacion de evento outbox:
 

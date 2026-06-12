@@ -381,6 +381,10 @@ Avance P2 2026-06-12: se agrega endpoint protegido
 `POST /api/v1/integrations/rca/outbox/publish` para disparar manualmente el
 publicador outbox y devolver `RcaOutboxPublishResultDto`.
 
+Avance P2 2026-06-12: `RcaHttpWebhookSender` aplica
+`RcaIntegration:PublishTimeoutSeconds` por request y devuelve fallo controlado
+cuando un destino webhook no responde a tiempo.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

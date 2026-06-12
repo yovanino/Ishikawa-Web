@@ -6,6 +6,7 @@ using IshikawaRca.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace IshikawaRca.Infrastructure;
 
@@ -33,7 +34,9 @@ public static class DependencyInjection
         services.AddScoped<IRcaExternalIntakeService, EfRcaExternalIntakeService>();
         services.AddScoped<IRcaOutboxService, EfRcaOutboxService>();
         services.AddScoped<IRcaOutboxPublisher, RcaOutboxPublisher>();
-        services.AddScoped<IRcaWebhookSender>(_ => new RcaHttpWebhookSender(new HttpClient()));
+        services.AddScoped<IRcaWebhookSender>(provider => new RcaHttpWebhookSender(
+            new HttpClient(),
+            provider.GetRequiredService<IOptions<RcaIntegrationOptions>>()));
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<IRcaAiGatewayClient, StubRcaAiGatewayClient>();
         services.Configure<RcaIntegrationOptions>(options =>

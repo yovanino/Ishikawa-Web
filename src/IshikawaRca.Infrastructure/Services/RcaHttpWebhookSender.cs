@@ -2,16 +2,27 @@ using System.Text;
 using System.Security.Cryptography;
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Domain.Entities;
+using Microsoft.Extensions.Options;
 
 namespace IshikawaRca.Infrastructure.Services;
 
 public class RcaHttpWebhookSender : IRcaWebhookSender
 {
     private readonly HttpClient _httpClient;
+    private readonly TimeSpan _publishTimeout;
 
     public RcaHttpWebhookSender(HttpClient httpClient)
+        : this(httpClient, Options.Create(new RcaIntegrationOptions()))
+    {
+    }
+
+    public RcaHttpWebhookSender(HttpClient httpClient, IOptions<RcaIntegrationOptions> options)
     {
         _httpClient = httpClient;
+        var timeoutSeconds = options.Value.PublishTimeoutSeconds > 0
+            ? options.Value.PublishTimeoutSeconds
+            : new RcaIntegrationOptions().PublishTimeoutSeconds;
+        _publishTimeout = TimeSpan.FromSeconds(timeoutSeconds);
     }
 
     public async Task<RcaWebhookSendResult> SendAsync(
@@ -43,12 +54,27 @@ public class RcaHttpWebhookSender : IRcaWebhookSender
             request.Headers.TryAddWithoutValidation("X-RCA-Signature", "sha256=" + signature);
         }
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (response.IsSuccessStatusCode)
+        using var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutTokenSource.CancelAfter(_publishTimeout);
+
+        HttpResponseMessage response;
+        try
         {
-            return RcaWebhookSendResult.Succeeded();
+            response = await _httpClient.SendAsync(request, timeoutTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return RcaWebhookSendResult.Failed("Webhook delivery timed out.");
         }
 
-        return RcaWebhookSendResult.Failed($"Webhook responded with HTTP {(int)response.StatusCode}.");
+        using (response)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                return RcaWebhookSendResult.Succeeded();
+            }
+
+            return RcaWebhookSendResult.Failed($"Webhook responded with HTTP {(int)response.StatusCode}.");
+        }
     }
 }

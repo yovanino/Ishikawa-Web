@@ -61,6 +61,7 @@ await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
+await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
 await AssertInMemoryAuditRecordsAsync();
 await AssertEvidenceStorageRejectsOversizedFilesAsync();
 AssertEvidenceStorageRejectsUnsafeKeys();
@@ -597,6 +598,37 @@ static async Task AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync()
     }
 }
 
+static async Task AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync()
+{
+    var handler = new SlowHttpMessageHandler(TimeSpan.FromMilliseconds(1500));
+    var sender = new RcaHttpWebhookSender(
+        new HttpClient(handler),
+        Options.Create(new RcaIntegrationOptions { PublishTimeoutSeconds = 1 }));
+    var outboxEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-timeout",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = "{\"type\":\"RcaClosed\"}"
+    };
+
+    var result = await sender.SendAsync(
+        new RcaWebhookOptions
+        {
+            Name = "slow-http",
+            Url = "https://example.local/rca/events"
+        },
+        outboxEvent);
+
+    if (result.Success || !handler.WasCanceled)
+    {
+        throw new InvalidOperationException("Expected HTTP webhook sender to fail and cancel slow requests when configured timeout expires.");
+    }
+}
+
 static async Task AssertInMemoryAuditRecordsAsync()
 {
     var service = new InMemoryRcaIncidentService();
@@ -959,5 +991,32 @@ internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
             : await request.Content.ReadAsStringAsync(cancellationToken));
 
         return new HttpResponseMessage(_statusCode);
+    }
+}
+
+internal sealed class SlowHttpMessageHandler : HttpMessageHandler
+{
+    private readonly TimeSpan _delay;
+
+    public SlowHttpMessageHandler(TimeSpan delay)
+    {
+        _delay = delay;
+    }
+
+    public bool WasCanceled { get; private set; }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(_delay, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            WasCanceled = true;
+            throw;
+        }
+
+        return new HttpResponseMessage(HttpStatusCode.OK);
     }
 }
