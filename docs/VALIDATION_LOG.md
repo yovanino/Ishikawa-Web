@@ -1349,6 +1349,26 @@ Checks:
 
 Result: passed.
 
+## 2026-06-12 - P2 integration closure
+
+Scope: close P2 integration scope without adding direct adapters to external
+modules.
+
+Checks:
+
+- Reviewed P2 matrix against implemented contracts.
+- Marked webhooks, outbox, broker-ready event contracts, live events,
+  Gantt-facing snapshots/correlation, Gateway/SCADA facts and external consumer
+  state/operations as complete for standalone scope.
+- Documented that concrete external adapters remain outside this repo and must
+  consume versioned APIs/events.
+
+Validation:
+
+- `git diff --check`: passed.
+
+Result: passed.
+
 ## 2026-06-12 - RCA live integration events
 
 Scope: validate a live channel for RCA timeline/status integration events.

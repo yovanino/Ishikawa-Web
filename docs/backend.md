@@ -152,6 +152,25 @@ Quedan como post-P0: Identity global, tenant corporativo multitenant, permisos
 productivos finos, reapertura gobernada, reportes corporativos de auditoria,
 tests MVC/UI, CI/CD y storage documental productivo.
 
+## Corte Backend P2
+
+El corte de integracion operacional real queda cerrado para el alcance
+standalone:
+
+- Outbox transaccional persistido en `rca_outbox_events`.
+- Captura outbox de los eventos RCA actuales, incluyendo intake externo.
+- Feed `/api/v1/integrations/rca/events` combinado con outbox y fallback
+  derivado historico.
+- Webhooks configurables por `RcaIntegration`, apagados por default.
+- Publicador manual protegido, firma HMAC, timeout configurable, fallo
+  controlado, reintento manual y dead-letter.
+- Canal live SSE para timeline/estados.
+- Snapshots/correlacion para Gantt y facts idempotentes para Gateway/SCADA.
+
+Los adapters directos contra Gantt, SCADA o Gateway no forman parte de este
+repositorio. La integracion debe hacerse por APIs, snapshots, facts, eventos
+live, outbox o webhooks versionados.
+
 ## Limites
 
 - No acoplar directamente con Gantt, SCADA, OEE, TPM, Andon, Identity ni AI

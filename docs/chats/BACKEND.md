@@ -186,6 +186,10 @@ standalone.
   manual ya existe, el canal live SSE ya existe y la entrega HTTP basica con
   firma HMAC, timeout configurado, fallo inicial y dead-letter por maximos
   intentos ya esta registrada. El endpoint publish manual ya existe.
+- P2 queda cerrado para el alcance standalone: outbox transaccional, webhooks,
+  endpoint publish, retry/dead-letter/status, canal live SSE, contratos de
+  eventos, snapshots Gantt y facts Gateway/SCADA. Los adapters a sistemas
+  externos quedan fuera del repo por limite de modulo.
 
 ## Riesgos
 
@@ -375,7 +379,7 @@ standalone.
 
 ## Ultimo Cierre
 
-- Fecha: 2026-06-11.
+- Fecha: 2026-06-12.
 - Resumen: iniciado P2 de integracion operacional real con documentacion formal
   del feed de eventos RCA, envelope `RcaDomainEventDto`, compatibilidad
   `/api/v1`, deduplicacion por `id`, polling por `occurredAt` y evolucion
@@ -400,5 +404,9 @@ standalone.
   Agregado sender HTTP real para POST de payload outbox y firma HMAC cuando hay
   secreto configurado. Agregado fallo inicial del publicador con `Failed` y
   `NextAttemptAt` a 1 minuto. Agregado paso a `DeadLetter` por maximos
-  intentos. Agregado endpoint manual publish del outbox.
-- Commit sugerido: `feat(integration): add RCA outbox publish endpoint`.
+  intentos. Agregado endpoint manual publish del outbox. Agregado timeout
+  configurado para webhooks y canal live SSE para timeline/estados. Cerrada la
+  matriz P2 standalone con outbox, webhooks, contratos broker-ready, Gantt por
+  snapshots/correlacion, Gateway/SCADA por facts idempotentes y estados
+  operativos para consumidores externos.
+- Commit sugerido: `docs(roadmap): close P2 integration scope`.

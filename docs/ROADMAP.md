@@ -275,13 +275,13 @@ Criterio de salida P1:
 
 Objetivo: conectar el RCA con otros modulos/sistemas sin acoplamiento directo.
 
-- [ ] Webhooks configurables.
-- [ ] Outbox transaccional.
-- [ ] Contratos de eventos listos para broker/event bus.
+- [x] Webhooks configurables.
+- [x] Outbox transaccional.
+- [x] Contratos de eventos listos para broker/event bus.
 - [x] SignalR o canal live para timeline y estados.
-- [ ] Integracion API concreta con Gantt.
-- [ ] Integracion API concreta con Gateway/SCADA para facts.
-- [ ] Estados y auditoria ampliada para consumidores externos.
+- [x] Integracion API concreta con Gantt.
+- [x] Integracion API concreta con Gateway/SCADA para facts.
+- [x] Estados y auditoria ampliada para consumidores externos.
 - [x] Documentar versionado y compatibilidad de eventos.
 
 Avance P2 2026-06-11: queda documentado el contrato de eventos de integracion,
@@ -389,6 +389,13 @@ Avance P2 2026-06-12: se agrega canal live por Server-Sent Events en
 `GET /api/v1/integrations/rca/events/live`, reutilizando el envelope
 `RcaDomainEventDto` del feed y polling desacoplado sobre los eventos de
 integracion.
+
+Estado del corte: P2 queda cerrado como integracion operacional standalone. El
+modulo expone APIs concretas para Gantt mediante snapshots/correlacion externa,
+para Gateway/SCADA mediante facts idempotentes y para consumidores externos
+mediante feed/eventos live/outbox/webhooks. No se agregan adapters directos a
+Gantt, SCADA ni Gateway porque esos sistemas son modulos externos al repositorio
+y deben consumir por contratos versionados.
 
 Criterio de salida P2:
 
