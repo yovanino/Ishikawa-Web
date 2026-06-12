@@ -179,6 +179,13 @@ standalone.
   mediante el wrapper configurado.
 - Agregada cobertura liviana para fallback a stub, modo stub forzado y retorno
   de fallo HTTP cuando el fallback esta deshabilitado.
+- Hardening post-review de la Task 2: el wrapper ahora captura
+  `HttpRequestException` del path HTTP para hacer fallback a stub o devolver
+  `AI_GATEWAY_UNAVAILABLE` sin dejar escapar excepciones de transporte.
+- Agregada prueba DI que valida que `AddIshikawaRcaInfrastructure` resuelve
+  `IRcaAiGatewayClient` como `ConfiguredRcaAiGatewayClient`.
+- Ajustada la DI del cliente IA para reutilizar un `HttpClient` compartido en
+  lugar de crear uno nuevo por scope, sin agregar paquetes.
 
 ## Pendientes
 
@@ -410,6 +417,13 @@ standalone.
   `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`,
   `dotnet build IshikawaRca.sln /m:1` y `git diff --check` deben pasar en
   serie antes del commit.
+- Para el hardening post-review de la Task 2, se agregaron pruebas RED para
+  fallback ante `HttpRequestException`, devolucion controlada
+  `AI_GATEWAY_UNAVAILABLE` sin fallback y resolucion DI real de
+  `IRcaAiGatewayClient`. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`, `dotnet build
+  IshikawaRca.sln /m:1` y `git diff --check` deben pasar en serie antes del
+  commit.
 
 ## Ultimo Cierre
 

@@ -367,3 +367,14 @@ live, outbox o webhooks versionados.
   falla original del gateway.
 - DI ahora registra `StubRcaAiGatewayClient` y `HttpRcaAiGatewayClient` como
   concretos, y expone `IRcaAiGatewayClient` mediante el wrapper configurado.
+
+### 2026-06-12 - Hardening post-review de seleccion IA
+
+- `ConfiguredRcaAiGatewayClient` ahora captura `HttpRequestException` del path
+  HTTP, evitando que una falla de transporte escape del wrapper.
+- Si `UseFallbackOnFailure = true`, una excepcion HTTP tambien cae al stub.
+- Si `UseFallbackOnFailure = false`, la excepcion HTTP se normaliza a
+  `AI_GATEWAY_UNAVAILABLE` con `ApiResult`.
+- La DI de IA reutiliza un `HttpClient` compartido para
+  `HttpRcaAiGatewayClient`, evitando recrearlo por scope sin agregar paquetes
+  nuevos.

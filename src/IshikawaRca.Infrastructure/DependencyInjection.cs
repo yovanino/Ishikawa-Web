@@ -13,6 +13,7 @@ namespace IshikawaRca.Infrastructure;
 public static class DependencyInjection
 {
     private static readonly TimeSpan MySqlMaxRetryDelay = TimeSpan.FromSeconds(2);
+    private static readonly HttpClient SharedAiGatewayHttpClient = new();
 
     public static IServiceCollection AddIshikawaRcaInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
@@ -40,7 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IRcaAiAssistantService, RcaAiAssistantService>();
         services.AddScoped<StubRcaAiGatewayClient>();
         services.AddScoped<HttpRcaAiGatewayClient>(provider => new HttpRcaAiGatewayClient(
-            new HttpClient(),
+            SharedAiGatewayHttpClient,
             provider.GetRequiredService<IOptions<RcaAiGatewayOptions>>()));
         services.AddScoped<IRcaAiGatewayClient>(provider => new ConfiguredRcaAiGatewayClient(
             provider.GetRequiredService<HttpRcaAiGatewayClient>(),

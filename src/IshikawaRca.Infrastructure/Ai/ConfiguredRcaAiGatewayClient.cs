@@ -51,12 +51,33 @@ public class ConfiguredRcaAiGatewayClient : IRcaAiGatewayClient
             return await runStub(_stubClient);
         }
 
-        var result = await runHttp(_httpClient);
+        ApiResult<T> result;
+        try
+        {
+            result = await runHttp(_httpClient);
+        }
+        catch (HttpRequestException)
+        {
+            result = GatewayUnavailable<T>();
+        }
+
         if (result.Success || !_options.UseFallbackOnFailure)
         {
             return result;
         }
 
         return await runStub(_stubClient);
+    }
+
+    private static ApiResult<T> GatewayUnavailable<T>()
+    {
+        return ApiResult<T>.Fail(
+            "AI Gateway no esta disponible.",
+            new ApiError
+            {
+                Code = "AI_GATEWAY_UNAVAILABLE",
+                Message = "AI Gateway no esta disponible.",
+                Field = "AiGateway"
+            });
     }
 }
