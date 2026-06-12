@@ -227,6 +227,20 @@ public class EfRcaOutboxService : IRcaOutboxService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task MarkDeadLetterAsync(Guid id, string error, CancellationToken cancellationToken = default)
+    {
+        var outboxEvent = await GetRequiredAsync(id, cancellationToken);
+
+        outboxEvent.Status = RcaOutboxEventStatus.DeadLetter;
+        outboxEvent.AttemptCount++;
+        outboxEvent.LastAttemptAt = DateTimeOffset.UtcNow;
+        outboxEvent.NextAttemptAt = null;
+        outboxEvent.LastError = Truncate(error, MaxErrorLength);
+        outboxEvent.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<RcaOutboxEvent> GetRequiredAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _dbContext.RcaOutboxEvents

@@ -1,5 +1,31 @@
 # Validation Log
 
+## 2026-06-12 - P2 webhook max attempts dead-letter
+
+Scope: move RCA outbox events to dead-letter when webhook publish attempts are
+exhausted.
+
+Checks:
+
+- Added `IRcaOutboxService.MarkDeadLetterAsync`.
+- Added EF implementation that increments attempts, records last attempt/error
+  and clears `NextAttemptAt`.
+- `RcaOutboxPublisher` compares `AttemptCount + 1` against
+  `RcaIntegration:MaxPublishAttempts`.
+- Events at the threshold move to `DeadLetter` and increment
+  `DeadLetterEventCount`.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because max-attempt failures were still marked `Failed`.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 webhook publish failure handling
 
 Scope: mark RCA outbox events as failed when webhook delivery fails.

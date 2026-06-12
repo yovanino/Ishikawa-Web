@@ -70,12 +70,21 @@ public class RcaOutboxPublisher : IRcaOutboxPublisher
             }
             else
             {
-                await _outboxService.MarkFailedAsync(
-                    pendingEvent.Id,
-                    string.Join(" | ", errors),
-                    DateTimeOffset.UtcNow.AddMinutes(1),
-                    cancellationToken);
-                result.FailedEventCount++;
+                var error = string.Join(" | ", errors);
+                if (pendingEvent.AttemptCount + 1 >= Math.Max(1, _options.MaxPublishAttempts))
+                {
+                    await _outboxService.MarkDeadLetterAsync(pendingEvent.Id, error, cancellationToken);
+                    result.DeadLetterEventCount++;
+                }
+                else
+                {
+                    await _outboxService.MarkFailedAsync(
+                        pendingEvent.Id,
+                        error,
+                        DateTimeOffset.UtcNow.AddMinutes(1),
+                        cancellationToken);
+                    result.FailedEventCount++;
+                }
             }
         }
 

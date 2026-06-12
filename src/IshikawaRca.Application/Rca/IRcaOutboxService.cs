@@ -19,4 +19,6 @@ public interface IRcaOutboxService
     Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default);
 
     Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default);
+
+    Task MarkDeadLetterAsync(Guid id, string error, CancellationToken cancellationToken = default);
 }

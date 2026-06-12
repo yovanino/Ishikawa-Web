@@ -373,6 +373,10 @@ Avance P2 2026-06-12: el publicador marca eventos como `Failed` cuando falla
 algun webhook aplicable, registra error resumido y programa `NextAttemptAt` con
 backoff inicial de 1 minuto.
 
+Avance P2 2026-06-12: el publicador mueve eventos a `DeadLetter` cuando el
+intento actual alcanza `RcaIntegration:MaxPublishAttempts`, evitando reintentos
+indefinidos.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

@@ -151,6 +151,8 @@ standalone.
 - Agregado manejo inicial de fallo en publicador: si un webhook aplicable
   falla, el evento se marca `Failed`, guarda error resumido y queda con
   `NextAttemptAt` a 1 minuto.
+- Agregado paso a `DeadLetter` cuando el intento actual alcanza
+  `RcaIntegration:MaxPublishAttempts`.
 
 ## Pendientes
 
@@ -170,11 +172,11 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: agregar paso a `DeadLetter` al superar maximos intentos y
-  timeout configurado; el endpoint de eventos ya usa outbox + fallback
-  derivado, el endpoint de status ya cubre observabilidad, dead-letter ya tiene
-  consulta, el retry manual ya existe y la entrega HTTP basica con firma HMAC y
-  fallo inicial ya esta registrada.
+- Siguiente tarea P2: agregar timeout configurado y endpoint manual de publish;
+  el endpoint de eventos ya usa outbox + fallback derivado, el endpoint de
+  status ya cubre observabilidad, dead-letter ya tiene consulta, el retry
+  manual ya existe y la entrega HTTP basica con firma HMAC, fallo inicial y
+  dead-letter por maximos intentos ya esta registrada.
 
 ## Riesgos
 
@@ -344,6 +346,10 @@ standalone.
   esperaba `MarkFailedAsync`. Luego `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
+- Para dead-letter por maximos intentos, se agrego primero una prueba RED que
+  esperaba `MarkDeadLetterAsync`. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -371,5 +377,6 @@ standalone.
   para marcar eventos como publicados cuando la entrega abstracta tiene exito.
   Agregado sender HTTP real para POST de payload outbox y firma HMAC cuando hay
   secreto configurado. Agregado fallo inicial del publicador con `Failed` y
-  `NextAttemptAt` a 1 minuto.
-- Commit sugerido: `feat(integration): handle RCA webhook publish failures`.
+  `NextAttemptAt` a 1 minuto. Agregado paso a `DeadLetter` por maximos
+  intentos.
+- Commit sugerido: `feat(integration): dead-letter RCA webhook failures`.

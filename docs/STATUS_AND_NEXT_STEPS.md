@@ -164,14 +164,15 @@ publica por POST el payload outbox, headers de evento y firma HMAC SHA-256
 cuando el webhook tiene `Secret`.
 Si algun destino aplicable falla, el publicador marca el evento como `Failed`,
 guarda el error resumido y programa un reintento inicial a 1 minuto.
+Al alcanzar `RcaIntegration:MaxPublishAttempts`, el evento pasa a `DeadLetter`.
 
 - Siguiente decision tecnica: persistencia de orden de causas, edicion avanzada
   desde panel lateral y regla formal de SLA visual requieren contrato/regla
   antes de implementarse.
-- Siguiente paso P2 recomendado: agregar paso a `DeadLetter` al superar maximos
-  intentos y timeout configurado; la entrega HTTP basica, firma HMAC, fallo con
-  backoff inicial, observabilidad, dead-letter, retry manual y base del
-  publicador ya quedaron cubiertas.
+- Siguiente paso P2 recomendado: agregar timeout configurado y endpoint manual
+  de publish; la entrega HTTP basica, firma HMAC, fallo con backoff inicial,
+  dead-letter por maximos intentos, observabilidad, dead-letter, retry manual y
+  base del publicador ya quedaron cubiertas.
 - Validacion visual completa queda recomendada cuando se levante app + DB sin
   penalizar cada micro-ajuste.
 - Mantener pendiente post-P0 el endurecimiento tecnico: suite formal de tests,

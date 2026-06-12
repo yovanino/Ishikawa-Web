@@ -120,6 +120,8 @@ El backend ya cuenta con:
 - Firma HMAC SHA-256 en `X-RCA-Signature` cuando el webhook tiene `Secret`.
 - Fallos de entrega webhook vuelven el evento a `Failed` con error resumido y
   `NextAttemptAt` inicial de 1 minuto.
+- Eventos que alcanzan `RcaIntegration:MaxPublishAttempts` pasan a
+  `DeadLetter`.
 
 ## Corte Backend P0
 
@@ -301,5 +303,7 @@ tests MVC/UI, CI/CD y storage documental productivo.
   `X-RCA-Signature: sha256=<hex>` cuando `Secret` esta configurado.
 - El publicador marca `Failed` cuando algun destino aplicable falla, conserva
   el error resumido y programa `NextAttemptAt` con backoff inicial de 1 minuto.
-- Pendiente: timeout configurado y paso a dead-letter al superar maximos
-  intentos.
+- Agregado `MarkDeadLetterAsync`; cuando el intento actual alcanza
+  `MaxPublishAttempts`, el publicador marca el evento como `DeadLetter` en vez
+  de reprogramarlo.
+- Pendiente: timeout configurado.

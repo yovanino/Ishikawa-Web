@@ -55,6 +55,7 @@ AssertRcaIntegrationOptionsDefaults();
 await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
+await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertInMemoryAuditRecordsAsync();
@@ -451,6 +452,50 @@ static async Task AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync()
     }
 }
 
+static async Task AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync()
+{
+    var pendingEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-dead-letter",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = "{\"type\":\"RcaClosed\"}",
+        Status = RcaOutboxEventStatus.Failed,
+        AttemptCount = 4
+    };
+    var outboxService = new RecordingOutboxService([pendingEvent]);
+    var publisher = new RcaOutboxPublisher(
+        outboxService,
+        new FailingWebhookSender("remote unavailable"),
+        Options.Create(new RcaIntegrationOptions
+        {
+            MaxPublishAttempts = 5,
+            Webhooks =
+            [
+                new RcaWebhookOptions
+                {
+                    Name = "failing-webhook",
+                    Url = "https://example.local/rca/events",
+                    Enabled = true
+                }
+            ]
+        }));
+
+    var result = await publisher.PublishPendingAsync();
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.DeadLetterEventCount != 1 ||
+        outboxService.DeadLetterEventIds.SingleOrDefault() != pendingEvent.Id ||
+        outboxService.FailedEventIds.Count != 0)
+    {
+        throw new InvalidOperationException("Expected event to move to dead-letter when max publish attempts is reached.");
+    }
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -763,6 +808,11 @@ internal sealed class ThrowingOutboxService : IRcaOutboxService
     {
         throw new NotSupportedException();
     }
+
+    public Task MarkDeadLetterAsync(Guid id, string error, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
 }
 
 internal sealed class RecordingOutboxService : IRcaOutboxService
@@ -776,6 +826,7 @@ internal sealed class RecordingOutboxService : IRcaOutboxService
 
     public List<Guid> PublishedEventIds { get; } = [];
     public List<Guid> FailedEventIds { get; } = [];
+    public List<Guid> DeadLetterEventIds { get; } = [];
     public string? LastFailureError { get; private set; }
     public DateTimeOffset? LastFailureNextAttemptAt { get; private set; }
 
@@ -815,6 +866,13 @@ internal sealed class RecordingOutboxService : IRcaOutboxService
         FailedEventIds.Add(id);
         LastFailureError = error;
         LastFailureNextAttemptAt = nextAttemptAt;
+        return Task.CompletedTask;
+    }
+
+    public Task MarkDeadLetterAsync(Guid id, string error, CancellationToken cancellationToken = default)
+    {
+        DeadLetterEventIds.Add(id);
+        LastFailureError = error;
         return Task.CompletedTask;
     }
 }
