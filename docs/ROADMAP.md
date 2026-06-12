@@ -369,6 +369,10 @@ configurado y politica de fallos/backoff/dead-letter.
 Avance P2 2026-06-12: `RcaHttpWebhookSender` firma payloads con HMAC SHA-256
 en `X-RCA-Signature: sha256=<hex>` cuando el webhook configura `Secret`.
 
+Avance P2 2026-06-12: el publicador marca eventos como `Failed` cuando falla
+algun webhook aplicable, registra error resumido y programa `NextAttemptAt` con
+backoff inicial de 1 minuto.
+
 Criterio de salida P2:
 
 - Los consumidores externos pueden crear, consultar y seguir un RCA sin acceder

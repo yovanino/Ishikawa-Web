@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-12 - P2 webhook publish failure handling
+
+Scope: mark RCA outbox events as failed when webhook delivery fails.
+
+Checks:
+
+- `RcaOutboxPublisher` records sender errors per applicable webhook.
+- If any applicable webhook fails, the event is marked `Failed`.
+- Failure stores a summarized error and schedules `NextAttemptAt` with a
+  1 minute initial backoff.
+- Result increments `FailedEventCount`.
+- Dead-letter threshold remains pending.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because failed sends did not call `MarkFailedAsync`.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after minimal implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed with CRLF warnings only.
+
+Result: passed.
+
 ## 2026-06-12 - P2 webhook HMAC signature
 
 Scope: sign RCA webhook payloads when a webhook secret is configured.

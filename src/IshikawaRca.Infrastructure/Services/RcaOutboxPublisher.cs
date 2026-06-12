@@ -52,16 +52,30 @@ public class RcaOutboxPublisher : IRcaOutboxPublisher
             }
 
             var allSucceeded = true;
+            var errors = new List<string>();
             foreach (var webhook in matchingWebhooks)
             {
                 var sendResult = await _webhookSender.SendAsync(webhook, pendingEvent, cancellationToken);
                 allSucceeded &= sendResult.Success;
+                if (!sendResult.Success)
+                {
+                    errors.Add($"{webhook.Name}: {sendResult.Error}");
+                }
             }
 
             if (allSucceeded)
             {
                 await _outboxService.MarkPublishedAsync(pendingEvent.Id, DateTimeOffset.UtcNow, cancellationToken);
                 result.PublishedEventCount++;
+            }
+            else
+            {
+                await _outboxService.MarkFailedAsync(
+                    pendingEvent.Id,
+                    string.Join(" | ", errors),
+                    DateTimeOffset.UtcNow.AddMinutes(1),
+                    cancellationToken);
+                result.FailedEventCount++;
             }
         }
 

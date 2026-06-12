@@ -54,6 +54,7 @@ AssertOutboxEventDomainDefaults();
 AssertRcaIntegrationOptionsDefaults();
 await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
+await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertInMemoryAuditRecordsAsync();
@@ -407,6 +408,49 @@ static async Task AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsy
     }
 }
 
+static async Task AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync()
+{
+    var pendingEvent = new RcaOutboxEvent
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        EventId = "event-failed",
+        EventType = "RcaClosed",
+        IncidentId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        PayloadJson = "{\"type\":\"RcaClosed\"}",
+        Status = RcaOutboxEventStatus.Pending
+    };
+    var outboxService = new RecordingOutboxService([pendingEvent]);
+    var publisher = new RcaOutboxPublisher(
+        outboxService,
+        new FailingWebhookSender("remote unavailable"),
+        Options.Create(new RcaIntegrationOptions
+        {
+            Webhooks =
+            [
+                new RcaWebhookOptions
+                {
+                    Name = "failing-webhook",
+                    Url = "https://example.local/rca/events",
+                    Enabled = true
+                }
+            ]
+        }));
+
+    var result = await publisher.PublishPendingAsync();
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.FailedEventCount != 1 ||
+        outboxService.FailedEventIds.SingleOrDefault() != pendingEvent.Id ||
+        string.IsNullOrWhiteSpace(outboxService.LastFailureError) ||
+        outboxService.LastFailureNextAttemptAt is null)
+    {
+        throw new InvalidOperationException("Expected failed webhook delivery to mark the outbox event as failed.");
+    }
+}
+
 static async Task AssertHttpWebhookSenderPostsPayloadAsync()
 {
     var payload = "{\"id\":\"event-001\",\"type\":\"RcaClosed\"}";
@@ -731,6 +775,9 @@ internal sealed class RecordingOutboxService : IRcaOutboxService
     }
 
     public List<Guid> PublishedEventIds { get; } = [];
+    public List<Guid> FailedEventIds { get; } = [];
+    public string? LastFailureError { get; private set; }
+    public DateTimeOffset? LastFailureNextAttemptAt { get; private set; }
 
     public Task<RcaOutboxEvent> EnqueueAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken = default)
     {
@@ -765,7 +812,10 @@ internal sealed class RecordingOutboxService : IRcaOutboxService
 
     public Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        FailedEventIds.Add(id);
+        LastFailureError = error;
+        LastFailureNextAttemptAt = nextAttemptAt;
+        return Task.CompletedTask;
     }
 }
 
@@ -777,6 +827,21 @@ internal sealed class RecordingWebhookSender : IRcaWebhookSender
     {
         SentEventIds.Add(outboxEvent.Id);
         return Task.FromResult(RcaWebhookSendResult.Succeeded());
+    }
+}
+
+internal sealed class FailingWebhookSender : IRcaWebhookSender
+{
+    private readonly string _error;
+
+    public FailingWebhookSender(string error)
+    {
+        _error = error;
+    }
+
+    public Task<RcaWebhookSendResult> SendAsync(RcaWebhookOptions webhook, RcaOutboxEvent outboxEvent, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(RcaWebhookSendResult.Failed(_error));
     }
 }
 

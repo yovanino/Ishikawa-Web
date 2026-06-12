@@ -148,6 +148,9 @@ standalone.
   `X-RCA-Outbox-Id`.
 - Agregada firma HMAC SHA-256 de webhooks en `X-RCA-Signature` cuando el
   webhook tiene `Secret`.
+- Agregado manejo inicial de fallo en publicador: si un webhook aplicable
+  falla, el evento se marca `Failed`, guarda error resumido y queda con
+  `NextAttemptAt` a 1 minuto.
 
 ## Pendientes
 
@@ -167,11 +170,11 @@ standalone.
 - Implementar entidad/mapping/migracion `RcaOutboxEvent` como siguiente ajuste
   P2, conservando el feed derivado hasta igualar cobertura outbox.
 - Ejecutar el plan outbox base por tareas, con commit al final de cada ajuste.
-- Siguiente tarea P2: agregar politica de fallos/backoff/dead-letter al
-  publicador; el endpoint de eventos ya usa outbox + fallback derivado, el
-  endpoint de status ya cubre observabilidad, dead-letter ya tiene consulta, el
-  retry manual ya existe y la entrega HTTP basica con firma HMAC ya esta
-  registrada.
+- Siguiente tarea P2: agregar paso a `DeadLetter` al superar maximos intentos y
+  timeout configurado; el endpoint de eventos ya usa outbox + fallback
+  derivado, el endpoint de status ya cubre observabilidad, dead-letter ya tiene
+  consulta, el retry manual ya existe y la entrega HTTP basica con firma HMAC y
+  fallo inicial ya esta registrada.
 
 ## Riesgos
 
@@ -337,6 +340,10 @@ standalone.
   ausencia de `X-RCA-Signature`. Luego `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
+- Para fallo inicial del publicador, se agrego primero una prueba RED que
+  esperaba `MarkFailedAsync`. Luego `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre
 
@@ -363,5 +370,6 @@ standalone.
   seguro cuando no hay webhooks habilitados. Agregado sender abstracto y flujo
   para marcar eventos como publicados cuando la entrega abstracta tiene exito.
   Agregado sender HTTP real para POST de payload outbox y firma HMAC cuando hay
-  secreto configurado.
-- Commit sugerido: `feat(integration): sign RCA webhook payloads`.
+  secreto configurado. Agregado fallo inicial del publicador con `Failed` y
+  `NextAttemptAt` a 1 minuto.
+- Commit sugerido: `feat(integration): handle RCA webhook publish failures`.
