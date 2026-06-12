@@ -4,6 +4,7 @@ using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace IshikawaRca.Web.Controllers.Api;
 
@@ -11,6 +12,8 @@ namespace IshikawaRca.Web.Controllers.Api;
 [Route("api/v1/integrations/rca")]
 public class RcaIntegrationsController : ControllerBase
 {
+    private static readonly JsonSerializerOptions ServerSentEventJsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaOutboxService _rcaOutboxService;
     private readonly IRcaOutboxPublisher _rcaOutboxPublisher;
@@ -62,6 +65,64 @@ public class RcaIntegrationsController : ControllerBase
         var result = await _rcaIncidentService.ListIntegrationEventsAsync(incidentId, since, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpGet("events/live")]
+    [Produces("text/event-stream")]
+    public async Task<IActionResult> StreamEvents(
+        [FromQuery] Guid? incidentId,
+        [FromQuery] DateTimeOffset? since,
+        [FromQuery] int pollIntervalSeconds = 5,
+        [FromQuery] int? maxBatches = null,
+        CancellationToken cancellationToken = default)
+    {
+        Response.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers.Connection = "keep-alive";
+
+        var cursor = since;
+        var interval = TimeSpan.FromSeconds(Math.Clamp(pollIntervalSeconds, 1, 30));
+        var batchLimit = maxBatches.HasValue
+            ? Math.Clamp(maxBatches.Value, 1, 100)
+            : int.MaxValue;
+
+        try
+        {
+            for (var batch = 0; batch < batchLimit && !cancellationToken.IsCancellationRequested; batch++)
+            {
+                var result = await _rcaIncidentService.ListIntegrationEventsAsync(incidentId, cursor, cancellationToken);
+                var events = result.Data?
+                    .OrderBy(x => x.OccurredAt)
+                    .ThenBy(x => x.Id, StringComparer.Ordinal)
+                    .ToList() ?? [];
+
+                foreach (var integrationEvent in events)
+                {
+                    await Response.WriteAsync($"id: {integrationEvent.Id}\n", cancellationToken);
+                    await Response.WriteAsync($"event: {integrationEvent.Type}\n", cancellationToken);
+                    await Response.WriteAsync(
+                        $"data: {JsonSerializer.Serialize(integrationEvent, ServerSentEventJsonOptions)}\n\n",
+                        cancellationToken);
+                }
+
+                if (events.Count > 0)
+                {
+                    cursor = events.Max(x => x.OccurredAt).AddTicks(1);
+                }
+
+                await Response.Body.FlushAsync(cancellationToken);
+
+                if (batch + 1 < batchLimit)
+                {
+                    await Task.Delay(interval, cancellationToken);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+
+        return new EmptyResult();
     }
 
     [HttpGet("outbox/status")]

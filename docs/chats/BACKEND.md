@@ -124,6 +124,9 @@ standalone.
   intake externo cliente/proveedor.
 - Actualizado `ListIntegrationEventsAsync` para combinar eventos outbox y feed
   derivado, deduplicando por `id`.
+- Agregado canal live por Server-Sent Events en
+  `GET /api/v1/integrations/rca/events/live`, reutilizando
+  `RcaDomainEventDto` para timeline y estados.
 - Agregado endpoint protegido
   `GET /api/v1/integrations/rca/outbox/status` para exponer estado operativo
   del outbox con conteos por estado y timestamps de pendientes, reintentos,
@@ -180,9 +183,9 @@ standalone.
 - Siguiente tarea P2: agregar smoke manual de webhook y revisar cierre P2;
   el endpoint de eventos ya usa outbox + fallback derivado, el endpoint de
   status ya cubre observabilidad, dead-letter ya tiene consulta, el retry
-  manual ya existe y la entrega HTTP basica con firma HMAC, timeout configurado,
-  fallo inicial y dead-letter por maximos intentos ya esta registrada. El
-  endpoint publish manual ya existe.
+  manual ya existe, el canal live SSE ya existe y la entrega HTTP basica con
+  firma HMAC, timeout configurado, fallo inicial y dead-letter por maximos
+  intentos ya esta registrada. El endpoint publish manual ya existe.
 
 ## Riesgos
 
@@ -364,6 +367,10 @@ standalone.
   que fallaba porque `RcaHttpWebhookSender` no aceptaba opciones de
   `RcaIntegration`. Luego `dotnet run --project
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
+  IshikawaRca.sln /m:1` pasan en serie.
+- Para canal live SSE, se agrego primero una prueba RED que fallaba porque
+  `RcaIntegrationsController.StreamEvents` no existia. Luego `dotnet run
+  --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` y `dotnet build
   IshikawaRca.sln /m:1` pasan en serie.
 
 ## Ultimo Cierre

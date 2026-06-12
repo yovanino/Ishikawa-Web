@@ -59,6 +59,7 @@ await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
+await AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -514,6 +515,58 @@ static async Task AssertOutboxPublishEndpointInvokesPublisherAsync()
     if (!publisher.WasCalled || !result.Success || result.Data?.PublishedEventCount != 2)
     {
         throw new InvalidOperationException("Expected outbox publish endpoint to invoke the publisher.");
+    }
+}
+
+static async Task AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync()
+{
+    var service = new InMemoryRcaIncidentService();
+    var created = await service.CreateAsync(new CreateRcaIncidentRequest
+    {
+        TenantId = Guid.NewGuid(),
+        Title = "SSE integration event",
+        ProblemDescription = "Test RCA",
+        SourceSystem = "TEST",
+        ReportedBy = "tests"
+    });
+
+    if (created.Data is null)
+    {
+        throw new InvalidOperationException("Expected test incident to be created.");
+    }
+
+    await using var body = new MemoryStream();
+    var controller = new RcaIntegrationsController(service, null!, null!)
+    {
+        ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                Response =
+                {
+                    Body = body
+                }
+            }
+        }
+    };
+
+    var response = await controller.StreamEvents(
+        created.Data.Id,
+        null,
+        pollIntervalSeconds: 1,
+        maxBatches: 1,
+        CancellationToken.None);
+
+    body.Position = 0;
+    using var reader = new StreamReader(body, Encoding.UTF8);
+    var streamText = await reader.ReadToEndAsync();
+
+    if (response is not EmptyResult ||
+        controller.Response.ContentType != "text/event-stream" ||
+        !streamText.Contains("event: RcaIncidentCreated", StringComparison.Ordinal) ||
+        !streamText.Contains("\"type\":\"RcaIncidentCreated\"", StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException("Expected live integration events endpoint to write RCA events as server-sent events.");
     }
 }
 

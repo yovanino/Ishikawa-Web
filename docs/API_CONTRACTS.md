@@ -293,6 +293,7 @@ Estas APIs son la superficie recomendada para Gantt, gateway industrial, OEE, An
 GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
 GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
+GET /api/v1/integrations/rca/events/live?incidentId=&since=&pollIntervalSeconds=
 GET /api/v1/integrations/rca/outbox/status
 GET /api/v1/integrations/rca/outbox/dead-letter?take=
 POST /api/v1/integrations/rca/outbox/publish
@@ -302,6 +303,20 @@ POST /api/v1/integrations/rca/outbox/{id}/retry
 El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
 consumidores externos quedan documentados en
 `docs/INTEGRATION_EVENTS.md`.
+
+Canal live de eventos:
+
+```http
+GET /api/v1/integrations/rca/events/live?incidentId={id}&since={isoDate}&pollIntervalSeconds=5
+Accept: text/event-stream
+```
+
+Devuelve Server-Sent Events (`text/event-stream`) sobre el mismo envelope
+`RcaDomainEventDto` del feed `/events`. Cada mensaje incluye `id`, `event` con
+el tipo de evento RCA y `data` serializado en JSON. `pollIntervalSeconds` se
+acota internamente entre 1 y 30 segundos. Para pruebas/smoke puede usarse
+`maxBatches`, acotado entre 1 y 100; si no se informa, el stream permanece
+abierto hasta que el cliente cierre la conexion.
 
 Estado operativo del outbox:
 

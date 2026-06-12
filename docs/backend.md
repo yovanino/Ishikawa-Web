@@ -101,6 +101,8 @@ El backend ya cuenta con:
   `EfRcaExternalIntakeService`.
 - El feed de eventos de integracion combina outbox y feed derivado con
   deduplicacion por `id`.
+- Canal live `GET /api/v1/integrations/rca/events/live` por Server-Sent Events
+  sobre `RcaDomainEventDto` para timeline y estados sin acoplamiento directo.
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
   observar conteos y timestamps operativos del outbox sin publicar ni reintentar
   eventos.
@@ -316,3 +318,5 @@ tests MVC/UI, CI/CD y storage documental productivo.
   que invoca `IRcaOutboxPublisher.PublishPendingAsync` y devuelve
   `RcaOutboxPublishResultDto`.
 - Timeout configurado cubierto por prueba liviana y DI de infraestructura.
+- Agregado endpoint live SSE `GET /api/v1/integrations/rca/events/live`, con
+  polling configurable, cursor `since` y payload `RcaDomainEventDto`.

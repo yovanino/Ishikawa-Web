@@ -1349,6 +1349,27 @@ Checks:
 
 Result: passed.
 
+## 2026-06-12 - RCA live integration events
+
+Scope: validate a live channel for RCA timeline/status integration events.
+
+Checks:
+
+- Added RED test for `RcaIntegrationsController.StreamEvents` writing
+  Server-Sent Events.
+- Implemented `GET /api/v1/integrations/rca/events/live` with
+  `text/event-stream`, `RcaDomainEventDto` JSON payloads, cursor advancement by
+  `OccurredAt + 1 tick`, clamped polling interval and optional `maxBatches` for
+  smoke/tests.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-12 - RCA webhook configured timeout
 
 Scope: validate configured timeout handling for outbound RCA webhooks.

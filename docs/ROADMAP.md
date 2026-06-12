@@ -278,7 +278,7 @@ Objetivo: conectar el RCA con otros modulos/sistemas sin acoplamiento directo.
 - [ ] Webhooks configurables.
 - [ ] Outbox transaccional.
 - [ ] Contratos de eventos listos para broker/event bus.
-- [ ] SignalR o canal live para timeline y estados.
+- [x] SignalR o canal live para timeline y estados.
 - [ ] Integracion API concreta con Gantt.
 - [ ] Integracion API concreta con Gateway/SCADA para facts.
 - [ ] Estados y auditoria ampliada para consumidores externos.
@@ -384,6 +384,11 @@ publicador outbox y devolver `RcaOutboxPublishResultDto`.
 Avance P2 2026-06-12: `RcaHttpWebhookSender` aplica
 `RcaIntegration:PublishTimeoutSeconds` por request y devuelve fallo controlado
 cuando un destino webhook no responde a tiempo.
+
+Avance P2 2026-06-12: se agrega canal live por Server-Sent Events en
+`GET /api/v1/integrations/rca/events/live`, reutilizando el envelope
+`RcaDomainEventDto` del feed y polling desacoplado sobre los eventos de
+integracion.
 
 Criterio de salida P2:
 
