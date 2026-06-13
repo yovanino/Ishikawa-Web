@@ -34,6 +34,16 @@ public class HttpRcaAiGatewayClient : IRcaAiGatewayClient
         return PostAsync<RcaAiSummaryResultDto>("/ai/rca/summarize", context, cancellationToken);
     }
 
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return PostAsync<RcaAiRecurrenceResultDto>("/ai/rca/detect-recurrence", context, cancellationToken);
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return PostAsync<RcaAiEightDDraftResultDto>("/ai/rca/generate-8d-draft", context, cancellationToken);
+    }
+
     private async Task<ApiResult<T>> PostAsync<T>(string path, RcaAiContextDto context, CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(_options.BaseUrl, UriKind.Absolute, out var baseUri))

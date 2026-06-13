@@ -378,3 +378,20 @@ live, outbox o webhooks versionados.
 - La DI de IA reutiliza un `HttpClient` compartido para
   `HttpRcaAiGatewayClient`, evitando recrearlo por scope sin agregar paquetes
   nuevos.
+
+### 2026-06-13 - Recurrencia y borrador 8D P3
+
+- Extendidos `IRcaAiAssistantService` e `IRcaAiGatewayClient` con
+  `DetectRecurrenceAsync` y `GenerateEightDDraftAsync`.
+- `RcaAiAssistantService` ahora reutiliza el armado de contexto RCA para
+  deteccion de recurrencia y generacion de borrador 8D.
+- `HttpRcaAiGatewayClient` publica a `/ai/rca/detect-recurrence` y
+  `/ai/rca/generate-8d-draft`.
+- `ConfiguredRcaAiGatewayClient` enruta ambos metodos por el mismo
+  `ExecuteAsync` usado por causas, acciones y resumen.
+- `StubRcaAiGatewayClient` agrega respuestas deterministicas para recurrencia y
+  borrador 8D, ambas con `metadata.isFallback = true`.
+- `RcaAiController` expone `POST /api/v1/rca/incidents/{id}/ai/detect-recurrence`
+  y `POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft`.
+- La suite liviana cubre el POST HTTP de recurrencia, la exposicion de ambos
+  endpoints en controller y el comportamiento fallback/no mutacion del stub.

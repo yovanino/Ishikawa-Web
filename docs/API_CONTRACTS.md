@@ -383,9 +383,48 @@ Estas APIs son opt-in. El RCA debe seguir funcionando aunque la IA este apagada 
 POST /api/v1/rca/incidents/{id}/ai/suggest-causes
 POST /api/v1/rca/incidents/{id}/ai/suggest-actions
 POST /api/v1/rca/incidents/{id}/ai/summarize
+POST /api/v1/rca/incidents/{id}/ai/detect-recurrence
+POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft
 ```
 
 La respuesta incluye `metadata.provider`, `metadata.model` e `metadata.isFallback` para que la UI o la app global sepan si la recomendacion vino de IA real o de fallback.
+
+Deteccion de recurrencia:
+
+```json
+{
+  "incidentId": "11111111-1111-1111-1111-111111111111",
+  "isLikelyRecurring": true,
+  "confidenceScore": 88,
+  "rationale": "Repeated machine pattern.",
+  "similarSignals": [
+    "Same line"
+  ],
+  "metadata": {
+    "provider": "Gateway",
+    "model": "rca-v1",
+    "isFallback": false
+  }
+}
+```
+
+Borrador 8D:
+
+```json
+{
+  "incidentId": "11111111-1111-1111-1111-111111111111",
+  "problemStatement": "Repeated weld deviation",
+  "containmentActions": "Definir contencion temporal y responsable.",
+  "rootCauseAnalysis": "Completar causa raiz con evidencia validada.",
+  "correctiveActions": "Convertir acciones RCA aceptadas en plan 8D.",
+  "verificationPlan": "Verificar eficacia antes de cierre formal.",
+  "metadata": {
+    "provider": "Gateway",
+    "model": "rca-v1",
+    "isFallback": false
+  }
+}
+```
 
 Snapshot de integracion:
 

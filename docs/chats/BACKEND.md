@@ -186,6 +186,17 @@ standalone.
   `IRcaAiGatewayClient` como `ConfiguredRcaAiGatewayClient`.
 - Ajustada la DI del cliente IA para reutilizar un `HttpClient` compartido en
   lugar de crear uno nuevo por scope, sin agregar paquetes.
+- Cerrada la Task 3 P3 con contratos y endpoints de deteccion de recurrencia y
+  borrador 8D.
+- Agregados `RcaAiRecurrenceResultDto` y `RcaAiEightDDraftResultDto` en
+  `Contracts`.
+- Extendidos `IRcaAiAssistantService`, `IRcaAiGatewayClient`,
+  `RcaAiAssistantService`, `ConfiguredRcaAiGatewayClient`,
+  `HttpRcaAiGatewayClient`, `StubRcaAiGatewayClient` y `RcaAiController`.
+- Agregada cobertura liviana para el POST HTTP a
+  `/ai/rca/detect-recurrence`, la exposicion controller de
+  `detect-recurrence` + `generate-8d-draft` y el comportamiento fallback/no
+  mutacion del stub.
 
 ## Pendientes
 
@@ -215,6 +226,8 @@ standalone.
   endpoint publish, retry/dead-letter/status, canal live SSE, contratos de
   eventos, snapshots Gantt y facts Gateway/SCADA. Los adapters a sistemas
   externos quedan fuera del repo por limite de modulo.
+- Siguiente tramo P3 despues de Task 3: UI de aprobacion humana de sugerencias
+  IA y auditoria de aceptacion/rechazo.
 
 ## Riesgos
 
@@ -424,6 +437,10 @@ standalone.
   tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`, `dotnet build
   IshikawaRca.sln /m:1` y `git diff --check` deben pasar en serie antes del
   commit.
+- Para la Task 3 P3, el estado heredado ya traia la base de codigo verde al
+  inspeccionarlo; se completo la cobertura faltante del stub y el cierre
+  documental. La validacion final requerida queda registrada en
+  `docs/VALIDATION_LOG.md`.
 
 ## Ultimo Cierre
 
@@ -468,3 +485,8 @@ standalone.
   `UseFallbackOnFailure` y agregadas pruebas livianas para fallback a stub,
   modo stub directo y devolucion de fallo HTTP sin fallback.
 - Commit sugerido: `feat(ai): select AI gateway mode with fallback`.
+- Actualizacion Task 3 P3: cerrados los contratos y endpoints de
+  `detect-recurrence` y `generate-8d-draft`, con DTOs nuevos, soporte completo
+  en servicio/gateway/controller, POST HTTP a AI Gateway para recurrencia y
+  cobertura liviana adicional del stub. Commit requerido:
+  `feat(ai): add recurrence and 8D draft suggestions`.

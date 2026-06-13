@@ -1,5 +1,39 @@
 # Validation Log
 
+## 2026-06-13 - P3 recurrence and 8D draft AI endpoints
+
+Scope: close Task 3 for RCA AI recurrence detection and 8D draft suggestions,
+finishing the partial contracts, controller surface and lightweight coverage.
+
+Checks:
+
+- Confirmed `RcaAiRecurrenceResultDto` and `RcaAiEightDDraftResultDto` exist in
+  `Contracts` with the agreed metadata shape.
+- Confirmed `IRcaAiAssistantService`, `IRcaAiGatewayClient` and
+  `RcaAiAssistantService` expose recurrence and 8D draft methods using the same
+  RCA context-building path as the existing AI features.
+- Confirmed `HttpRcaAiGatewayClient` posts recurrence context to
+  `/ai/rca/detect-recurrence` and `ConfiguredRcaAiGatewayClient` routes the new
+  methods through the existing configured execution path.
+- Confirmed `RcaAiController` exposes
+  `POST /api/v1/rca/incidents/{id}/ai/detect-recurrence` and
+  `POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft`.
+- Added lightweight coverage for controller exposure plus stub fallback
+  metadata and no-mutation behavior for recurrence and 8D draft responses.
+
+Validation:
+
+- Current state on inspection: `dotnet run --project
+  tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj` was already green from the
+  inherited partial implementation.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after adding the missing regression coverage.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-12 - P3 AI gateway mode selection hardening
 
 Scope: harden RCA AI gateway mode selection after review by normalizing thrown

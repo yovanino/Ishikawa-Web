@@ -62,6 +62,8 @@ El modulo expone endpoints propios para que la UI o integraciones pidan asistenc
 POST /api/v1/rca/incidents/{id}/ai/suggest-causes
 POST /api/v1/rca/incidents/{id}/ai/suggest-actions
 POST /api/v1/rca/incidents/{id}/ai/summarize
+POST /api/v1/rca/incidents/{id}/ai/detect-recurrence
+POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft
 ```
 
 ## Modo Stub
@@ -87,13 +89,27 @@ Configuracion actual:
 Desde el ajuste P3 del 2026-06-12 existe la base `HttpRcaAiGatewayClient`.
 
 - Publica el `RcaAiContextDto` por JSON a `/ai/rca/suggest-causes`,
-  `/ai/rca/suggest-actions` y `/ai/rca/summarize`.
+  `/ai/rca/suggest-actions`, `/ai/rca/summarize`,
+  `/ai/rca/detect-recurrence` y `/ai/rca/generate-8d-draft`.
 - Usa `AiGateway:BaseUrl` como URL absoluta.
 - Envia `Authorization: Bearer <ApiKey>` cuando `AiGateway:ApiKey` tiene valor.
 - Aplica timeout por request usando `AiGateway:TimeoutSeconds`.
 - Devuelve fallos controlados:
   `AI_GATEWAY_CONFIGURATION_INVALID`, `AI_GATEWAY_UNAVAILABLE` y
   `AI_GATEWAY_INVALID_RESPONSE`.
+
+## Estado actual P3 Task 3
+
+Desde el cierre de Task 3 del 2026-06-13, el modulo ya expone y enruta por
+gateway las sugerencias de deteccion de recurrencia y borrador 8D.
+
+- `RcaAiController` publica `detect-recurrence` y `generate-8d-draft`.
+- `RcaAiAssistantService` arma el `RcaAiContextDto` y delega ambas operaciones
+  al gateway configurado.
+- `StubRcaAiGatewayClient` devuelve respuestas deterministicas con
+  `metadata.isFallback = true` para validar el flujo standalone.
+- `ConfiguredRcaAiGatewayClient` aplica el mismo enrutamiento
+  `Stub`/`Http` + fallback opcional que ya usaban causas, acciones y resumen.
 
 ## Seleccion de modo y fallback
 

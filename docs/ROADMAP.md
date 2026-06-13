@@ -121,9 +121,9 @@ storage documental productivo y AI Gateway HTTP.
 - [x] Cliente AI Gateway abstracto.
 - [x] Stub deterministico local.
 - [x] Endpoints de sugerencia de causas, acciones y resumen.
-- [ ] Cliente HTTP real contra AI Gateway.
-- [ ] Deteccion de recurrencia.
-- [ ] Borrador 8D.
+- [x] Cliente HTTP real contra AI Gateway.
+- [x] Deteccion de recurrencia.
+- [x] Borrador 8D.
 - [ ] Flujo UI de aprobacion humana de sugerencias.
 
 ### UI
@@ -408,15 +408,23 @@ Criterio de salida P2:
 
 Objetivo: pasar de stub IA a asistencia real gobernada.
 
-- [ ] Cliente HTTP real para AI Gateway.
+- [x] Cliente HTTP real para AI Gateway.
 - [ ] Configuracion por ambiente/tenant.
-- [ ] Sugerencias de causas con metadata de modelo/proveedor.
-- [ ] Sugerencias de acciones CAPA.
-- [ ] Resumen del RCA.
-- [ ] Deteccion de recurrencia por historico.
-- [ ] Borrador 8D.
+- [x] Sugerencias de causas con metadata de modelo/proveedor.
+- [x] Sugerencias de acciones CAPA.
+- [x] Resumen del RCA.
+- [x] Deteccion de recurrencia por historico.
+- [x] Borrador 8D.
 - [ ] UI para aceptar/rechazar sugerencias.
 - [ ] Auditoria de sugerencias aceptadas.
+
+Avance P3 2026-06-13: quedan cerrados los contratos y endpoints de
+`detect-recurrence` y `generate-8d-draft`. El modulo ya arma contexto RCA,
+enruta por `ConfiguredRcaAiGatewayClient`, publica por HTTP JSON al AI Gateway
+cuando `AiGateway:Mode = Http` y mantiene respuestas stub deterministicas con
+fallback para modo standalone. Siguen pendientes la configuracion por
+ambiente/tenant, la UI de aprobacion humana y la auditoria de sugerencias
+aceptadas.
 
 Criterio de salida P3:
 

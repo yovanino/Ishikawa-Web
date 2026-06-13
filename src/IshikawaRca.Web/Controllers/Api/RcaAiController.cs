@@ -57,4 +57,22 @@ public class RcaAiController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("detect-recurrence")]
+    [ProducesResponseType(typeof(ApiResult<RcaAiRecurrenceResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiRecurrenceResultDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaAiRecurrenceResultDto>>> DetectRecurrence(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.DetectRecurrenceAsync(id, cancellationToken);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
+
+    [HttpPost("generate-8d-draft")]
+    [ProducesResponseType(typeof(ApiResult<RcaAiEightDDraftResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiEightDDraftResultDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaAiEightDDraftResultDto>>> GenerateEightDDraft(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.GenerateEightDDraftAsync(id, cancellationToken);
+        return result.Success ? Ok(result) : NotFound(result);
+    }
 }

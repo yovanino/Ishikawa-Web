@@ -71,12 +71,15 @@ await AssertHttpAiGatewayClientRejectsInvalidBaseUrlAsync();
 await AssertHttpAiGatewayClientReturnsUnavailableForNonSuccessStatusAsync();
 await AssertHttpAiGatewayClientReturnsInvalidResponseForInvalidJsonAsync();
 await AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTimesOutAsync();
+await AssertHttpAiGatewayClientPostsRecurrenceContextAsync();
+await AssertStubAiGatewayReturnsRecurrenceAndEightDWithoutMutatingContextAsync();
 await AssertConfiguredAiGatewayFallsBackWhenHttpFailsAsync();
 await AssertConfiguredAiGatewayUsesStubModeEvenWhenHttpWouldFailAsync();
 await AssertConfiguredAiGatewayReturnsHttpFailureWhenFallbackIsDisabledAsync();
 await AssertConfiguredAiGatewayFallsBackWhenHttpThrowsAsync();
 await AssertConfiguredAiGatewayReturnsUnavailableWhenHttpThrowsAndFallbackIsDisabledAsync();
 AssertInfrastructureResolvesConfiguredAiGatewayClient();
+await AssertAiControllerExposesRecurrenceAndEightDAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -156,6 +159,24 @@ static async Task AssertIncompleteExternalFactCorrelationFailsAsync()
     AssertContains(
         result.Errors.Select(x => x.Code).ToList(),
         "EXTERNAL_FACT_CORRELATION_INCOMPLETE");
+}
+
+static async Task AssertAiControllerExposesRecurrenceAndEightDAsync()
+{
+    var service = new RecordingAiAssistantService();
+    var controller = new RcaAiController(service);
+    var id = Guid.NewGuid();
+
+    var recurrence = await controller.DetectRecurrence(id, CancellationToken.None);
+    var eightD = await controller.GenerateEightDDraft(id, CancellationToken.None);
+
+    if (recurrence.Result is not OkObjectResult ||
+        eightD.Result is not OkObjectResult ||
+        !service.DetectRecurrenceCalled ||
+        !service.GenerateEightDCalled)
+    {
+        throw new InvalidOperationException("Expected AI controller to expose recurrence and 8D draft endpoints.");
+    }
 }
 
 static async Task AssertIntegrationEventCompatibilityAsync()
@@ -800,6 +821,103 @@ static async Task AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTim
     AssertContains(result.Errors.Select(x => x.Code).ToList(), "AI_GATEWAY_UNAVAILABLE");
 }
 
+static async Task AssertHttpAiGatewayClientPostsRecurrenceContextAsync()
+{
+    var incidentId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    var handler = new RecordingHttpMessageHandler(HttpStatusCode.OK)
+    {
+        ResponseContent = """
+        {
+          "incidentId":"11111111-1111-1111-1111-111111111111",
+          "isLikelyRecurring":true,
+          "confidenceScore":88,
+          "rationale":"Repeated machine pattern.",
+          "similarSignals":["Same line"],
+          "metadata":{
+            "provider":"Gateway",
+            "model":"rca-v1",
+            "isFallback":false,
+            "generatedAt":"2026-06-12T00:00:00Z"
+          }
+        }
+        """
+    };
+    var client = new HttpRcaAiGatewayClient(
+        new HttpClient(handler),
+        Options.Create(new RcaAiGatewayOptions
+        {
+            BaseUrl = "https://ai.example.local",
+            TimeoutSeconds = 5
+        }));
+
+    var result = await client.DetectRecurrenceAsync(new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = incidentId,
+            Title = "AI RCA recurrence"
+        }
+    });
+
+    if (!result.Success ||
+        result.Data?.IncidentId != incidentId ||
+        handler.Requests.Single().RequestUri?.ToString() != "https://ai.example.local/ai/rca/detect-recurrence")
+    {
+        throw new InvalidOperationException("Expected HTTP AI Gateway client to POST recurrence context to the recurrence endpoint.");
+    }
+}
+
+static async Task AssertStubAiGatewayReturnsRecurrenceAndEightDWithoutMutatingContextAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var context = new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = incidentId,
+            Title = "Recurring defect",
+            ProblemDescription = "Repeated weld deviation"
+        },
+        Canvas = new IshikawaCanvasDto
+        {
+            Causes =
+            [
+                new IshikawaCauseDto { Id = Guid.NewGuid(), Title = "Cause 1" },
+                new IshikawaCauseDto { Id = Guid.NewGuid(), Title = "Cause 2" },
+                new IshikawaCauseDto { Id = Guid.NewGuid(), Title = "Cause 3" }
+            ]
+        }
+    };
+
+    var originalCauseCount = context.Canvas.Causes.Count;
+    var stub = new StubRcaAiGatewayClient();
+
+    var recurrence = await stub.DetectRecurrenceAsync(context);
+    var eightD = await stub.GenerateEightDDraftAsync(context);
+
+    if (!recurrence.Success ||
+        recurrence.Data?.IncidentId != incidentId ||
+        recurrence.Data.Metadata.IsFallback != true ||
+        recurrence.Data.IsLikelyRecurring != true ||
+        recurrence.Data.SimilarSignals.Count != 2)
+    {
+        throw new InvalidOperationException("Expected stub recurrence suggestion with fallback metadata.");
+    }
+
+    if (!eightD.Success ||
+        eightD.Data?.IncidentId != incidentId ||
+        eightD.Data.Metadata.IsFallback != true ||
+        eightD.Data.ProblemStatement != "Repeated weld deviation")
+    {
+        throw new InvalidOperationException("Expected stub 8D draft with fallback metadata.");
+    }
+
+    if (context.Canvas.Causes.Count != originalCauseCount)
+    {
+        throw new InvalidOperationException("Expected stub AI calls to avoid mutating the RCA context.");
+    }
+}
+
 static async Task AssertConfiguredAiGatewayFallsBackWhenHttpFailsAsync()
 {
     var fallback = new StubRcaAiGatewayClient();
@@ -1419,6 +1537,16 @@ internal sealed class FailingAiGatewayClient : IRcaAiGatewayClient
     {
         return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
     }
+
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiRecurrenceResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiEightDDraftResultDto>.Fail("Gateway down", new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" }));
+    }
 }
 
 internal sealed class ThrowingAiGatewayClient : IRcaAiGatewayClient
@@ -1436,6 +1564,76 @@ internal sealed class ThrowingAiGatewayClient : IRcaAiGatewayClient
     public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Gateway down");
+    }
+
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        throw new HttpRequestException("Gateway down");
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        throw new HttpRequestException("Gateway down");
+    }
+}
+
+internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
+{
+    public bool DetectRecurrenceCalled { get; private set; }
+    public bool GenerateEightDCalled { get; private set; }
+
+    public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiCauseSuggestionResultDto>.Ok(new RcaAiCauseSuggestionResultDto
+        {
+            IncidentId = incidentId,
+            Summary = "ok",
+            Suggestions = [],
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiActionSuggestionResultDto>> SuggestActionsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiActionSuggestionResultDto>.Ok(new RcaAiActionSuggestionResultDto
+        {
+            IncidentId = incidentId,
+            Summary = "ok",
+            Suggestions = [],
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Ok(new RcaAiSummaryResultDto
+        {
+            IncidentId = incidentId,
+            ExecutiveSummary = "ok",
+            RiskAssessment = "ok",
+            RecommendedNextSteps = [],
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        DetectRecurrenceCalled = true;
+        return Task.FromResult(ApiResult<RcaAiRecurrenceResultDto>.Ok(new RcaAiRecurrenceResultDto
+        {
+            IncidentId = incidentId,
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        GenerateEightDCalled = true;
+        return Task.FromResult(ApiResult<RcaAiEightDDraftResultDto>.Ok(new RcaAiEightDDraftResultDto
+        {
+            IncidentId = incidentId,
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
     }
 }
 

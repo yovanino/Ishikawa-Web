@@ -109,6 +109,33 @@ public class StubRcaAiGatewayClient : IRcaAiGatewayClient
         return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Ok(result));
     }
 
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiRecurrenceResultDto>.Ok(new RcaAiRecurrenceResultDto
+        {
+            IncidentId = context.Incident.Id,
+            IsLikelyRecurring = context.Canvas.Causes.Count > 2,
+            ConfidenceScore = 62,
+            Rationale = "Modo stub: recurrencia estimada por cantidad de causas y acciones abiertas.",
+            SimilarSignals = ["Misma linea o maquina", "Acciones abiertas"],
+            Metadata = CreateMetadata()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiEightDDraftResultDto>.Ok(new RcaAiEightDDraftResultDto
+        {
+            IncidentId = context.Incident.Id,
+            ProblemStatement = context.Incident.ProblemDescription ?? string.Empty,
+            ContainmentActions = "Definir contencion temporal y responsable.",
+            RootCauseAnalysis = "Completar causa raiz con evidencia validada.",
+            CorrectiveActions = "Convertir acciones RCA aceptadas en plan 8D.",
+            VerificationPlan = "Verificar eficacia antes de cierre formal.",
+            Metadata = CreateMetadata()
+        }));
+    }
+
     private static string BuildCauseTitle(string branch, RcaAiContextDto context)
     {
         return branch switch

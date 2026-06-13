@@ -98,7 +98,9 @@ gobernada y reportes corporativos de auditoria.
 - Definir integracion futura con Identity global y tenant corporativo real.
 - Agregar suite formal ampliada de tests unitarios/integracion sobre la base de
   smokes y pruebas livianas actuales.
-- Reemplazar `StubRcaAiGatewayClient` por cliente HTTP cuando exista el AI Gateway compartido.
+- Completar configuracion por ambiente/tenant y operacion productiva del
+  `ConfiguredRcaAiGatewayClient`; el cliente HTTP y los endpoints de
+  recurrencia/borrador 8D ya existen.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
 - Extender UI/API de auditoria fina, reapertura gobernada y reportes cuando se

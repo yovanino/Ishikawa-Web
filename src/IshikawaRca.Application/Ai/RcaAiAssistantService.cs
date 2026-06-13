@@ -48,6 +48,28 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         return await _aiGatewayClient.SummarizeAsync(contextResult.Data, cancellationToken);
     }
 
+    public async Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var contextResult = await BuildContextAsync(incidentId, cancellationToken);
+        if (!contextResult.Success || contextResult.Data is null)
+        {
+            return ApiResult<RcaAiRecurrenceResultDto>.Fail(contextResult.Message ?? "No se pudo armar el contexto RCA.", contextResult.Errors.ToArray());
+        }
+
+        return await _aiGatewayClient.DetectRecurrenceAsync(contextResult.Data, cancellationToken);
+    }
+
+    public async Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        var contextResult = await BuildContextAsync(incidentId, cancellationToken);
+        if (!contextResult.Success || contextResult.Data is null)
+        {
+            return ApiResult<RcaAiEightDDraftResultDto>.Fail(contextResult.Message ?? "No se pudo armar el contexto RCA.", contextResult.Errors.ToArray());
+        }
+
+        return await _aiGatewayClient.GenerateEightDDraftAsync(contextResult.Data, cancellationToken);
+    }
+
     private async Task<ApiResult<RcaAiContextDto>> BuildContextAsync(Guid incidentId, CancellationToken cancellationToken)
     {
         var incidentResult = await _rcaIncidentService.GetByIdAsync(incidentId, cancellationToken);

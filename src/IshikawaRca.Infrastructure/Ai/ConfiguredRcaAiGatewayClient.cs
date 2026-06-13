@@ -42,6 +42,20 @@ public class ConfiguredRcaAiGatewayClient : IRcaAiGatewayClient
             stubClient => stubClient.SummarizeAsync(context, cancellationToken));
     }
 
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return ExecuteAsync(
+            httpClient => httpClient.DetectRecurrenceAsync(context, cancellationToken),
+            stubClient => stubClient.DetectRecurrenceAsync(context, cancellationToken));
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return ExecuteAsync(
+            httpClient => httpClient.GenerateEightDDraftAsync(context, cancellationToken),
+            stubClient => stubClient.GenerateEightDDraftAsync(context, cancellationToken));
+    }
+
     private async Task<ApiResult<T>> ExecuteAsync<T>(
         Func<IRcaAiGatewayClient, Task<ApiResult<T>>> runHttp,
         Func<IRcaAiGatewayClient, Task<ApiResult<T>>> runStub)
