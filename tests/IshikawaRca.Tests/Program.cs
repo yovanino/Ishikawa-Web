@@ -73,6 +73,7 @@ await AssertHttpAiGatewayClientReturnsInvalidResponseForInvalidJsonAsync();
 await AssertHttpAiGatewayClientReturnsUnavailableWhenResponseReadTimesOutAsync();
 await AssertHttpAiGatewayClientPostsRecurrenceContextAsync();
 await AssertStubAiGatewayReturnsRecurrenceAndEightDWithoutMutatingContextAsync();
+await AssertStubAiGatewayMetadataIsDeterministicAsync();
 await AssertConfiguredAiGatewayFallsBackWhenHttpFailsAsync();
 await AssertConfiguredAiGatewayUsesStubModeEvenWhenHttpWouldFailAsync();
 await AssertConfiguredAiGatewayReturnsHttpFailureWhenFallbackIsDisabledAsync();
@@ -915,6 +916,38 @@ static async Task AssertStubAiGatewayReturnsRecurrenceAndEightDWithoutMutatingCo
     if (context.Canvas.Causes.Count != originalCauseCount)
     {
         throw new InvalidOperationException("Expected stub AI calls to avoid mutating the RCA context.");
+    }
+}
+
+static async Task AssertStubAiGatewayMetadataIsDeterministicAsync()
+{
+    var context = new RcaAiContextDto
+    {
+        Incident = new RcaIncidentDto
+        {
+            Id = Guid.NewGuid(),
+            Title = "Deterministic stub",
+            ProblemDescription = "Same input must keep fallback metadata stable"
+        },
+        Canvas = new IshikawaCanvasDto()
+    };
+
+    var stub = new StubRcaAiGatewayClient();
+
+    var first = await stub.DetectRecurrenceAsync(context);
+    var second = await stub.DetectRecurrenceAsync(context);
+    var firstDraft = await stub.GenerateEightDDraftAsync(context);
+    var secondDraft = await stub.GenerateEightDDraftAsync(context);
+
+    if (!first.Success || !second.Success || !firstDraft.Success || !secondDraft.Success)
+    {
+        throw new InvalidOperationException("Expected stub AI calls to succeed for deterministic metadata validation.");
+    }
+
+    if (first.Data?.Metadata.GeneratedAt != second.Data?.Metadata.GeneratedAt ||
+        firstDraft.Data?.Metadata.GeneratedAt != secondDraft.Data?.Metadata.GeneratedAt)
+    {
+        throw new InvalidOperationException("Expected stub AI fallback metadata to be deterministic for identical calls.");
     }
 }
 

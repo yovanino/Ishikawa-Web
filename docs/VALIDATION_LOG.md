@@ -1,5 +1,32 @@
 # Validation Log
 
+## 2026-06-13 - P3 Task 3 deterministic AI stub metadata
+
+Scope: address Task 3 spec review feedback requiring fully deterministic stub
+responses for recurrence and 8D draft suggestions.
+
+Checks:
+
+- Added regression coverage proving repeated `StubRcaAiGatewayClient` calls keep
+  identical `metadata.generatedAt` values for recurrence and 8D draft flows.
+- Replaced fallback stub metadata generation based on `DateTimeOffset.UtcNow`
+  with a fixed timestamp owned by the stub implementation.
+- Updated backend and AI integration docs to document deterministic fallback
+  metadata.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first with `Expected stub AI fallback metadata to be deterministic for
+  identical calls.`
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after making stub fallback metadata fixed.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 recurrence and 8D draft AI endpoints
 
 Scope: close Task 3 for RCA AI recurrence detection and 8D draft suggestions,

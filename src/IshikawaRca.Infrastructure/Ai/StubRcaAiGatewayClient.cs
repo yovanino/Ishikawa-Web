@@ -6,6 +6,8 @@ namespace IshikawaRca.Infrastructure.Ai;
 
 public class StubRcaAiGatewayClient : IRcaAiGatewayClient
 {
+    private static readonly DateTimeOffset StubGeneratedAt = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
     public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
     {
         var existingBranches = context.Canvas.Branches
@@ -162,7 +164,7 @@ public class StubRcaAiGatewayClient : IRcaAiGatewayClient
             Provider = "IshikawaRca.Stub",
             Model = "rules-v1",
             IsFallback = true,
-            GeneratedAt = DateTimeOffset.UtcNow
+            GeneratedAt = StubGeneratedAt
         };
     }
 }

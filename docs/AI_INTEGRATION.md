@@ -107,7 +107,8 @@ gateway las sugerencias de deteccion de recurrencia y borrador 8D.
 - `RcaAiAssistantService` arma el `RcaAiContextDto` y delega ambas operaciones
   al gateway configurado.
 - `StubRcaAiGatewayClient` devuelve respuestas deterministicas con
-  `metadata.isFallback = true` para validar el flujo standalone.
+  `metadata.isFallback = true` y `metadata.generatedAt` fijo para validar el
+  flujo standalone sin depender del reloj del servidor.
 - `ConfiguredRcaAiGatewayClient` aplica el mismo enrutamiento
   `Stub`/`Http` + fallback opcional que ya usaban causas, acciones y resumen.
 

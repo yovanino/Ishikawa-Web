@@ -390,8 +390,18 @@ live, outbox o webhooks versionados.
 - `ConfiguredRcaAiGatewayClient` enruta ambos metodos por el mismo
   `ExecuteAsync` usado por causas, acciones y resumen.
 - `StubRcaAiGatewayClient` agrega respuestas deterministicas para recurrencia y
-  borrador 8D, ambas con `metadata.isFallback = true`.
+  borrador 8D, ambas con `metadata.isFallback = true` y `metadata.generatedAt`
+  fijo para no depender del reloj del servidor.
 - `RcaAiController` expone `POST /api/v1/rca/incidents/{id}/ai/detect-recurrence`
   y `POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft`.
 - La suite liviana cubre el POST HTTP de recurrencia, la exposicion de ambos
   endpoints en controller y el comportamiento fallback/no mutacion del stub.
+
+### 2026-06-13 - Hardening post-review de stub IA P3 Task 3
+
+- `StubRcaAiGatewayClient` ahora usa una marca `generatedAt` fija para la
+  metadata fallback.
+- El resultado de recurrencia y borrador 8D en modo stub queda estable para
+  llamadas identicas, incluyendo metadata.
+- La suite liviana agrega una regresion para validar metadata deterministica en
+  el stub.
