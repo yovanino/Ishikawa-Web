@@ -441,3 +441,17 @@ live, outbox o webhooks versionados.
 - La DI registra `IRcaAiSuggestionStore` con implementacion EF.
 - La suite liviana valida que `SuggestCausesAsync` persiste una sugerencia
   pendiente por cada causa devuelta por el gateway.
+
+### 2026-06-13 - Hardening post-review de persistencia IA P3 Task 5
+
+- `IRcaAiSuggestionStore` ahora guarda batches mediante
+  `SavePendingBatchAsync`, evitando persistencias parciales por loop de servicio.
+- `EfRcaAiSuggestionStore` usa un solo `SaveChangesAsync` por batch y filtra
+  duplicados ya existentes o repetidos en el mismo batch.
+- Se calcula `GatewayCorrelationId` estable con hash de tenant, incidente, tipo
+  y payload JSON; la DB agrega indice unico `TenantId + GatewayCorrelationId`.
+- Los campos generados por IA se recortan antes de persistir para respetar
+  longitudes de esquema.
+- `ListSuggestionsAsync` valida el filtro `status` y el store lista por
+  `TenantId + RcaIncidentId`.
+- Agregada migracion `AddRcaAiSuggestionCorrelationIndex`.

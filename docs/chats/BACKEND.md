@@ -502,3 +502,8 @@ standalone.
   pendientes tras respuestas exitosas del gateway para causas, acciones,
   resumen, recurrencia y 8D. Se valido con prueba RED/GREEN de persistencia de
   causas pendientes.
+- Hardening post-review Task 5 P3: el store IA pasa a guardado batch con un
+  unico `SaveChanges`, recorta strings a limites de esquema, calcula
+  `GatewayCorrelationId` estable, filtra duplicados, agrega indice unico
+  `TenantId + GatewayCorrelationId`, lista por tenant/incidente y rechaza status
+  invalidos con `AI_SUGGESTION_STATUS_INVALID`.

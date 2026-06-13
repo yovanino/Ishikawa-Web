@@ -29,19 +29,15 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         var result = await _aiGatewayClient.SuggestCausesAsync(contextResult.Data, cancellationToken);
         if (result.Success && result.Data is not null)
         {
-            foreach (var suggestion in result.Data.Suggestions)
-            {
-                await _suggestionStore.SavePendingAsync(
-                    contextResult.Data.Incident.TenantId,
-                    incidentId,
+            await SavePendingBatchAsync(
+                contextResult.Data,
+                result.Data.Suggestions.Select(x => new RcaAiPendingSuggestionInput(
                     RcaAiSuggestionType.Cause,
-                    suggestion.Title,
+                    x.Title,
                     result.Data.Summary,
-                    suggestion,
-                    result.Data.Metadata,
-                    "ai-request",
-                    cancellationToken);
-            }
+                    x,
+                    result.Data.Metadata)).ToList(),
+                cancellationToken);
         }
 
         return result;
@@ -58,19 +54,15 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         var result = await _aiGatewayClient.SuggestActionsAsync(contextResult.Data, cancellationToken);
         if (result.Success && result.Data is not null)
         {
-            foreach (var suggestion in result.Data.Suggestions)
-            {
-                await _suggestionStore.SavePendingAsync(
-                    contextResult.Data.Incident.TenantId,
-                    incidentId,
+            await SavePendingBatchAsync(
+                contextResult.Data,
+                result.Data.Suggestions.Select(x => new RcaAiPendingSuggestionInput(
                     RcaAiSuggestionType.Action,
-                    suggestion.Title,
+                    x.Title,
                     result.Data.Summary,
-                    suggestion,
-                    result.Data.Metadata,
-                    "ai-request",
-                    cancellationToken);
-            }
+                    x,
+                    result.Data.Metadata)).ToList(),
+                cancellationToken);
         }
 
         return result;
@@ -87,15 +79,9 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         var result = await _aiGatewayClient.SummarizeAsync(contextResult.Data, cancellationToken);
         if (result.Success && result.Data is not null)
         {
-            await _suggestionStore.SavePendingAsync(
-                contextResult.Data.Incident.TenantId,
-                incidentId,
-                RcaAiSuggestionType.Summary,
-                "Resumen ejecutivo IA",
-                result.Data.ExecutiveSummary,
-                result.Data,
-                result.Data.Metadata,
-                "ai-request",
+            await SavePendingBatchAsync(
+                contextResult.Data,
+                [new RcaAiPendingSuggestionInput(RcaAiSuggestionType.Summary, "Resumen ejecutivo IA", result.Data.ExecutiveSummary, result.Data, result.Data.Metadata)],
                 cancellationToken);
         }
 
@@ -113,15 +99,9 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         var result = await _aiGatewayClient.DetectRecurrenceAsync(contextResult.Data, cancellationToken);
         if (result.Success && result.Data is not null)
         {
-            await _suggestionStore.SavePendingAsync(
-                contextResult.Data.Incident.TenantId,
-                incidentId,
-                RcaAiSuggestionType.Recurrence,
-                "Deteccion de recurrencia IA",
-                result.Data.Rationale,
-                result.Data,
-                result.Data.Metadata,
-                "ai-request",
+            await SavePendingBatchAsync(
+                contextResult.Data,
+                [new RcaAiPendingSuggestionInput(RcaAiSuggestionType.Recurrence, "Deteccion de recurrencia IA", result.Data.Rationale, result.Data, result.Data.Metadata)],
                 cancellationToken);
         }
 
@@ -139,15 +119,9 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         var result = await _aiGatewayClient.GenerateEightDDraftAsync(contextResult.Data, cancellationToken);
         if (result.Success && result.Data is not null)
         {
-            await _suggestionStore.SavePendingAsync(
-                contextResult.Data.Incident.TenantId,
-                incidentId,
-                RcaAiSuggestionType.EightD,
-                "Borrador 8D IA",
-                result.Data.ProblemStatement,
-                result.Data,
-                result.Data.Metadata,
-                "ai-request",
+            await SavePendingBatchAsync(
+                contextResult.Data,
+                [new RcaAiPendingSuggestionInput(RcaAiSuggestionType.EightD, "Borrador 8D IA", result.Data.ProblemStatement, result.Data, result.Data.Metadata)],
                 cancellationToken);
         }
 
@@ -162,8 +136,47 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             return ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Fail(incidentResult.Message ?? "No se encontro el incidente RCA.", incidentResult.Errors.ToArray());
         }
 
-        var suggestions = await _suggestionStore.ListAsync(incidentId, status, cancellationToken);
+        if (!TryParseSuggestionStatus(status, out var parsedStatus))
+        {
+            return ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Fail(
+                "El estado de sugerencia IA no es valido.",
+                new ApiError { Field = nameof(status), Code = "AI_SUGGESTION_STATUS_INVALID", Message = "El estado informado no corresponde a una sugerencia IA." });
+        }
+
+        var suggestions = await _suggestionStore.ListAsync(incidentResult.Data.TenantId, incidentId, parsedStatus, cancellationToken);
         return ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Ok(suggestions);
+    }
+
+    private async Task SavePendingBatchAsync(RcaAiContextDto context, IReadOnlyList<RcaAiPendingSuggestionInput> suggestions, CancellationToken cancellationToken)
+    {
+        if (suggestions.Count == 0)
+        {
+            return;
+        }
+
+        await _suggestionStore.SavePendingBatchAsync(
+            context.Incident.TenantId,
+            context.Incident.Id,
+            suggestions,
+            "ai-request",
+            cancellationToken);
+    }
+
+    private static bool TryParseSuggestionStatus(string? status, out RcaAiSuggestionStatus? parsedStatus)
+    {
+        parsedStatus = null;
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return true;
+        }
+
+        if (!Enum.TryParse<RcaAiSuggestionStatus>(status, true, out var value))
+        {
+            return false;
+        }
+
+        parsedStatus = value;
+        return true;
     }
 
     private async Task<ApiResult<RcaAiContextDto>> BuildContextAsync(Guid incidentId, CancellationToken cancellationToken)

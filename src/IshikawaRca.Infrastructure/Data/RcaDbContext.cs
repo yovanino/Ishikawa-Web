@@ -334,6 +334,7 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.Status });
         entity.HasIndex(x => new { x.TenantId, x.CreatedAt });
         entity.HasIndex(x => new { x.TenantId, x.SuggestionType, x.Status });
+        entity.HasIndex(x => new { x.TenantId, x.GatewayCorrelationId }).IsUnique();
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

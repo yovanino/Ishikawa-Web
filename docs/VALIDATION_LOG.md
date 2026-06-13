@@ -1,5 +1,33 @@
 # Validation Log
 
+## 2026-06-13 - P3 Task 5 AI suggestion persistence hardening
+
+Scope: address Task 5 quality review feedback before starting accept/reject
+governance.
+
+Checks:
+
+- Replaced per-suggestion persistence calls with `SavePendingBatchAsync`.
+- `EfRcaAiSuggestionStore` now serializes candidates, truncates text fields to
+  schema limits, computes stable `GatewayCorrelationId` values and saves a
+  deduplicated batch with one `SaveChangesAsync`.
+- Added unique EF index and migration for `TenantId + GatewayCorrelationId`.
+- `ListSuggestionsAsync` now validates `status` and returns
+  `AI_SUGGESTION_STATUS_INVALID` for invalid filters.
+- Store listing now filters by `TenantId + RcaIncidentId`.
+- Extended lightweight tests to verify a single batch save for cause suggestions
+  and controlled invalid-status failure.
+
+Validation:
+
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after the hardening changes.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 5 persist pending RCA AI suggestions
 
 Scope: persist AI/fallback suggestions as pending auditable records after

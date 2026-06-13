@@ -85,6 +85,7 @@ await AssertAiControllerExposesRecurrenceAndEightDAsync();
 await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
 await AssertAiControllerMapsMissingRcaToNotFoundAsync();
 await AssertAiAssistantPersistsPendingCauseSuggestionsAsync();
+await AssertAiAssistantRejectsInvalidSuggestionStatusAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -252,12 +253,30 @@ static async Task AssertAiAssistantPersistsPendingCauseSuggestionsAsync()
     }
 
     if (store.Saved.Count != 2 ||
+        store.SaveBatchCallCount != 1 ||
         store.Saved.Any(x => x.TenantId != tenantId || x.IncidentId != incidentId) ||
         store.Saved.Any(x => x.Type != RcaAiSuggestionType.Cause) ||
         store.Saved.Any(x => x.CreatedByUserId != "ai-request") ||
         store.Saved.Any(x => !x.Metadata.IsFallback))
     {
         throw new InvalidOperationException("Expected AI assistant to persist one pending cause suggestion per gateway suggestion.");
+    }
+}
+
+static async Task AssertAiAssistantRejectsInvalidSuggestionStatusAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var service = new RcaAiAssistantService(
+        new FixedRcaIncidentService(tenantId, incidentId),
+        new FixedAiGatewayClient(),
+        new RecordingAiSuggestionStore());
+
+    var result = await service.ListSuggestionsAsync(incidentId, "PendienteMalEscrito", CancellationToken.None);
+
+    if (result.Success || result.Errors.All(x => x.Code != "AI_SUGGESTION_STATUS_INVALID"))
+    {
+        throw new InvalidOperationException("Expected invalid AI suggestion status filters to fail with a controlled error.");
     }
 }
 
@@ -1804,23 +1823,29 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
 {
     public List<SavedAiSuggestion> Saved { get; } = [];
+    public int SaveBatchCallCount { get; private set; }
 
-    public Task SavePendingAsync(
+    public Task SavePendingBatchAsync(
         Guid tenantId,
         Guid incidentId,
-        RcaAiSuggestionType type,
-        string title,
-        string summary,
-        object payload,
-        RcaAiSuggestionMetadataDto metadata,
+        IReadOnlyList<RcaAiPendingSuggestionInput> suggestions,
         string createdByUserId,
         CancellationToken cancellationToken = default)
     {
-        Saved.Add(new SavedAiSuggestion(tenantId, incidentId, type, title, summary, payload, metadata, createdByUserId));
+        SaveBatchCallCount++;
+        Saved.AddRange(suggestions.Select(x => new SavedAiSuggestion(
+            tenantId,
+            incidentId,
+            x.Type,
+            x.Title,
+            x.Summary,
+            x.Payload,
+            x.Metadata,
+            createdByUserId)));
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<RcaAiSuggestionDto>> ListAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<RcaAiSuggestionDto>> ListAsync(Guid tenantId, Guid incidentId, RcaAiSuggestionStatus? status, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IReadOnlyList<RcaAiSuggestionDto>>([]);
     }

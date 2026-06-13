@@ -152,6 +152,11 @@ despues de respuestas exitosas del gateway:
   de usuario en el flujo de revision.
 - `IRcaAiSuggestionStore` mantiene la frontera Application/Infrastructure para
   no acoplar el servicio de asistencia IA directamente a EF.
+- El store EF guarda batches con un unico `SaveChanges`, recorta campos al
+  limite del esquema, calcula `GatewayCorrelationId` estable por payload y evita
+  duplicados por `TenantId + GatewayCorrelationId`.
+- El listado valida `status` antes de consultar; un valor invalido devuelve
+  `AI_SUGGESTION_STATUS_INVALID`.
 
 ## Fallback
 
