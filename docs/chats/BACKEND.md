@@ -494,3 +494,6 @@ standalone.
   `RCA_NOT_FOUND` (`404`) de fallas `AI_GATEWAY_*` (`503`) en todos los
   endpoints de asistencia IA. Se agrego prueba RED/GREEN para gateway caido y
   RCA inexistente, con validacion en serie verde.
+- Inicio y cierre tecnico Task 4 P3: agregada base persistente auditable de
+  sugerencias IA con `RcaAiSuggestion`, enums de tipo/estado, mapping EF,
+  migracion `AddRcaAiSuggestions` y prueba RED/GREEN de defaults de dominio.

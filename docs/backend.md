@@ -414,3 +414,17 @@ live, outbox o webhooks versionados.
   `503 Service Unavailable` en lugar de `404`.
 - Otros errores controlados quedan como `400 Bad Request`.
 - La suite liviana cubre gateway caido como `503` y RCA inexistente como `404`.
+
+### 2026-06-13 - Dominio y persistencia base de sugerencias IA P3 Task 4
+
+- Agregada entidad `RcaAiSuggestion` como registro auditable standalone para
+  sugerencias IA pendientes de revision humana.
+- Agregados enums `RcaAiSuggestionType` (`Cause`, `Action`, `Summary`,
+  `Recurrence`, `EightD`) y `RcaAiSuggestionStatus` (`Pending`, `Accepted`,
+  `Rejected`, `Expired`).
+- `RcaDbContext` expone `RcaAiSuggestions` y mapea tabla
+  `rca_ai_suggestions` con payload JSON, metadata de gateway/fallback, estado,
+  campos de revision y entidad aplicada.
+- Generada migracion `AddRcaAiSuggestions`.
+- La suite liviana valida defaults de dominio: estado `Pending`, id generado y
+  sugerencia no fallback por defecto.

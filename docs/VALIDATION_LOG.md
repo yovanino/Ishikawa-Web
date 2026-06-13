@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-13 - P3 Task 4 RCA AI suggestion persistence base
+
+Scope: add the domain, EF mapping and migration foundation for auditable AI
+suggestions before implementing save/list/approve workflows.
+
+Checks:
+
+- Added RED domain coverage for `RcaAiSuggestion` defaults.
+- Added `RcaAiSuggestionType` and `RcaAiSuggestionStatus` enums.
+- Added `RcaAiSuggestion` entity inheriting `TenantEntity`.
+- Added `RcaDbContext.RcaAiSuggestions` and table mapping for
+  `rca_ai_suggestions`.
+- Generated EF migration `AddRcaAiSuggestions`.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first because `RcaAiSuggestion`, `RcaAiSuggestionType` and
+  `RcaAiSuggestionStatus` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after adding domain and EF mapping.
+- `dotnet build IshikawaRca.sln /m:1`: passed before migration generation.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after migration generation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 3 AI controller failure status mapping
 
 Scope: address Task 3 quality review feedback requiring AI Gateway failures to

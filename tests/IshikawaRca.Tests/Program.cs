@@ -54,6 +54,7 @@ var completeResolution = new[]
 
 AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEscapeAnalysis: true));
 
+AssertAiSuggestionDefaults();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -97,6 +98,25 @@ static CorrectiveAction NewAction(CorrectiveActionType type, RcaResolutionScope 
         ActionType = type,
         ResolutionScope = scope
     };
+}
+
+static void AssertAiSuggestionDefaults()
+{
+    var suggestion = new RcaAiSuggestion
+    {
+        TenantId = Guid.NewGuid(),
+        RcaIncidentId = Guid.NewGuid(),
+        SuggestionType = RcaAiSuggestionType.Cause,
+        Title = "AI cause",
+        PayloadJson = "{}"
+    };
+
+    if (suggestion.Status != RcaAiSuggestionStatus.Pending ||
+        suggestion.Id == Guid.Empty ||
+        suggestion.IsFallback)
+    {
+        throw new InvalidOperationException("Expected AI suggestions to default to pending, non-fallback review records.");
+    }
 }
 
 static async Task AssertExternalFactIdempotencyAsync()

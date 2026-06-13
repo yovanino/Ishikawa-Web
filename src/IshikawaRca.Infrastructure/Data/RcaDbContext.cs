@@ -30,6 +30,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<RcaOutboxEvent> RcaOutboxEvents => Set<RcaOutboxEvent>();
 
+    public DbSet<RcaAiSuggestion> RcaAiSuggestions => Set<RcaAiSuggestion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -43,6 +45,7 @@ public class RcaDbContext : DbContext
         ConfigureRcaExternalIntakeRequest(modelBuilder);
         ConfigureRcaAuditRecord(modelBuilder);
         ConfigureRcaOutboxEvent(modelBuilder);
+        ConfigureRcaAiSuggestion(modelBuilder);
     }
 
     private static void ConfigureRcaIncident(ModelBuilder modelBuilder)
@@ -307,6 +310,30 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.Status, x.NextAttemptAt });
         entity.HasIndex(x => new { x.TenantId, x.IncidentId, x.OccurredAt });
         entity.HasIndex(x => new { x.TenantId, x.EventType, x.OccurredAt });
+    }
+
+    private static void ConfigureRcaAiSuggestion(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaAiSuggestion>();
+
+        entity.ToTable("rca_ai_suggestions");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.SuggestionType).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.Title).HasMaxLength(300).IsRequired();
+        entity.Property(x => x.Summary).HasMaxLength(4000);
+        entity.Property(x => x.PayloadJson).HasColumnType("json");
+        entity.Property(x => x.Provider).HasMaxLength(100);
+        entity.Property(x => x.Model).HasMaxLength(100);
+        entity.Property(x => x.GatewayCorrelationId).HasMaxLength(200);
+        entity.Property(x => x.ReviewedByUserId).HasMaxLength(160);
+        entity.Property(x => x.ReviewNotes).HasMaxLength(2000);
+        entity.Property(x => x.AppliedEntityType).HasMaxLength(100);
+
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.Status });
+        entity.HasIndex(x => new { x.TenantId, x.CreatedAt });
+        entity.HasIndex(x => new { x.TenantId, x.SuggestionType, x.Status });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

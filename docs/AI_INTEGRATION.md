@@ -129,6 +129,19 @@ Desde la Task 2 del 2026-06-12 el runtime ya no queda fijado al stub.
 La seleccion se resuelve en `ConfiguredRcaAiGatewayClient`, sin cambiar
 controladores, contratos publicos ni `RcaAiAssistantService`.
 
+## Registro auditable de sugerencias
+
+Desde la Task 4 de P3 existe la entidad persistente `RcaAiSuggestion` y la tabla
+`rca_ai_suggestions`. Esta tabla es la base auditable para guardar sugerencias
+pendientes antes de cualquier aceptacion o rechazo humano.
+
+- `SuggestionType`: `Cause`, `Action`, `Summary`, `Recurrence` o `EightD`.
+- `Status`: `Pending`, `Accepted`, `Rejected` o `Expired`.
+- `PayloadJson`: payload original propuesto por IA/fallback.
+- `Provider`, `Model`, `IsFallback` y `Confidence`: metadata de origen.
+- `ReviewedAt`, `ReviewedByUserId`, `ReviewNotes`, `AppliedEntityType` y
+  `AppliedEntityId`: campos reservados para el workflow de revision humana.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.
