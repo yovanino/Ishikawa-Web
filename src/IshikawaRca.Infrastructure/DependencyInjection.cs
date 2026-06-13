@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IRcaExternalIntakeService, EfRcaExternalIntakeService>();
         services.AddScoped<IRcaOutboxService, EfRcaOutboxService>();
         services.AddScoped<IRcaOutboxPublisher, RcaOutboxPublisher>();
+        services.AddScoped<IRcaAiSuggestionStore, EfRcaAiSuggestionStore>();
         services.AddScoped<IRcaWebhookSender>(provider => new RcaHttpWebhookSender(
             new HttpClient(),
             provider.GetRequiredService<IOptions<RcaIntegrationOptions>>()));

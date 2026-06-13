@@ -497,3 +497,8 @@ standalone.
 - Inicio y cierre tecnico Task 4 P3: agregada base persistente auditable de
   sugerencias IA con `RcaAiSuggestion`, enums de tipo/estado, mapping EF,
   migracion `AddRcaAiSuggestions` y prueba RED/GREEN de defaults de dominio.
+- Task 5 P3: agregado `IRcaAiSuggestionStore`, `EfRcaAiSuggestionStore` y
+  `RcaAiSuggestionDto`; `RcaAiAssistantService` ahora persiste sugerencias
+  pendientes tras respuestas exitosas del gateway para causas, acciones,
+  resumen, recurrencia y 8D. Se valido con prueba RED/GREEN de persistencia de
+  causas pendientes.

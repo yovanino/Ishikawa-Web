@@ -1,5 +1,36 @@
 # Validation Log
 
+## 2026-06-13 - P3 Task 5 persist pending RCA AI suggestions
+
+Scope: persist AI/fallback suggestions as pending auditable records after
+successful gateway responses.
+
+Checks:
+
+- Added RED coverage proving `RcaAiAssistantService.SuggestCausesAsync` saves
+  one pending `Cause` suggestion per returned gateway cause.
+- Added `RcaAiSuggestionDto`.
+- Added `IRcaAiSuggestionStore` as the Application boundary.
+- Added `EfRcaAiSuggestionStore` for JSON payload persistence, metadata mapping,
+  confidence normalization and filtered listing.
+- Registered the store in infrastructure DI.
+- `RcaAiAssistantService` persists pending suggestions for `Cause`, `Action`,
+  `Summary`, `Recurrence` and `EightD` successful results.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first because `IRcaAiSuggestionStore` and `RcaAiSuggestionDto` did not
+  exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after adding the store boundary, EF implementation and assistant
+  persistence calls.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 4 RCA AI suggestion persistence base
 
 Scope: add the domain, EF mapping and migration foundation for auditable AI

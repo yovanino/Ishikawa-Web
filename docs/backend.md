@@ -428,3 +428,16 @@ live, outbox o webhooks versionados.
 - Generada migracion `AddRcaAiSuggestions`.
 - La suite liviana valida defaults de dominio: estado `Pending`, id generado y
   sugerencia no fallback por defecto.
+
+### 2026-06-13 - Persistencia de sugerencias IA pendientes P3 Task 5
+
+- Agregado contrato `RcaAiSuggestionDto`.
+- Agregada frontera `IRcaAiSuggestionStore` en Application.
+- Agregada implementacion `EfRcaAiSuggestionStore` para serializar payloads IA
+  en `PayloadJson`, guardar metadata de gateway/fallback y listar sugerencias
+  por incidente/estado.
+- `RcaAiAssistantService` ahora guarda sugerencias `Pending` despues de
+  respuestas exitosas de causas, acciones, resumen, recurrencia y borrador 8D.
+- La DI registra `IRcaAiSuggestionStore` con implementacion EF.
+- La suite liviana valida que `SuggestCausesAsync` persiste una sugerencia
+  pendiente por cada causa devuelta por el gateway.

@@ -142,6 +142,17 @@ pendientes antes de cualquier aceptacion o rechazo humano.
 - `ReviewedAt`, `ReviewedByUserId`, `ReviewNotes`, `AppliedEntityType` y
   `AppliedEntityId`: campos reservados para el workflow de revision humana.
 
+Desde la Task 5 de P3, `RcaAiAssistantService` persiste sugerencias pendientes
+despues de respuestas exitosas del gateway:
+
+- Una sugerencia `Cause` por cada causa propuesta.
+- Una sugerencia `Action` por cada accion propuesta.
+- Una sugerencia unica para `Summary`, `Recurrence` y `EightD`.
+- `createdByUserId` queda temporalmente en `ai-request` hasta conectar identidad
+  de usuario en el flujo de revision.
+- `IRcaAiSuggestionStore` mantiene la frontera Application/Infrastructure para
+  no acoplar el servicio de asistencia IA directamente a EF.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.

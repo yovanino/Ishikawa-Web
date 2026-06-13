@@ -84,6 +84,7 @@ AssertInfrastructureResolvesConfiguredAiGatewayClient();
 await AssertAiControllerExposesRecurrenceAndEightDAsync();
 await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
 await AssertAiControllerMapsMissingRcaToNotFoundAsync();
+await AssertAiAssistantPersistsPendingCauseSuggestionsAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -230,6 +231,33 @@ static async Task AssertAiControllerMapsMissingRcaToNotFoundAsync()
     if (result.Result is not NotFoundObjectResult)
     {
         throw new InvalidOperationException("Expected AI controller to keep missing RCA results as 404 Not Found.");
+    }
+}
+
+static async Task AssertAiAssistantPersistsPendingCauseSuggestionsAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var store = new RecordingAiSuggestionStore();
+    var service = new RcaAiAssistantService(
+        new FixedRcaIncidentService(tenantId, incidentId),
+        new FixedAiGatewayClient(),
+        store);
+
+    var result = await service.SuggestCausesAsync(incidentId, CancellationToken.None);
+
+    if (!result.Success || result.Data?.Suggestions.Count != 2)
+    {
+        throw new InvalidOperationException("Expected AI assistant to return gateway cause suggestions.");
+    }
+
+    if (store.Saved.Count != 2 ||
+        store.Saved.Any(x => x.TenantId != tenantId || x.IncidentId != incidentId) ||
+        store.Saved.Any(x => x.Type != RcaAiSuggestionType.Cause) ||
+        store.Saved.Any(x => x.CreatedByUserId != "ai-request") ||
+        store.Saved.Any(x => !x.Metadata.IsFallback))
+    {
+        throw new InvalidOperationException("Expected AI assistant to persist one pending cause suggestion per gateway suggestion.");
     }
 }
 
@@ -1766,6 +1794,165 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
             Metadata = new RcaAiSuggestionMetadataDto()
         }));
     }
+
+    public Task<ApiResult<IReadOnlyList<RcaAiSuggestionDto>>> ListSuggestionsAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Ok([]));
+    }
+}
+
+internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
+{
+    public List<SavedAiSuggestion> Saved { get; } = [];
+
+    public Task SavePendingAsync(
+        Guid tenantId,
+        Guid incidentId,
+        RcaAiSuggestionType type,
+        string title,
+        string summary,
+        object payload,
+        RcaAiSuggestionMetadataDto metadata,
+        string createdByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        Saved.Add(new SavedAiSuggestion(tenantId, incidentId, type, title, summary, payload, metadata, createdByUserId));
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<RcaAiSuggestionDto>> ListAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<RcaAiSuggestionDto>>([]);
+    }
+}
+
+internal sealed record SavedAiSuggestion(
+    Guid TenantId,
+    Guid IncidentId,
+    RcaAiSuggestionType Type,
+    string Title,
+    string Summary,
+    object Payload,
+    RcaAiSuggestionMetadataDto Metadata,
+    string CreatedByUserId);
+
+internal sealed class FixedAiGatewayClient : IRcaAiGatewayClient
+{
+    public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiCauseSuggestionResultDto>.Ok(new RcaAiCauseSuggestionResultDto
+        {
+            IncidentId = context.Incident.Id,
+            Summary = "Gateway causes",
+            Suggestions =
+            [
+                new RcaAiCauseSuggestionDto { BranchName = "Metodo", Title = "Review setup", ConfidenceScore = 80 },
+                new RcaAiCauseSuggestionDto { BranchName = "Material", Title = "Check batch", ConfidenceScore = 70 }
+            ],
+            Metadata = new RcaAiSuggestionMetadataDto
+            {
+                Provider = "Test",
+                Model = "fixed",
+                IsFallback = true
+            }
+        }));
+    }
+
+    public Task<ApiResult<RcaAiActionSuggestionResultDto>> SuggestActionsAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiActionSuggestionResultDto>.Ok(new RcaAiActionSuggestionResultDto
+        {
+            IncidentId = context.Incident.Id,
+            Summary = "Gateway actions",
+            Suggestions = [],
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Ok(new RcaAiSummaryResultDto
+        {
+            IncidentId = context.Incident.Id,
+            ExecutiveSummary = "Summary",
+            RiskAssessment = "Risk",
+            RecommendedNextSteps = [],
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiRecurrenceResultDto>.Ok(new RcaAiRecurrenceResultDto
+        {
+            IncidentId = context.Incident.Id,
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(RcaAiContextDto context, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaAiEightDDraftResultDto>.Ok(new RcaAiEightDDraftResultDto
+        {
+            IncidentId = context.Incident.Id,
+            Metadata = new RcaAiSuggestionMetadataDto()
+        }));
+    }
+}
+
+internal sealed class FixedRcaIncidentService : IRcaIncidentService
+{
+    private readonly Guid _tenantId;
+    private readonly Guid _incidentId;
+
+    public FixedRcaIncidentService(Guid tenantId, Guid incidentId)
+    {
+        _tenantId = tenantId;
+        _incidentId = incidentId;
+    }
+
+    public Task<ApiResult<RcaIncidentDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(new RcaIncidentDto
+        {
+            Id = _incidentId,
+            TenantId = _tenantId,
+            Title = "AI persistence test",
+            Severity = "High",
+            Status = "Open"
+        }));
+    }
+
+    public Task<ApiResult<IshikawaCanvasDto>> GetCanvasAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<IshikawaCanvasDto>.Ok(new IshikawaCanvasDto { RcaIncidentId = incidentId }));
+    }
+
+    public Task<ApiResult<IReadOnlyList<CorrectiveActionDto>>> ListCorrectiveActionsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<IReadOnlyList<CorrectiveActionDto>>.Ok([]));
+    }
+
+    public Task<ApiResult<RcaIncidentDto>> CreateAsync(CreateRcaIncidentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaIncidentDto>>> ListAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IshikawaCauseDto>> AddCauseAsync(Guid incidentId, AddIshikawaCauseRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<CorrectiveActionDto>> AddCorrectiveActionAsync(Guid incidentId, AddCorrectiveActionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<CorrectiveActionDto>> UpdateCorrectiveActionStatusAsync(Guid incidentId, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> AddEvidenceAsync(Guid incidentId, AddRcaEvidenceRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> UpdateEvidenceAsync(Guid incidentId, Guid evidenceId, UpdateRcaEvidenceRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, string? replacedByUserId = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, string? deletedByUserId = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaFactDto>> AddFactAsync(Guid incidentId, AddRcaFactRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaAuditRecordDto>>> ListAuditRecordsAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> EscalateTo8DAsync(Guid incidentId, EscalateRcaIncidentTo8DRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> CompleteWizardStepAsync(Guid incidentId, CompleteRcaWizardStepRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaWizardProgressDto>> GetWizardProgressAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>> ListIntegrationSnapshotsAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaDomainEventDto>>> ListIntegrationEventsAsync(Guid? incidentId = null, DateTimeOffset? since = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 }
 
 internal sealed class RecordingHttpMessageHandler : HttpMessageHandler
