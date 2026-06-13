@@ -10,6 +10,13 @@ namespace IshikawaRca.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                """
+                UPDATE rca_ai_suggestions
+                SET GatewayCorrelationId = LOWER(SHA2(CONCAT(TenantId, ':', Id), 256))
+                WHERE GatewayCorrelationId = '';
+                """);
+
             migrationBuilder.CreateIndex(
                 name: "IX_rca_ai_suggestions_TenantId_GatewayCorrelationId",
                 table: "rca_ai_suggestions",

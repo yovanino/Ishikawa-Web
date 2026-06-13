@@ -507,3 +507,6 @@ standalone.
   `GatewayCorrelationId` estable, filtra duplicados, agrega indice unico
   `TenantId + GatewayCorrelationId`, lista por tenant/incidente y rechaza status
   invalidos con `AI_SUGGESTION_STATUS_INVALID`.
+- Re-review Task 5 P3: la migracion del indice unico backfillea
+  `GatewayCorrelationId` vacios antes de crear el indice, y el parser de status
+  rechaza numericos fuera del enum como `999`.

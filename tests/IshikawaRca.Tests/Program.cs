@@ -86,6 +86,7 @@ await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
 await AssertAiControllerMapsMissingRcaToNotFoundAsync();
 await AssertAiAssistantPersistsPendingCauseSuggestionsAsync();
 await AssertAiAssistantRejectsInvalidSuggestionStatusAsync();
+await AssertAiAssistantRejectsUndefinedNumericSuggestionStatusAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -277,6 +278,23 @@ static async Task AssertAiAssistantRejectsInvalidSuggestionStatusAsync()
     if (result.Success || result.Errors.All(x => x.Code != "AI_SUGGESTION_STATUS_INVALID"))
     {
         throw new InvalidOperationException("Expected invalid AI suggestion status filters to fail with a controlled error.");
+    }
+}
+
+static async Task AssertAiAssistantRejectsUndefinedNumericSuggestionStatusAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var service = new RcaAiAssistantService(
+        new FixedRcaIncidentService(tenantId, incidentId),
+        new FixedAiGatewayClient(),
+        new RecordingAiSuggestionStore());
+
+    var result = await service.ListSuggestionsAsync(incidentId, "999", CancellationToken.None);
+
+    if (result.Success || result.Errors.All(x => x.Code != "AI_SUGGESTION_STATUS_INVALID"))
+    {
+        throw new InvalidOperationException("Expected undefined numeric AI suggestion statuses to fail with a controlled error.");
     }
 }
 

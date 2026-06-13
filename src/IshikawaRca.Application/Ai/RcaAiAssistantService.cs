@@ -170,7 +170,8 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             return true;
         }
 
-        if (!Enum.TryParse<RcaAiSuggestionStatus>(status, true, out var value))
+        if (!Enum.TryParse<RcaAiSuggestionStatus>(status, true, out var value) ||
+            !Enum.IsDefined(value))
         {
             return false;
         }

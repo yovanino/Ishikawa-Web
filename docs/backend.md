@@ -455,3 +455,7 @@ live, outbox o webhooks versionados.
 - `ListSuggestionsAsync` valida el filtro `status` y el store lista por
   `TenantId + RcaIncidentId`.
 - Agregada migracion `AddRcaAiSuggestionCorrelationIndex`.
+- La migracion backfillea `GatewayCorrelationId` vacios en datos existentes
+  antes de crear el indice unico.
+- La validacion de `status` rechaza valores numericos fuera del enum, no solo
+  texto invalido.

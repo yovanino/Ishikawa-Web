@@ -28,6 +28,30 @@ Validation:
 
 Result: passed.
 
+## 2026-06-13 - P3 Task 5 AI suggestion persistence re-review fixes
+
+Scope: address follow-up quality review for migration upgrade safety and numeric
+status validation.
+
+Checks:
+
+- `AddRcaAiSuggestionCorrelationIndex` now backfills empty
+  `GatewayCorrelationId` values with a per-row SHA2 value before creating the
+  unique index.
+- `ListSuggestionsAsync` rejects undefined numeric enum values such as `999`
+  with `AI_SUGGESTION_STATUS_INVALID`.
+- Added lightweight regression coverage for undefined numeric status filters.
+
+Validation:
+
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 5 persist pending RCA AI suggestions
 
 Scope: persist AI/fallback suggestions as pending auditable records after
