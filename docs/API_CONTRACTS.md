@@ -389,6 +389,14 @@ POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft
 
 La respuesta incluye `metadata.provider`, `metadata.model` e `metadata.isFallback` para que la UI o la app global sepan si la recomendacion vino de IA real o de fallback.
 
+Codigos HTTP:
+
+- `200 OK`: asistencia generada correctamente.
+- `404 Not Found`: el incidente RCA no existe o no esta disponible (`RCA_NOT_FOUND`).
+- `503 Service Unavailable`: el AI Gateway no esta disponible, esta mal
+  configurado o devuelve una respuesta invalida (`AI_GATEWAY_*`).
+- `400 Bad Request`: otros errores de validacion del flujo RCA.
+
 Deteccion de recurrencia:
 
 ```json

@@ -405,3 +405,12 @@ live, outbox o webhooks versionados.
   llamadas identicas, incluyendo metadata.
 - La suite liviana agrega una regresion para validar metadata deterministica en
   el stub.
+
+### 2026-06-13 - Hardening post-review de respuestas HTTP IA P3 Task 3
+
+- `RcaAiController` centraliza el mapping de respuestas de asistencia IA.
+- Los errores `RCA_NOT_FOUND` siguen devolviendo `404 Not Found`.
+- Los errores del gateway IA (`AI_GATEWAY_*`) ahora devuelven
+  `503 Service Unavailable` en lugar de `404`.
+- Otros errores controlados quedan como `400 Bad Request`.
+- La suite liviana cubre gateway caido como `503` y RCA inexistente como `404`.

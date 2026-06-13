@@ -490,3 +490,7 @@ standalone.
   en servicio/gateway/controller, POST HTTP a AI Gateway para recurrencia y
   cobertura liviana adicional del stub. Commit requerido:
   `feat(ai): add recurrence and 8D draft suggestions`.
+- Hardening post-review Task 3 P3: `RcaAiController` ahora distingue
+  `RCA_NOT_FOUND` (`404`) de fallas `AI_GATEWAY_*` (`503`) en todos los
+  endpoints de asistencia IA. Se agrego prueba RED/GREEN para gateway caido y
+  RCA inexistente, con validacion en serie verde.

@@ -104,6 +104,9 @@ Desde el cierre de Task 3 del 2026-06-13, el modulo ya expone y enruta por
 gateway las sugerencias de deteccion de recurrencia y borrador 8D.
 
 - `RcaAiController` publica `detect-recurrence` y `generate-8d-draft`.
+- `RcaAiController` mapea `RCA_NOT_FOUND` a `404` y fallas
+  `AI_GATEWAY_*` a `503`, evitando reportar indisponibilidad de IA como RCA
+  inexistente.
 - `RcaAiAssistantService` arma el `RcaAiContextDto` y delega ambas operaciones
   al gateway configurado.
 - `StubRcaAiGatewayClient` devuelve respuestas deterministicas con

@@ -19,60 +19,70 @@ public class RcaAiController : ControllerBase
     [HttpPost("suggest-causes")]
     [ProducesResponseType(typeof(ApiResult<RcaAiCauseSuggestionResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaAiCauseSuggestionResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiCauseSuggestionResultDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResult<RcaAiCauseSuggestionResultDto>>> SuggestCauses(Guid id, CancellationToken cancellationToken)
     {
         var result = await _aiAssistantService.SuggestCausesAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
-
-        return Ok(result);
+        return ToAiActionResult(result);
     }
 
     [HttpPost("suggest-actions")]
     [ProducesResponseType(typeof(ApiResult<RcaAiActionSuggestionResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaAiActionSuggestionResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiActionSuggestionResultDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResult<RcaAiActionSuggestionResultDto>>> SuggestActions(Guid id, CancellationToken cancellationToken)
     {
         var result = await _aiAssistantService.SuggestActionsAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
-
-        return Ok(result);
+        return ToAiActionResult(result);
     }
 
     [HttpPost("summarize")]
     [ProducesResponseType(typeof(ApiResult<RcaAiSummaryResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaAiSummaryResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSummaryResultDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResult<RcaAiSummaryResultDto>>> Summarize(Guid id, CancellationToken cancellationToken)
     {
         var result = await _aiAssistantService.SummarizeAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
-
-        return Ok(result);
+        return ToAiActionResult(result);
     }
 
     [HttpPost("detect-recurrence")]
     [ProducesResponseType(typeof(ApiResult<RcaAiRecurrenceResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaAiRecurrenceResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiRecurrenceResultDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResult<RcaAiRecurrenceResultDto>>> DetectRecurrence(Guid id, CancellationToken cancellationToken)
     {
         var result = await _aiAssistantService.DetectRecurrenceAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return ToAiActionResult(result);
     }
 
     [HttpPost("generate-8d-draft")]
     [ProducesResponseType(typeof(ApiResult<RcaAiEightDDraftResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResult<RcaAiEightDDraftResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiEightDDraftResultDto>), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ApiResult<RcaAiEightDDraftResultDto>>> GenerateEightDDraft(Guid id, CancellationToken cancellationToken)
     {
         var result = await _aiAssistantService.GenerateEightDDraftAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return ToAiActionResult(result);
+    }
+
+    private ActionResult<ApiResult<T>> ToAiActionResult<T>(ApiResult<T> result)
+    {
+        if (result.Success)
+        {
+            return Ok(result);
+        }
+
+        if (result.Errors.Any(x => x.Code == "RCA_NOT_FOUND"))
+        {
+            return NotFound(result);
+        }
+
+        if (result.Errors.Any(x => x.Code.StartsWith("AI_GATEWAY_", StringComparison.Ordinal)))
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, result);
+        }
+
+        return BadRequest(result);
     }
 }

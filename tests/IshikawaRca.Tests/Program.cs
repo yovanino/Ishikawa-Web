@@ -81,6 +81,8 @@ await AssertConfiguredAiGatewayFallsBackWhenHttpThrowsAsync();
 await AssertConfiguredAiGatewayReturnsUnavailableWhenHttpThrowsAndFallbackIsDisabledAsync();
 AssertInfrastructureResolvesConfiguredAiGatewayClient();
 await AssertAiControllerExposesRecurrenceAndEightDAsync();
+await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
+await AssertAiControllerMapsMissingRcaToNotFoundAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -177,6 +179,37 @@ static async Task AssertAiControllerExposesRecurrenceAndEightDAsync()
         !service.GenerateEightDCalled)
     {
         throw new InvalidOperationException("Expected AI controller to expose recurrence and 8D draft endpoints.");
+    }
+}
+
+static async Task AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync()
+{
+    var controller = new RcaAiController(new RecordingAiAssistantService(
+        recurrenceResult: ApiResult<RcaAiRecurrenceResultDto>.Fail(
+            "Gateway down",
+            new ApiError { Code = "AI_GATEWAY_UNAVAILABLE", Message = "Gateway down" })));
+
+    var result = await controller.DetectRecurrence(Guid.NewGuid(), CancellationToken.None);
+
+    if (result.Result is not ObjectResult objectResult ||
+        objectResult.StatusCode != StatusCodes.Status503ServiceUnavailable)
+    {
+        throw new InvalidOperationException("Expected AI controller to map gateway failures to 503 Service Unavailable.");
+    }
+}
+
+static async Task AssertAiControllerMapsMissingRcaToNotFoundAsync()
+{
+    var controller = new RcaAiController(new RecordingAiAssistantService(
+        recurrenceResult: ApiResult<RcaAiRecurrenceResultDto>.Fail(
+            "RCA missing",
+            new ApiError { Code = "RCA_NOT_FOUND", Message = "RCA missing" })));
+
+    var result = await controller.DetectRecurrence(Guid.NewGuid(), CancellationToken.None);
+
+    if (result.Result is not NotFoundObjectResult)
+    {
+        throw new InvalidOperationException("Expected AI controller to keep missing RCA results as 404 Not Found.");
     }
 }
 
@@ -1612,11 +1645,36 @@ internal sealed class ThrowingAiGatewayClient : IRcaAiGatewayClient
 
 internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 {
+    private readonly ApiResult<RcaAiCauseSuggestionResultDto>? _causeResult;
+    private readonly ApiResult<RcaAiActionSuggestionResultDto>? _actionResult;
+    private readonly ApiResult<RcaAiSummaryResultDto>? _summaryResult;
+    private readonly ApiResult<RcaAiRecurrenceResultDto>? _recurrenceResult;
+    private readonly ApiResult<RcaAiEightDDraftResultDto>? _eightDResult;
+
+    public RecordingAiAssistantService(
+        ApiResult<RcaAiCauseSuggestionResultDto>? causeResult = null,
+        ApiResult<RcaAiActionSuggestionResultDto>? actionResult = null,
+        ApiResult<RcaAiSummaryResultDto>? summaryResult = null,
+        ApiResult<RcaAiRecurrenceResultDto>? recurrenceResult = null,
+        ApiResult<RcaAiEightDDraftResultDto>? eightDResult = null)
+    {
+        _causeResult = causeResult;
+        _actionResult = actionResult;
+        _summaryResult = summaryResult;
+        _recurrenceResult = recurrenceResult;
+        _eightDResult = eightDResult;
+    }
+
     public bool DetectRecurrenceCalled { get; private set; }
     public bool GenerateEightDCalled { get; private set; }
 
     public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
+        if (_causeResult is not null)
+        {
+            return Task.FromResult(_causeResult);
+        }
+
         return Task.FromResult(ApiResult<RcaAiCauseSuggestionResultDto>.Ok(new RcaAiCauseSuggestionResultDto
         {
             IncidentId = incidentId,
@@ -1628,6 +1686,11 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 
     public Task<ApiResult<RcaAiActionSuggestionResultDto>> SuggestActionsAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
+        if (_actionResult is not null)
+        {
+            return Task.FromResult(_actionResult);
+        }
+
         return Task.FromResult(ApiResult<RcaAiActionSuggestionResultDto>.Ok(new RcaAiActionSuggestionResultDto
         {
             IncidentId = incidentId,
@@ -1639,6 +1702,11 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 
     public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
+        if (_summaryResult is not null)
+        {
+            return Task.FromResult(_summaryResult);
+        }
+
         return Task.FromResult(ApiResult<RcaAiSummaryResultDto>.Ok(new RcaAiSummaryResultDto
         {
             IncidentId = incidentId,
@@ -1652,6 +1720,11 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
     public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         DetectRecurrenceCalled = true;
+        if (_recurrenceResult is not null)
+        {
+            return Task.FromResult(_recurrenceResult);
+        }
+
         return Task.FromResult(ApiResult<RcaAiRecurrenceResultDto>.Ok(new RcaAiRecurrenceResultDto
         {
             IncidentId = incidentId,
@@ -1662,6 +1735,11 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
     public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
         GenerateEightDCalled = true;
+        if (_eightDResult is not null)
+        {
+            return Task.FromResult(_eightDResult);
+        }
+
         return Task.FromResult(ApiResult<RcaAiEightDDraftResultDto>.Ok(new RcaAiEightDDraftResultDto
         {
             IncidentId = incidentId,

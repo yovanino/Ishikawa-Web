@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-13 - P3 Task 3 AI controller failure status mapping
+
+Scope: address Task 3 quality review feedback requiring AI Gateway failures to
+be distinguishable from missing RCA incidents.
+
+Checks:
+
+- Added controller-level regression coverage for `AI_GATEWAY_UNAVAILABLE`
+  returning `503 Service Unavailable`.
+- Added controller-level regression coverage preserving `RCA_NOT_FOUND` as
+  `404 Not Found`.
+- Centralized AI controller result mapping for all assistance endpoints:
+  `RCA_NOT_FOUND` -> `404`, `AI_GATEWAY_*` -> `503`, other controlled failures
+  -> `400`.
+- Updated API/backend/AI integration documentation with the HTTP status
+  contract.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first with `Expected AI controller to map gateway failures to 503
+  Service Unavailable.`
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after controller mapping.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 3 deterministic AI stub metadata
 
 Scope: address Task 3 spec review feedback requiring fully deterministic stub
