@@ -164,6 +164,12 @@ aceptar una sugerencia `Action` crea una accion correctiva oficial. Rechazar una
 sugerencia no modifica entidades RCA oficiales. Ambos caminos registran auditoria
 `AiSuggestionAccepted` o `AiSuggestionRejected`.
 
+Los endpoints de asistencia IA requieren usuario autenticado; aceptar/rechazar
+requiere ademas roles de gobernanza de calidad. El usuario de auditoria se toma
+del contexto autenticado, no del payload enviado por el cliente. La aceptacion se
+ejecuta dentro de una transaccion de revision para evitar duplicados ante doble
+click o revisiones concurrentes.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.

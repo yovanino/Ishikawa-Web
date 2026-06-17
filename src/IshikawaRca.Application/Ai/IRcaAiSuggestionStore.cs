@@ -1,3 +1,4 @@
+using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Enums;
 
@@ -16,17 +17,21 @@ public interface IRcaAiSuggestionStore
 
     Task<RcaAiSuggestionDto?> GetAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken = default);
 
-    Task<RcaAiSuggestionDto> MarkAcceptedAsync(
+    Task<ApiResult<RcaAiSuggestionDto>> ExecuteReviewTransactionAsync(
+        Func<CancellationToken, Task<ApiResult<RcaAiSuggestionDto>>> operation,
+        CancellationToken cancellationToken = default);
+
+    Task<RcaAiSuggestionDto?> MarkAcceptedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
         string reviewedByUserId,
         string reviewNotes,
         string appliedEntityType,
-        Guid appliedEntityId,
+        Guid? appliedEntityId,
         CancellationToken cancellationToken = default);
 
-    Task<RcaAiSuggestionDto> MarkRejectedAsync(
+    Task<RcaAiSuggestionDto?> MarkRejectedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,

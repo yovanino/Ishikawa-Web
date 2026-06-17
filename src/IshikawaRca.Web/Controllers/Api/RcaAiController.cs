@@ -8,14 +8,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace IshikawaRca.Web.Controllers.Api;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/rca/incidents/{id:guid}/ai")]
 public class RcaAiController : ControllerBase
 {
     private readonly IRcaAiAssistantService _aiAssistantService;
+    private readonly ICurrentRcaUserContext _currentUserContext;
 
-    public RcaAiController(IRcaAiAssistantService aiAssistantService)
+    public RcaAiController(IRcaAiAssistantService aiAssistantService, ICurrentRcaUserContext currentUserContext)
     {
         _aiAssistantService = aiAssistantService;
+        _currentUserContext = currentUserContext;
     }
 
     [HttpPost("suggest-causes")]
@@ -85,6 +88,7 @@ public class RcaAiController : ControllerBase
     [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<RcaAiSuggestionDto>>> AcceptSuggestion(Guid id, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken)
     {
+        request.ReviewedByUserId = _currentUserContext.UserId;
         var result = await _aiAssistantService.AcceptSuggestionAsync(id, suggestionId, request, cancellationToken);
         return ToAiActionResult(result);
     }
@@ -96,6 +100,7 @@ public class RcaAiController : ControllerBase
     [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResult<RcaAiSuggestionDto>>> RejectSuggestion(Guid id, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken)
     {
+        request.ReviewedByUserId = _currentUserContext.UserId;
         var result = await _aiAssistantService.RejectSuggestionAsync(id, suggestionId, request, cancellationToken);
         return ToAiActionResult(result);
     }

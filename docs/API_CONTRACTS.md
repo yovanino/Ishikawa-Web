@@ -407,11 +407,14 @@ Las sugerencias persistidas se gobiernan por aprobacion humana:
 - `POST accept` requiere rol de gobernanza de calidad y convierte una
   sugerencia `Cause` en causa oficial o una sugerencia `Action` en accion
   correctiva oficial. La IA no aplica cambios sin esta llamada humana.
+- Las sugerencias `Summary`, `Recurrence` y `EightD` pueden aceptarse como
+  revision auditada sin crear entidades oficiales.
 - `POST reject` requiere rol de gobernanza de calidad, marca la sugerencia como
   rechazada y no crea entidades oficiales.
 - Si la sugerencia no existe devuelve `AI_SUGGESTION_NOT_FOUND`; si ya fue
   revisada devuelve `AI_SUGGESTION_NOT_PENDING`; si el payload no puede
-  interpretarse devuelve `AI_SUGGESTION_PAYLOAD_INVALID`.
+  interpretarse devuelve `AI_SUGGESTION_PAYLOAD_INVALID`; si una causa se acepta
+  sin rama destino devuelve `AI_SUGGESTION_BRANCH_REQUIRED`.
 
 Aceptar sugerencia:
 

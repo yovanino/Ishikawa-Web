@@ -172,23 +172,28 @@ public class RcaAiAssistantService : IRcaAiAssistantService
                 new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_PENDING", Message = "Solo se pueden aceptar sugerencias pendientes." });
         }
 
-        var applied = await ApplySuggestionAsync(incidentId, suggestion, request, cancellationToken);
-        if (!applied.Success || applied.Data is null)
+        return await _suggestionStore.ExecuteReviewTransactionAsync(async transactionCancellationToken =>
         {
-            return ApiResult<RcaAiSuggestionDto>.Fail(applied.Message ?? "No se pudo aplicar la sugerencia IA.", applied.Errors.ToArray());
-        }
+            var applied = await ApplySuggestionAsync(incidentId, suggestion, request, transactionCancellationToken);
+            if (!applied.Success || applied.Data is null)
+            {
+                return ApiResult<RcaAiSuggestionDto>.Fail(applied.Message ?? "No se pudo aplicar la sugerencia IA.", applied.Errors.ToArray());
+            }
 
-        var accepted = await _suggestionStore.MarkAcceptedAsync(
-            incidentResult.Data.TenantId,
-            incidentId,
-            suggestionId,
-            NormalizeUserId(request.ReviewedByUserId),
-            request.ReviewNotes ?? string.Empty,
-            applied.Data.EntityType,
-            applied.Data.EntityId,
-            cancellationToken);
+            var accepted = await _suggestionStore.MarkAcceptedAsync(
+                incidentResult.Data.TenantId,
+                incidentId,
+                suggestionId,
+                NormalizeUserId(request.ReviewedByUserId),
+                request.ReviewNotes ?? string.Empty,
+                applied.Data.EntityType,
+                applied.Data.EntityId,
+                transactionCancellationToken);
 
-        return ApiResult<RcaAiSuggestionDto>.Ok(accepted, "Sugerencia IA aceptada.");
+            return accepted is null
+                ? SuggestionNotPending()
+                : ApiResult<RcaAiSuggestionDto>.Ok(accepted, "Sugerencia IA aceptada.");
+        }, cancellationToken);
     }
 
     public async Task<ApiResult<RcaAiSuggestionDto>> RejectSuggestionAsync(Guid incidentId, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken = default)
@@ -214,15 +219,20 @@ public class RcaAiAssistantService : IRcaAiAssistantService
                 new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_PENDING", Message = "Solo se pueden rechazar sugerencias pendientes." });
         }
 
-        var rejected = await _suggestionStore.MarkRejectedAsync(
-            incidentResult.Data.TenantId,
-            incidentId,
-            suggestionId,
-            NormalizeUserId(request.ReviewedByUserId),
-            request.ReviewNotes ?? string.Empty,
-            cancellationToken);
+        return await _suggestionStore.ExecuteReviewTransactionAsync(async transactionCancellationToken =>
+        {
+            var rejected = await _suggestionStore.MarkRejectedAsync(
+                incidentResult.Data.TenantId,
+                incidentId,
+                suggestionId,
+                NormalizeUserId(request.ReviewedByUserId),
+                request.ReviewNotes ?? string.Empty,
+                transactionCancellationToken);
 
-        return ApiResult<RcaAiSuggestionDto>.Ok(rejected, "Sugerencia IA rechazada.");
+            return rejected is null
+                ? SuggestionNotPending()
+                : ApiResult<RcaAiSuggestionDto>.Ok(rejected, "Sugerencia IA rechazada.");
+        }, cancellationToken);
     }
 
     private async Task SavePendingBatchAsync(RcaAiContextDto context, IReadOnlyList<RcaAiPendingSuggestionInput> suggestions, CancellationToken cancellationToken)
@@ -248,7 +258,7 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             {
                 return ApiResult<AppliedAiSuggestion>.Fail(
                     "La sugerencia de causa requiere rama destino.",
-                    new ApiError { Field = nameof(request.TargetBranchId), Code = "TARGET_BRANCH_REQUIRED", Message = "Seleccione la rama Ishikawa donde aplicar la causa." });
+                    new ApiError { Field = nameof(request.TargetBranchId), Code = "AI_SUGGESTION_BRANCH_REQUIRED", Message = "Seleccione la rama Ishikawa donde aplicar la causa." });
             }
 
             var payload = DeserializePayload<RcaAiCauseSuggestionDto>(suggestion.PayloadJson);
@@ -296,9 +306,7 @@ public class RcaAiAssistantService : IRcaAiAssistantService
                 : ApiResult<AppliedAiSuggestion>.Fail(actionResult.Message ?? "No se pudo crear la accion desde la sugerencia IA.", actionResult.Errors.ToArray());
         }
 
-        return ApiResult<AppliedAiSuggestion>.Fail(
-            "El tipo de sugerencia IA no puede aplicarse automaticamente.",
-            new ApiError { Field = nameof(suggestion.SuggestionType), Code = "AI_SUGGESTION_TYPE_NOT_APPLICABLE", Message = "Este tipo de sugerencia solo puede revisarse manualmente." });
+        return ApiResult<AppliedAiSuggestion>.Ok(new AppliedAiSuggestion(string.Empty, null));
     }
 
     private static bool TryParseSuggestionStatus(string? status, out RcaAiSuggestionStatus? parsedStatus)
@@ -338,6 +346,13 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             new ApiError { Field = nameof(RcaAiSuggestionDto.PayloadJson), Code = "AI_SUGGESTION_PAYLOAD_INVALID", Message = "No se pudo interpretar el payload de la sugerencia IA." });
     }
 
+    private static ApiResult<RcaAiSuggestionDto> SuggestionNotPending()
+    {
+        return ApiResult<RcaAiSuggestionDto>.Fail(
+            "La sugerencia IA ya fue revisada.",
+            new ApiError { Code = "AI_SUGGESTION_NOT_PENDING", Message = "Solo se pueden revisar sugerencias pendientes." });
+    }
+
     private static string NormalizeUserId(string? value)
     {
         return string.IsNullOrWhiteSpace(value)
@@ -345,7 +360,7 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             : value.Trim();
     }
 
-    private sealed record AppliedAiSuggestion(string EntityType, Guid EntityId);
+    private sealed record AppliedAiSuggestion(string EntityType, Guid? EntityId);
 
     private async Task<ApiResult<RcaAiContextDto>> BuildContextAsync(Guid incidentId, CancellationToken cancellationToken)
     {

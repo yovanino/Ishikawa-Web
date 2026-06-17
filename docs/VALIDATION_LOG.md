@@ -30,6 +30,32 @@ Validation:
 
 Result: passed.
 
+## 2026-06-17 - P3 Task 6 AI suggestion governance hardening
+
+Scope: address spec and quality review feedback for Task 6.
+
+Checks:
+
+- Added review transaction boundary through `ExecuteReviewTransactionAsync`.
+- Store accept/reject methods now require the suggestion to still be `Pending`.
+- API controller requires authentication for all AI endpoints and uses
+  `ICurrentRcaUserContext.UserId` for review attribution.
+- `Summary`, `Recurrence` and `EightD` suggestions can be accepted as audited
+  decisions without official RCA mutation.
+- Cause acceptance without branch now returns `AI_SUGGESTION_BRANCH_REQUIRED`.
+- Added regressions for controller authenticated user attribution, transaction
+  usage, accepted summary without mutation and branch-required error code.
+
+Validation:
+
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 5 AI suggestion persistence hardening
 
 Scope: address Task 5 quality review feedback before starting accept/reject

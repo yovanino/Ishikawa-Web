@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
 using IshikawaRca.Application.Ai;
+using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
 using IshikawaRca.Domain.Entities;
 using IshikawaRca.Domain.Enums;
@@ -97,17 +98,40 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         return suggestion is null ? null : ToDto(suggestion);
     }
 
-    public async Task<RcaAiSuggestionDto> MarkAcceptedAsync(
+    public async Task<ApiResult<RcaAiSuggestionDto>> ExecuteReviewTransactionAsync(
+        Func<CancellationToken, Task<ApiResult<RcaAiSuggestionDto>>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var result = await operation(cancellationToken);
+        if (result.Success)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+        else
+        {
+            await transaction.RollbackAsync(cancellationToken);
+        }
+
+        return result;
+    }
+
+    public async Task<RcaAiSuggestionDto?> MarkAcceptedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
         string reviewedByUserId,
         string reviewNotes,
         string appliedEntityType,
-        Guid appliedEntityId,
+        Guid? appliedEntityId,
         CancellationToken cancellationToken = default)
     {
         var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        if (suggestion is null)
+        {
+            return null;
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         suggestion.Status = RcaAiSuggestionStatus.Accepted;
@@ -125,7 +149,7 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         return ToDto(suggestion);
     }
 
-    public async Task<RcaAiSuggestionDto> MarkRejectedAsync(
+    public async Task<RcaAiSuggestionDto?> MarkRejectedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
@@ -134,6 +158,11 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         CancellationToken cancellationToken = default)
     {
         var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        if (suggestion is null)
+        {
+            return null;
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         suggestion.Status = RcaAiSuggestionStatus.Rejected;
@@ -198,13 +227,14 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         };
     }
 
-    private async Task<RcaAiSuggestion> LoadForReviewAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
+    private async Task<RcaAiSuggestion?> LoadForReviewAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
     {
         return await _dbContext.RcaAiSuggestions
-            .FirstAsync(
+            .FirstOrDefaultAsync(
                 x => x.TenantId == tenantId &&
                     x.RcaIncidentId == incidentId &&
                     x.Id == suggestionId &&
+                    x.Status == RcaAiSuggestionStatus.Pending &&
                     !x.IsDeleted,
                 cancellationToken);
     }
