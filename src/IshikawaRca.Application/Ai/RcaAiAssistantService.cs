@@ -174,18 +174,29 @@ public class RcaAiAssistantService : IRcaAiAssistantService
 
         return await _suggestionStore.ExecuteReviewTransactionAsync(async transactionCancellationToken =>
         {
+            var claimed = await _suggestionStore.ClaimAcceptedAsync(
+                incidentResult.Data.TenantId,
+                incidentId,
+                suggestionId,
+                NormalizeUserId(request.ReviewedByUserId),
+                request.ReviewNotes ?? string.Empty,
+                transactionCancellationToken);
+
+            if (claimed is null)
+            {
+                return SuggestionNotPending();
+            }
+
             var applied = await ApplySuggestionAsync(incidentId, suggestion, request, transactionCancellationToken);
             if (!applied.Success || applied.Data is null)
             {
                 return ApiResult<RcaAiSuggestionDto>.Fail(applied.Message ?? "No se pudo aplicar la sugerencia IA.", applied.Errors.ToArray());
             }
 
-            var accepted = await _suggestionStore.MarkAcceptedAsync(
+            var accepted = await _suggestionStore.CompleteAcceptedAsync(
                 incidentResult.Data.TenantId,
                 incidentId,
                 suggestionId,
-                NormalizeUserId(request.ReviewedByUserId),
-                request.ReviewNotes ?? string.Empty,
                 applied.Data.EntityType,
                 applied.Data.EntityId,
                 transactionCancellationToken);

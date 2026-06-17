@@ -37,7 +37,8 @@ Scope: address spec and quality review feedback for Task 6.
 Checks:
 
 - Added review transaction boundary through `ExecuteReviewTransactionAsync`.
-- Store accept/reject methods now require the suggestion to still be `Pending`.
+- Store accept/reject methods now require the suggestion to still be `Pending`;
+  acceptance claims `Pending -> Accepted` before applying official RCA changes.
 - API controller requires authentication for all AI endpoints and uses
   `ICurrentRcaUserContext.UserId` for review attribution.
 - `Summary`, `Recurrence` and `EightD` suggestions can be accepted as audited
@@ -45,6 +46,8 @@ Checks:
 - Cause acceptance without branch now returns `AI_SUGGESTION_BRANCH_REQUIRED`.
 - Added regressions for controller authenticated user attribution, transaction
   usage, accepted summary without mutation and branch-required error code.
+- Added regression proving already-reviewed suggestions do not create official
+  causes.
 
 Validation:
 

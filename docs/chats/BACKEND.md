@@ -516,6 +516,7 @@ standalone.
   `AiSuggestionRejected`.
 - Hardening post-review Task 6 P3: toda la superficie IA requiere autenticacion,
   el usuario auditado sale del contexto autenticado, accept/reject corre con
-  transaccion de revision y pending enforcement, los tipos Summary/Recurrence/8D
-  pueden aceptarse como decision auditada sin mutacion oficial, y causa sin rama
-  devuelve `AI_SUGGESTION_BRANCH_REQUIRED`.
+  transaccion de revision y claim atomico `Pending -> Accepted` antes de mutar
+  entidades oficiales, los tipos Summary/Recurrence/8D pueden aceptarse como
+  decision auditada sin mutacion oficial, y causa sin rama devuelve
+  `AI_SUGGESTION_BRANCH_REQUIRED`.

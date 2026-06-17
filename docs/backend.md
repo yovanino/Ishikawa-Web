@@ -484,9 +484,11 @@ live, outbox o webhooks versionados.
 - `RcaAiController` ahora requiere autenticacion para toda la superficie IA.
 - El usuario de revision se toma de `ICurrentRcaUserContext`, evitando que el
   cliente fuerce `ReviewedByUserId` en auditoria.
+- La aceptacion usa claim atomico `Pending -> Accepted` antes de crear entidades
+  oficiales; si el claim no gana, no se aplica ningun cambio RCA.
 - La aceptacion/rechazo usa `ExecuteReviewTransactionAsync`; si la revision
   falla, se revierte cualquier mutacion RCA ejecutada en la misma transaccion.
-- `MarkAcceptedAsync` y `MarkRejectedAsync` solo actualizan sugerencias que
+- `ClaimAcceptedAsync` y `MarkRejectedAsync` solo actualizan sugerencias que
   siguen en estado `Pending`, reduciendo carreras por doble revision.
 - Las sugerencias `Summary`, `Recurrence` y `EightD` pueden aceptarse como
   decision auditada sin crear entidad RCA oficial.

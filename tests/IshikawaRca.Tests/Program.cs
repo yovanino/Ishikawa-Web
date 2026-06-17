@@ -93,6 +93,7 @@ await AssertAcceptingCauseSuggestionCreatesCauseAndMarksAcceptedAsync();
 await AssertRejectingSuggestionDoesNotCreateOfficialEntityAsync();
 await AssertAcceptingSummarySuggestionOnlyMarksAcceptedAsync();
 await AssertAcceptingCauseSuggestionRequiresBranchWithContractErrorAsync();
+await AssertAcceptingAlreadyReviewedSuggestionDoesNotCreateCauseAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -434,6 +435,38 @@ static async Task AssertAcceptingCauseSuggestionRequiresBranchWithContractErrorA
     if (result.Success || result.Errors.All(x => x.Code != "AI_SUGGESTION_BRANCH_REQUIRED"))
     {
         throw new InvalidOperationException("Expected accepting a cause suggestion without branch to fail with AI_SUGGESTION_BRANCH_REQUIRED.");
+    }
+}
+
+static async Task AssertAcceptingAlreadyReviewedSuggestionDoesNotCreateCauseAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var branchId = Guid.NewGuid();
+    var suggestionId = Guid.NewGuid();
+    var store = new RecordingAiSuggestionStore();
+    store.Suggestions.Add(new RcaAiSuggestionDto
+    {
+        Id = suggestionId,
+        TenantId = tenantId,
+        RcaIncidentId = incidentId,
+        SuggestionType = nameof(RcaAiSuggestionType.Cause),
+        Status = nameof(RcaAiSuggestionStatus.Accepted),
+        Title = "Already accepted",
+        PayloadJson = "{\"title\":\"Already accepted\"}"
+    });
+    var incidentService = new FixedRcaIncidentService(tenantId, incidentId, branchId);
+    var service = new RcaAiAssistantService(incidentService, new FixedAiGatewayClient(), store);
+
+    var result = await service.AcceptSuggestionAsync(incidentId, suggestionId, new AcceptRcaAiSuggestionRequest
+    {
+        TargetBranchId = branchId,
+        ReviewedByUserId = "quality"
+    });
+
+    if (result.Success || incidentService.AddedCauses.Count != 0)
+    {
+        throw new InvalidOperationException("Expected already reviewed AI suggestions to avoid official RCA mutations.");
     }
 }
 
@@ -2114,14 +2147,12 @@ internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
         return await operation(cancellationToken);
     }
 
-    public Task<RcaAiSuggestionDto?> MarkAcceptedAsync(
+    public Task<RcaAiSuggestionDto?> ClaimAcceptedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
         string reviewedByUserId,
         string reviewNotes,
-        string appliedEntityType,
-        Guid? appliedEntityId,
         CancellationToken cancellationToken = default)
     {
         var suggestion = Suggestions.SingleOrDefault(x =>
@@ -2138,6 +2169,27 @@ internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
         suggestion.ReviewedByUserId = reviewedByUserId;
         suggestion.ReviewNotes = reviewNotes;
         suggestion.ReviewedAt = DateTimeOffset.UtcNow;
+        return Task.FromResult<RcaAiSuggestionDto?>(suggestion);
+    }
+
+    public Task<RcaAiSuggestionDto?> CompleteAcceptedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
+        string appliedEntityType,
+        Guid? appliedEntityId,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestion = Suggestions.SingleOrDefault(x =>
+            x.TenantId == tenantId &&
+            x.RcaIncidentId == incidentId &&
+            x.Id == suggestionId &&
+            x.Status == nameof(RcaAiSuggestionStatus.Accepted));
+        if (suggestion is null)
+        {
+            return Task.FromResult<RcaAiSuggestionDto?>(null);
+        }
+
         suggestion.AppliedEntityType = appliedEntityType;
         suggestion.AppliedEntityId = appliedEntityId;
         AuditRecords.Add(new RecordedAiSuggestionAudit(tenantId, incidentId, suggestionId, "AiSuggestionAccepted"));

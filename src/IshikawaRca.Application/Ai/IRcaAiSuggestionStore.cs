@@ -21,12 +21,18 @@ public interface IRcaAiSuggestionStore
         Func<CancellationToken, Task<ApiResult<RcaAiSuggestionDto>>> operation,
         CancellationToken cancellationToken = default);
 
-    Task<RcaAiSuggestionDto?> MarkAcceptedAsync(
+    Task<RcaAiSuggestionDto?> ClaimAcceptedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
         string reviewedByUserId,
         string reviewNotes,
+        CancellationToken cancellationToken = default);
+
+    Task<RcaAiSuggestionDto?> CompleteAcceptedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
         string appliedEntityType,
         Guid? appliedEntityId,
         CancellationToken cancellationToken = default);

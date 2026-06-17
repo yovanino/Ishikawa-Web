@@ -116,34 +116,65 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         return result;
     }
 
-    public async Task<RcaAiSuggestionDto?> MarkAcceptedAsync(
+    public async Task<RcaAiSuggestionDto?> ClaimAcceptedAsync(
         Guid tenantId,
         Guid incidentId,
         Guid suggestionId,
         string reviewedByUserId,
         string reviewNotes,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var reviewer = Truncate(reviewedByUserId, 160);
+        var notes = Truncate(reviewNotes, 2000);
+        var accepted = RcaAiSuggestionStatus.Accepted.ToString();
+        var pending = RcaAiSuggestionStatus.Pending.ToString();
+
+        var affected = await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE rca_ai_suggestions
+            SET Status = {accepted},
+                ReviewedAt = {now},
+                ReviewedByUserId = {reviewer},
+                ReviewNotes = {notes},
+                UpdatedAt = {now},
+                UpdatedByUserId = {reviewer}
+            WHERE TenantId = {tenantId}
+                AND RcaIncidentId = {incidentId}
+                AND Id = {suggestionId}
+                AND Status = {pending}
+                AND IsDeleted = 0
+            """,
+            cancellationToken);
+
+        if (affected == 0)
+        {
+            return null;
+        }
+
+        return await GetAsync(tenantId, incidentId, suggestionId, cancellationToken);
+    }
+
+    public async Task<RcaAiSuggestionDto?> CompleteAcceptedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
         string appliedEntityType,
         Guid? appliedEntityId,
         CancellationToken cancellationToken = default)
     {
-        var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        var suggestion = await LoadAcceptedAsync(tenantId, incidentId, suggestionId, cancellationToken);
         if (suggestion is null)
         {
             return null;
         }
 
-        var now = DateTimeOffset.UtcNow;
-
-        suggestion.Status = RcaAiSuggestionStatus.Accepted;
-        suggestion.ReviewedAt = now;
-        suggestion.ReviewedByUserId = Truncate(reviewedByUserId, 160);
-        suggestion.ReviewNotes = Truncate(reviewNotes, 2000);
         suggestion.AppliedEntityType = Truncate(appliedEntityType, 100);
         suggestion.AppliedEntityId = appliedEntityId;
-        suggestion.UpdatedAt = now;
+        suggestion.UpdatedAt = DateTimeOffset.UtcNow;
         suggestion.UpdatedByUserId = suggestion.ReviewedByUserId;
 
-        AddAuditRecord(suggestion, "AiSuggestionAccepted", now);
+        AddAuditRecord(suggestion, "AiSuggestionAccepted", suggestion.UpdatedAt.Value);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(suggestion);
@@ -157,20 +188,39 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         string reviewNotes,
         CancellationToken cancellationToken = default)
     {
-        var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
-        if (suggestion is null)
+        var now = DateTimeOffset.UtcNow;
+        var reviewer = Truncate(reviewedByUserId, 160);
+        var notes = Truncate(reviewNotes, 2000);
+        var rejected = RcaAiSuggestionStatus.Rejected.ToString();
+        var pending = RcaAiSuggestionStatus.Pending.ToString();
+
+        var affected = await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE rca_ai_suggestions
+            SET Status = {rejected},
+                ReviewedAt = {now},
+                ReviewedByUserId = {reviewer},
+                ReviewNotes = {notes},
+                UpdatedAt = {now},
+                UpdatedByUserId = {reviewer}
+            WHERE TenantId = {tenantId}
+                AND RcaIncidentId = {incidentId}
+                AND Id = {suggestionId}
+                AND Status = {pending}
+                AND IsDeleted = 0
+            """,
+            cancellationToken);
+
+        if (affected == 0)
         {
             return null;
         }
 
-        var now = DateTimeOffset.UtcNow;
-
-        suggestion.Status = RcaAiSuggestionStatus.Rejected;
-        suggestion.ReviewedAt = now;
-        suggestion.ReviewedByUserId = Truncate(reviewedByUserId, 160);
-        suggestion.ReviewNotes = Truncate(reviewNotes, 2000);
-        suggestion.UpdatedAt = now;
-        suggestion.UpdatedByUserId = suggestion.ReviewedByUserId;
+        var suggestion = await LoadRejectedAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        if (suggestion is null)
+        {
+            return null;
+        }
 
         AddAuditRecord(suggestion, "AiSuggestionRejected", now);
 
@@ -227,14 +277,26 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
         };
     }
 
-    private async Task<RcaAiSuggestion?> LoadForReviewAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
+    private async Task<RcaAiSuggestion?> LoadAcceptedAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
     {
         return await _dbContext.RcaAiSuggestions
             .FirstOrDefaultAsync(
                 x => x.TenantId == tenantId &&
                     x.RcaIncidentId == incidentId &&
                     x.Id == suggestionId &&
-                    x.Status == RcaAiSuggestionStatus.Pending &&
+                    x.Status == RcaAiSuggestionStatus.Accepted &&
+                    !x.IsDeleted,
+                cancellationToken);
+    }
+
+    private async Task<RcaAiSuggestion?> LoadRejectedAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.RcaAiSuggestions
+            .FirstOrDefaultAsync(
+                x => x.TenantId == tenantId &&
+                    x.RcaIncidentId == incidentId &&
+                    x.Id == suggestionId &&
+                    x.Status == RcaAiSuggestionStatus.Rejected &&
                     !x.IsDeleted,
                 cancellationToken);
     }
