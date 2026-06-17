@@ -16,4 +16,8 @@ public interface IRcaAiAssistantService
     Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(Guid incidentId, CancellationToken cancellationToken = default);
 
     Task<ApiResult<IReadOnlyList<RcaAiSuggestionDto>>> ListSuggestionsAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default);
+
+    Task<ApiResult<RcaAiSuggestionDto>> AcceptSuggestionAsync(Guid incidentId, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken = default);
+
+    Task<ApiResult<RcaAiSuggestionDto>> RejectSuggestionAsync(Guid incidentId, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken = default);
 }

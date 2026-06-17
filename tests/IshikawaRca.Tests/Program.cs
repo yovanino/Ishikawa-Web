@@ -84,9 +84,12 @@ AssertInfrastructureResolvesConfiguredAiGatewayClient();
 await AssertAiControllerExposesRecurrenceAndEightDAsync();
 await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
 await AssertAiControllerMapsMissingRcaToNotFoundAsync();
+await AssertAiControllerExposesSuggestionReviewEndpointsAsync();
 await AssertAiAssistantPersistsPendingCauseSuggestionsAsync();
 await AssertAiAssistantRejectsInvalidSuggestionStatusAsync();
 await AssertAiAssistantRejectsUndefinedNumericSuggestionStatusAsync();
+await AssertAcceptingCauseSuggestionCreatesCauseAndMarksAcceptedAsync();
+await AssertRejectingSuggestionDoesNotCreateOfficialEntityAsync();
 await AssertHttpWebhookSenderPostsPayloadAsync();
 await AssertHttpWebhookSenderSignsPayloadWhenSecretExistsAsync();
 await AssertHttpWebhookSenderFailsWhenConfiguredTimeoutExpiresAsync();
@@ -236,6 +239,34 @@ static async Task AssertAiControllerMapsMissingRcaToNotFoundAsync()
     }
 }
 
+static async Task AssertAiControllerExposesSuggestionReviewEndpointsAsync()
+{
+    var service = new RecordingAiAssistantService();
+    var controller = new RcaAiController(service);
+    var incidentId = Guid.NewGuid();
+    var suggestionId = Guid.NewGuid();
+
+    var list = await controller.ListSuggestions(incidentId, "Pending", CancellationToken.None);
+    var accept = await controller.AcceptSuggestion(incidentId, suggestionId, new AcceptRcaAiSuggestionRequest
+    {
+        ReviewedByUserId = "quality"
+    }, CancellationToken.None);
+    var reject = await controller.RejectSuggestion(incidentId, suggestionId, new RejectRcaAiSuggestionRequest
+    {
+        ReviewedByUserId = "quality"
+    }, CancellationToken.None);
+
+    if (list.Result is not OkObjectResult ||
+        accept.Result is not OkObjectResult ||
+        reject.Result is not OkObjectResult ||
+        !service.ListSuggestionsCalled ||
+        !service.AcceptSuggestionCalled ||
+        !service.RejectSuggestionCalled)
+    {
+        throw new InvalidOperationException("Expected AI controller to expose suggestion list, accept and reject endpoints.");
+    }
+}
+
 static async Task AssertAiAssistantPersistsPendingCauseSuggestionsAsync()
 {
     var incidentId = Guid.NewGuid();
@@ -295,6 +326,78 @@ static async Task AssertAiAssistantRejectsUndefinedNumericSuggestionStatusAsync(
     if (result.Success || result.Errors.All(x => x.Code != "AI_SUGGESTION_STATUS_INVALID"))
     {
         throw new InvalidOperationException("Expected undefined numeric AI suggestion statuses to fail with a controlled error.");
+    }
+}
+
+static async Task AssertAcceptingCauseSuggestionCreatesCauseAndMarksAcceptedAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var branchId = Guid.NewGuid();
+    var suggestionId = Guid.NewGuid();
+    var store = new RecordingAiSuggestionStore();
+    store.Suggestions.Add(new RcaAiSuggestionDto
+    {
+        Id = suggestionId,
+        TenantId = tenantId,
+        RcaIncidentId = incidentId,
+        SuggestionType = nameof(RcaAiSuggestionType.Cause),
+        Status = nameof(RcaAiSuggestionStatus.Pending),
+        Title = "Accepted cause",
+        PayloadJson = "{\"branchName\":\"Metodo\",\"title\":\"Accepted cause\",\"reasoning\":\"AI reasoning\",\"confidenceScore\":91,\"suggestedImpactScore\":4,\"suggestedProbabilityScore\":3,\"suggestedFrequencyScore\":2}"
+    });
+    var incidentService = new FixedRcaIncidentService(tenantId, incidentId, branchId);
+    var service = new RcaAiAssistantService(incidentService, new FixedAiGatewayClient(), store);
+
+    var result = await service.AcceptSuggestionAsync(incidentId, suggestionId, new AcceptRcaAiSuggestionRequest
+    {
+        TargetBranchId = branchId,
+        ReviewedByUserId = "quality",
+        ReviewNotes = "Approved"
+    });
+
+    if (!result.Success ||
+        result.Data?.Status != nameof(RcaAiSuggestionStatus.Accepted) ||
+        incidentService.AddedCauses.Count != 1 ||
+        incidentService.AddedCauses.Single().Title != "Accepted cause" ||
+        store.AuditRecords.All(x => x.Action != "AiSuggestionAccepted"))
+    {
+        throw new InvalidOperationException("Expected accepting a cause suggestion to create an official cause and mark the suggestion accepted with audit.");
+    }
+}
+
+static async Task AssertRejectingSuggestionDoesNotCreateOfficialEntityAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var suggestionId = Guid.NewGuid();
+    var store = new RecordingAiSuggestionStore();
+    store.Suggestions.Add(new RcaAiSuggestionDto
+    {
+        Id = suggestionId,
+        TenantId = tenantId,
+        RcaIncidentId = incidentId,
+        SuggestionType = nameof(RcaAiSuggestionType.Cause),
+        Status = nameof(RcaAiSuggestionStatus.Pending),
+        Title = "Rejected cause",
+        PayloadJson = "{\"title\":\"Rejected cause\"}"
+    });
+    var incidentService = new FixedRcaIncidentService(tenantId, incidentId);
+    var service = new RcaAiAssistantService(incidentService, new FixedAiGatewayClient(), store);
+
+    var result = await service.RejectSuggestionAsync(incidentId, suggestionId, new RejectRcaAiSuggestionRequest
+    {
+        ReviewedByUserId = "quality",
+        ReviewNotes = "Not enough evidence"
+    });
+
+    if (!result.Success ||
+        result.Data?.Status != nameof(RcaAiSuggestionStatus.Rejected) ||
+        incidentService.AddedCauses.Count != 0 ||
+        incidentService.AddedActions.Count != 0 ||
+        store.AuditRecords.All(x => x.Action != "AiSuggestionRejected"))
+    {
+        throw new InvalidOperationException("Expected rejecting an AI suggestion to avoid official RCA mutations and write audit.");
     }
 }
 
@@ -1752,6 +1855,9 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 
     public bool DetectRecurrenceCalled { get; private set; }
     public bool GenerateEightDCalled { get; private set; }
+    public bool ListSuggestionsCalled { get; private set; }
+    public bool AcceptSuggestionCalled { get; private set; }
+    public bool RejectSuggestionCalled { get; private set; }
 
     public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
@@ -1834,13 +1940,38 @@ internal sealed class RecordingAiAssistantService : IRcaAiAssistantService
 
     public Task<ApiResult<IReadOnlyList<RcaAiSuggestionDto>>> ListSuggestionsAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default)
     {
+        ListSuggestionsCalled = true;
         return Task.FromResult(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Ok([]));
+    }
+
+    public Task<ApiResult<RcaAiSuggestionDto>> AcceptSuggestionAsync(Guid incidentId, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken = default)
+    {
+        AcceptSuggestionCalled = true;
+        return Task.FromResult(ApiResult<RcaAiSuggestionDto>.Ok(new RcaAiSuggestionDto
+        {
+            Id = suggestionId,
+            RcaIncidentId = incidentId,
+            Status = nameof(RcaAiSuggestionStatus.Accepted)
+        }));
+    }
+
+    public Task<ApiResult<RcaAiSuggestionDto>> RejectSuggestionAsync(Guid incidentId, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken = default)
+    {
+        RejectSuggestionCalled = true;
+        return Task.FromResult(ApiResult<RcaAiSuggestionDto>.Ok(new RcaAiSuggestionDto
+        {
+            Id = suggestionId,
+            RcaIncidentId = incidentId,
+            Status = nameof(RcaAiSuggestionStatus.Rejected)
+        }));
     }
 }
 
 internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
 {
     public List<SavedAiSuggestion> Saved { get; } = [];
+    public List<RcaAiSuggestionDto> Suggestions { get; } = [];
+    public List<RecordedAiSuggestionAudit> AuditRecords { get; } = [];
     public int SaveBatchCallCount { get; private set; }
 
     public Task SavePendingBatchAsync(
@@ -1865,7 +1996,58 @@ internal sealed class RecordingAiSuggestionStore : IRcaAiSuggestionStore
 
     public Task<IReadOnlyList<RcaAiSuggestionDto>> ListAsync(Guid tenantId, Guid incidentId, RcaAiSuggestionStatus? status, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<IReadOnlyList<RcaAiSuggestionDto>>([]);
+        var suggestions = Suggestions
+            .Where(x => x.TenantId == tenantId && x.RcaIncidentId == incidentId)
+            .Where(x => !status.HasValue || x.Status == status.Value.ToString())
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<RcaAiSuggestionDto>>(suggestions);
+    }
+
+    public Task<RcaAiSuggestionDto?> GetAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Suggestions.FirstOrDefault(x =>
+            x.TenantId == tenantId &&
+            x.RcaIncidentId == incidentId &&
+            x.Id == suggestionId));
+    }
+
+    public Task<RcaAiSuggestionDto> MarkAcceptedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
+        string reviewedByUserId,
+        string reviewNotes,
+        string appliedEntityType,
+        Guid appliedEntityId,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestion = Suggestions.Single(x => x.TenantId == tenantId && x.RcaIncidentId == incidentId && x.Id == suggestionId);
+        suggestion.Status = nameof(RcaAiSuggestionStatus.Accepted);
+        suggestion.ReviewedByUserId = reviewedByUserId;
+        suggestion.ReviewNotes = reviewNotes;
+        suggestion.ReviewedAt = DateTimeOffset.UtcNow;
+        suggestion.AppliedEntityType = appliedEntityType;
+        suggestion.AppliedEntityId = appliedEntityId;
+        AuditRecords.Add(new RecordedAiSuggestionAudit(tenantId, incidentId, suggestionId, "AiSuggestionAccepted"));
+        return Task.FromResult(suggestion);
+    }
+
+    public Task<RcaAiSuggestionDto> MarkRejectedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
+        string reviewedByUserId,
+        string reviewNotes,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestion = Suggestions.Single(x => x.TenantId == tenantId && x.RcaIncidentId == incidentId && x.Id == suggestionId);
+        suggestion.Status = nameof(RcaAiSuggestionStatus.Rejected);
+        suggestion.ReviewedByUserId = reviewedByUserId;
+        suggestion.ReviewNotes = reviewNotes;
+        suggestion.ReviewedAt = DateTimeOffset.UtcNow;
+        AuditRecords.Add(new RecordedAiSuggestionAudit(tenantId, incidentId, suggestionId, "AiSuggestionRejected"));
+        return Task.FromResult(suggestion);
     }
 }
 
@@ -1878,6 +2060,8 @@ internal sealed record SavedAiSuggestion(
     object Payload,
     RcaAiSuggestionMetadataDto Metadata,
     string CreatedByUserId);
+
+internal sealed record RecordedAiSuggestionAudit(Guid TenantId, Guid IncidentId, Guid SuggestionId, string Action);
 
 internal sealed class FixedAiGatewayClient : IRcaAiGatewayClient
 {
@@ -1947,12 +2131,17 @@ internal sealed class FixedRcaIncidentService : IRcaIncidentService
 {
     private readonly Guid _tenantId;
     private readonly Guid _incidentId;
+    private readonly Guid _branchId;
 
-    public FixedRcaIncidentService(Guid tenantId, Guid incidentId)
+    public FixedRcaIncidentService(Guid tenantId, Guid incidentId, Guid? branchId = null)
     {
         _tenantId = tenantId;
         _incidentId = incidentId;
+        _branchId = branchId ?? Guid.NewGuid();
     }
+
+    public List<AddIshikawaCauseRequest> AddedCauses { get; } = [];
+    public List<AddCorrectiveActionRequest> AddedActions { get; } = [];
 
     public Task<ApiResult<RcaIncidentDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -1968,7 +2157,14 @@ internal sealed class FixedRcaIncidentService : IRcaIncidentService
 
     public Task<ApiResult<IshikawaCanvasDto>> GetCanvasAsync(Guid incidentId, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(ApiResult<IshikawaCanvasDto>.Ok(new IshikawaCanvasDto { RcaIncidentId = incidentId }));
+        return Task.FromResult(ApiResult<IshikawaCanvasDto>.Ok(new IshikawaCanvasDto
+        {
+            RcaIncidentId = incidentId,
+            Branches =
+            [
+                new IshikawaBranchDto { Id = _branchId, Name = "Metodo", Order = 1 }
+            ]
+        }));
     }
 
     public Task<ApiResult<IReadOnlyList<CorrectiveActionDto>>> ListCorrectiveActionsAsync(Guid incidentId, CancellationToken cancellationToken = default)
@@ -1978,8 +2174,27 @@ internal sealed class FixedRcaIncidentService : IRcaIncidentService
 
     public Task<ApiResult<RcaIncidentDto>> CreateAsync(CreateRcaIncidentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<ApiResult<IReadOnlyList<RcaIncidentDto>>> ListAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-    public Task<ApiResult<IshikawaCauseDto>> AddCauseAsync(Guid incidentId, AddIshikawaCauseRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-    public Task<ApiResult<CorrectiveActionDto>> AddCorrectiveActionAsync(Guid incidentId, AddCorrectiveActionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IshikawaCauseDto>> AddCauseAsync(Guid incidentId, AddIshikawaCauseRequest request, CancellationToken cancellationToken = default)
+    {
+        AddedCauses.Add(request);
+        return Task.FromResult(ApiResult<IshikawaCauseDto>.Ok(new IshikawaCauseDto
+        {
+            Id = Guid.NewGuid(),
+            BranchId = request.BranchId,
+            Title = request.Title
+        }));
+    }
+
+    public Task<ApiResult<CorrectiveActionDto>> AddCorrectiveActionAsync(Guid incidentId, AddCorrectiveActionRequest request, CancellationToken cancellationToken = default)
+    {
+        AddedActions.Add(request);
+        return Task.FromResult(ApiResult<CorrectiveActionDto>.Ok(new CorrectiveActionDto
+        {
+            Id = Guid.NewGuid(),
+            RcaIncidentId = incidentId,
+            Title = request.Title
+        }));
+    }
     public Task<ApiResult<CorrectiveActionDto>> UpdateCorrectiveActionStatusAsync(Guid incidentId, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<ApiResult<RcaEvidenceDto>> AddEvidenceAsync(Guid incidentId, AddRcaEvidenceRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();

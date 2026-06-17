@@ -1,3 +1,4 @@
+using System.Text.Json;
 using IshikawaRca.Application.Rca;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
@@ -7,6 +8,7 @@ namespace IshikawaRca.Application.Ai;
 
 public class RcaAiAssistantService : IRcaAiAssistantService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaAiGatewayClient _aiGatewayClient;
     private readonly IRcaAiSuggestionStore _suggestionStore;
@@ -147,6 +149,82 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         return ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Ok(suggestions);
     }
 
+    public async Task<ApiResult<RcaAiSuggestionDto>> AcceptSuggestionAsync(Guid incidentId, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken = default)
+    {
+        var incidentResult = await _rcaIncidentService.GetByIdAsync(incidentId, cancellationToken);
+        if (!incidentResult.Success || incidentResult.Data is null)
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(incidentResult.Message ?? "No se encontro el incidente RCA.", incidentResult.Errors.ToArray());
+        }
+
+        var suggestion = await _suggestionStore.GetAsync(incidentResult.Data.TenantId, incidentId, suggestionId, cancellationToken);
+        if (suggestion is null)
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(
+                "No se encontro la sugerencia IA.",
+                new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_FOUND", Message = "La sugerencia IA no corresponde al incidente RCA." });
+        }
+
+        if (suggestion.Status != RcaAiSuggestionStatus.Pending.ToString())
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(
+                "La sugerencia IA ya fue revisada.",
+                new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_PENDING", Message = "Solo se pueden aceptar sugerencias pendientes." });
+        }
+
+        var applied = await ApplySuggestionAsync(incidentId, suggestion, request, cancellationToken);
+        if (!applied.Success || applied.Data is null)
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(applied.Message ?? "No se pudo aplicar la sugerencia IA.", applied.Errors.ToArray());
+        }
+
+        var accepted = await _suggestionStore.MarkAcceptedAsync(
+            incidentResult.Data.TenantId,
+            incidentId,
+            suggestionId,
+            NormalizeUserId(request.ReviewedByUserId),
+            request.ReviewNotes ?? string.Empty,
+            applied.Data.EntityType,
+            applied.Data.EntityId,
+            cancellationToken);
+
+        return ApiResult<RcaAiSuggestionDto>.Ok(accepted, "Sugerencia IA aceptada.");
+    }
+
+    public async Task<ApiResult<RcaAiSuggestionDto>> RejectSuggestionAsync(Guid incidentId, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken = default)
+    {
+        var incidentResult = await _rcaIncidentService.GetByIdAsync(incidentId, cancellationToken);
+        if (!incidentResult.Success || incidentResult.Data is null)
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(incidentResult.Message ?? "No se encontro el incidente RCA.", incidentResult.Errors.ToArray());
+        }
+
+        var suggestion = await _suggestionStore.GetAsync(incidentResult.Data.TenantId, incidentId, suggestionId, cancellationToken);
+        if (suggestion is null)
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(
+                "No se encontro la sugerencia IA.",
+                new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_FOUND", Message = "La sugerencia IA no corresponde al incidente RCA." });
+        }
+
+        if (suggestion.Status != RcaAiSuggestionStatus.Pending.ToString())
+        {
+            return ApiResult<RcaAiSuggestionDto>.Fail(
+                "La sugerencia IA ya fue revisada.",
+                new ApiError { Field = nameof(suggestionId), Code = "AI_SUGGESTION_NOT_PENDING", Message = "Solo se pueden rechazar sugerencias pendientes." });
+        }
+
+        var rejected = await _suggestionStore.MarkRejectedAsync(
+            incidentResult.Data.TenantId,
+            incidentId,
+            suggestionId,
+            NormalizeUserId(request.ReviewedByUserId),
+            request.ReviewNotes ?? string.Empty,
+            cancellationToken);
+
+        return ApiResult<RcaAiSuggestionDto>.Ok(rejected, "Sugerencia IA rechazada.");
+    }
+
     private async Task SavePendingBatchAsync(RcaAiContextDto context, IReadOnlyList<RcaAiPendingSuggestionInput> suggestions, CancellationToken cancellationToken)
     {
         if (suggestions.Count == 0)
@@ -160,6 +238,67 @@ public class RcaAiAssistantService : IRcaAiAssistantService
             suggestions,
             "ai-request",
             cancellationToken);
+    }
+
+    private async Task<ApiResult<AppliedAiSuggestion>> ApplySuggestionAsync(Guid incidentId, RcaAiSuggestionDto suggestion, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken)
+    {
+        if (suggestion.SuggestionType == RcaAiSuggestionType.Cause.ToString())
+        {
+            if (!request.TargetBranchId.HasValue)
+            {
+                return ApiResult<AppliedAiSuggestion>.Fail(
+                    "La sugerencia de causa requiere rama destino.",
+                    new ApiError { Field = nameof(request.TargetBranchId), Code = "TARGET_BRANCH_REQUIRED", Message = "Seleccione la rama Ishikawa donde aplicar la causa." });
+            }
+
+            var payload = DeserializePayload<RcaAiCauseSuggestionDto>(suggestion.PayloadJson);
+            if (payload is null)
+            {
+                return InvalidPayload();
+            }
+
+            var causeResult = await _rcaIncidentService.AddCauseAsync(incidentId, new AddIshikawaCauseRequest
+            {
+                BranchId = request.TargetBranchId.Value,
+                Title = payload.Title,
+                Description = payload.Reasoning,
+                ProbabilityScore = payload.SuggestedProbabilityScore,
+                ImpactScore = payload.SuggestedImpactScore,
+                FrequencyScore = payload.SuggestedFrequencyScore,
+                EvidenceSummary = suggestion.Summary
+            }, cancellationToken);
+
+            return causeResult.Success && causeResult.Data is not null
+                ? ApiResult<AppliedAiSuggestion>.Ok(new AppliedAiSuggestion(nameof(IshikawaCauseDto), causeResult.Data.Id))
+                : ApiResult<AppliedAiSuggestion>.Fail(causeResult.Message ?? "No se pudo crear la causa desde la sugerencia IA.", causeResult.Errors.ToArray());
+        }
+
+        if (suggestion.SuggestionType == RcaAiSuggestionType.Action.ToString())
+        {
+            var payload = DeserializePayload<RcaAiActionSuggestionDto>(suggestion.PayloadJson);
+            if (payload is null)
+            {
+                return InvalidPayload();
+            }
+
+            var actionResult = await _rcaIncidentService.AddCorrectiveActionAsync(incidentId, new AddCorrectiveActionRequest
+            {
+                Title = payload.Title,
+                Description = payload.Description,
+                AssignedToUserId = payload.SuggestedOwnerRole,
+                DueDate = payload.SuggestedDueDays > 0
+                    ? DateTimeOffset.UtcNow.AddDays(payload.SuggestedDueDays)
+                    : null
+            }, cancellationToken);
+
+            return actionResult.Success && actionResult.Data is not null
+                ? ApiResult<AppliedAiSuggestion>.Ok(new AppliedAiSuggestion(nameof(CorrectiveActionDto), actionResult.Data.Id))
+                : ApiResult<AppliedAiSuggestion>.Fail(actionResult.Message ?? "No se pudo crear la accion desde la sugerencia IA.", actionResult.Errors.ToArray());
+        }
+
+        return ApiResult<AppliedAiSuggestion>.Fail(
+            "El tipo de sugerencia IA no puede aplicarse automaticamente.",
+            new ApiError { Field = nameof(suggestion.SuggestionType), Code = "AI_SUGGESTION_TYPE_NOT_APPLICABLE", Message = "Este tipo de sugerencia solo puede revisarse manualmente." });
     }
 
     private static bool TryParseSuggestionStatus(string? status, out RcaAiSuggestionStatus? parsedStatus)
@@ -179,6 +318,34 @@ public class RcaAiAssistantService : IRcaAiAssistantService
         parsedStatus = value;
         return true;
     }
+
+    private static T? DeserializePayload<T>(string payloadJson)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<T>(payloadJson, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return default;
+        }
+    }
+
+    private static ApiResult<AppliedAiSuggestion> InvalidPayload()
+    {
+        return ApiResult<AppliedAiSuggestion>.Fail(
+            "El payload de la sugerencia IA no es valido.",
+            new ApiError { Field = nameof(RcaAiSuggestionDto.PayloadJson), Code = "AI_SUGGESTION_PAYLOAD_INVALID", Message = "No se pudo interpretar el payload de la sugerencia IA." });
+    }
+
+    private static string NormalizeUserId(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "ai-review"
+            : value.Trim();
+    }
+
+    private sealed record AppliedAiSuggestion(string EntityType, Guid EntityId);
 
     private async Task<ApiResult<RcaAiContextDto>> BuildContextAsync(Guid incidentId, CancellationToken cancellationToken)
     {

@@ -459,3 +459,22 @@ live, outbox o webhooks versionados.
   antes de crear el indice unico.
 - La validacion de `status` rechaza valores numericos fuera del enum, no solo
   texto invalido.
+
+### 2026-06-17 - Gobernanza de revision de sugerencias IA P3 Task 6
+
+- Agregados contratos `AcceptRcaAiSuggestionRequest` y
+  `RejectRcaAiSuggestionRequest`.
+- `IRcaAiAssistantService` expone `AcceptSuggestionAsync` y
+  `RejectSuggestionAsync`.
+- `RcaAiAssistantService` valida que la sugerencia pertenezca al tenant/incidente
+  y este `Pending` antes de aplicar cualquier cambio.
+- Aceptar una sugerencia `Cause` requiere `TargetBranchId` y crea una causa
+  oficial con `IRcaIncidentService.AddCauseAsync`.
+- Aceptar una sugerencia `Action` crea una accion correctiva oficial con
+  `IRcaIncidentService.AddCorrectiveActionAsync`.
+- Rechazar una sugerencia no crea entidades oficiales.
+- `EfRcaAiSuggestionStore` marca `Accepted`/`Rejected`, conserva usuario/notas de
+  revision y escribe `RcaAuditRecord` con acciones `AiSuggestionAccepted` o
+  `AiSuggestionRejected`.
+- `RcaAiController` expone `GET suggestions`, `POST accept` y `POST reject`; los
+  endpoints de aceptar/rechazar requieren roles de gobernanza de calidad.

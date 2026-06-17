@@ -1,6 +1,8 @@
 using IshikawaRca.Application.Ai;
 using IshikawaRca.Contracts.Common;
 using IshikawaRca.Contracts.Rca;
+using IshikawaRca.Web.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IshikawaRca.Web.Controllers.Api;
@@ -66,6 +68,38 @@ public class RcaAiController : ControllerBase
         return ToAiActionResult(result);
     }
 
+    [HttpGet("suggestions")]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<RcaAiSuggestionDto>>>> ListSuggestions(Guid id, [FromQuery] string? status, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.ListSuggestionsAsync(id, status, cancellationToken);
+        return ToAiActionResult(result);
+    }
+
+    [HttpPost("suggestions/{suggestionId:guid}/accept")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaAiSuggestionDto>>> AcceptSuggestion(Guid id, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.AcceptSuggestionAsync(id, suggestionId, request, cancellationToken);
+        return ToAiActionResult(result);
+    }
+
+    [HttpPost("suggestions/{suggestionId:guid}/reject")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResult<RcaAiSuggestionDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<RcaAiSuggestionDto>>> RejectSuggestion(Guid id, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.RejectSuggestionAsync(id, suggestionId, request, cancellationToken);
+        return ToAiActionResult(result);
+    }
+
     private ActionResult<ApiResult<T>> ToAiActionResult<T>(ApiResult<T> result)
     {
         if (result.Success)
@@ -73,7 +107,7 @@ public class RcaAiController : ControllerBase
             return Ok(result);
         }
 
-        if (result.Errors.Any(x => x.Code == "RCA_NOT_FOUND"))
+        if (result.Errors.Any(x => x.Code is "RCA_NOT_FOUND" or "AI_SUGGESTION_NOT_FOUND"))
         {
             return NotFound(result);
         }

@@ -83,6 +83,72 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<RcaAiSuggestionDto?> GetAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken = default)
+    {
+        var suggestion = await _dbContext.RcaAiSuggestions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.TenantId == tenantId &&
+                    x.RcaIncidentId == incidentId &&
+                    x.Id == suggestionId &&
+                    !x.IsDeleted,
+                cancellationToken);
+
+        return suggestion is null ? null : ToDto(suggestion);
+    }
+
+    public async Task<RcaAiSuggestionDto> MarkAcceptedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
+        string reviewedByUserId,
+        string reviewNotes,
+        string appliedEntityType,
+        Guid appliedEntityId,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+
+        suggestion.Status = RcaAiSuggestionStatus.Accepted;
+        suggestion.ReviewedAt = now;
+        suggestion.ReviewedByUserId = Truncate(reviewedByUserId, 160);
+        suggestion.ReviewNotes = Truncate(reviewNotes, 2000);
+        suggestion.AppliedEntityType = Truncate(appliedEntityType, 100);
+        suggestion.AppliedEntityId = appliedEntityId;
+        suggestion.UpdatedAt = now;
+        suggestion.UpdatedByUserId = suggestion.ReviewedByUserId;
+
+        AddAuditRecord(suggestion, "AiSuggestionAccepted", now);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(suggestion);
+    }
+
+    public async Task<RcaAiSuggestionDto> MarkRejectedAsync(
+        Guid tenantId,
+        Guid incidentId,
+        Guid suggestionId,
+        string reviewedByUserId,
+        string reviewNotes,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestion = await LoadForReviewAsync(tenantId, incidentId, suggestionId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+
+        suggestion.Status = RcaAiSuggestionStatus.Rejected;
+        suggestion.ReviewedAt = now;
+        suggestion.ReviewedByUserId = Truncate(reviewedByUserId, 160);
+        suggestion.ReviewNotes = Truncate(reviewNotes, 2000);
+        suggestion.UpdatedAt = now;
+        suggestion.UpdatedByUserId = suggestion.ReviewedByUserId;
+
+        AddAuditRecord(suggestion, "AiSuggestionRejected", now);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return ToDto(suggestion);
+    }
+
     private static RcaAiSuggestion ToEntity(Guid tenantId, Guid incidentId, RcaAiPendingSuggestionInput input, string createdByUserId)
     {
         var payloadJson = JsonSerializer.Serialize(input.Payload, JsonOptions);
@@ -130,6 +196,40 @@ public class EfRcaAiSuggestionStore : IRcaAiSuggestionStore
             AppliedEntityType = suggestion.AppliedEntityType,
             AppliedEntityId = suggestion.AppliedEntityId
         };
+    }
+
+    private async Task<RcaAiSuggestion> LoadForReviewAsync(Guid tenantId, Guid incidentId, Guid suggestionId, CancellationToken cancellationToken)
+    {
+        return await _dbContext.RcaAiSuggestions
+            .FirstAsync(
+                x => x.TenantId == tenantId &&
+                    x.RcaIncidentId == incidentId &&
+                    x.Id == suggestionId &&
+                    !x.IsDeleted,
+                cancellationToken);
+    }
+
+    private void AddAuditRecord(RcaAiSuggestion suggestion, string action, DateTimeOffset occurredAt)
+    {
+        _dbContext.RcaAuditRecords.Add(new RcaAuditRecord
+        {
+            TenantId = suggestion.TenantId,
+            RcaIncidentId = suggestion.RcaIncidentId,
+            EntityType = nameof(RcaAiSuggestion),
+            EntityId = suggestion.Id,
+            Action = action,
+            UserId = suggestion.ReviewedByUserId,
+            OccurredAt = occurredAt,
+            Summary = $"{action}: {suggestion.Title}",
+            DataJson = JsonSerializer.Serialize(new
+            {
+                suggestionId = suggestion.Id,
+                suggestionType = suggestion.SuggestionType.ToString(),
+                status = suggestion.Status.ToString(),
+                appliedEntityType = suggestion.AppliedEntityType,
+                appliedEntityId = suggestion.AppliedEntityId
+            }, JsonOptions)
+        });
     }
 
     private static int? TryGetConfidence(object payload)

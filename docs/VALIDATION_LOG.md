@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-17 - P3 Task 6 govern RCA AI suggestion review
+
+Scope: add human approval APIs for pending AI suggestions.
+
+Checks:
+
+- Added RED coverage for accepting a pending cause suggestion, creating an
+  official cause, marking the suggestion accepted and writing audit.
+- Added RED coverage for rejecting a pending suggestion without creating
+  official RCA entities and writing audit.
+- Added controller coverage for list/accept/reject endpoints.
+- Added accept/reject request DTOs.
+- Extended `IRcaAiAssistantService`, `RcaAiAssistantService` and
+  `IRcaAiSuggestionStore`.
+- `EfRcaAiSuggestionStore` now marks accepted/rejected suggestions and writes
+  `RcaAuditRecord` entries.
+- `RcaAiController` exposes protected accept/reject endpoints.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed first because accept/reject DTOs and service methods did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed with 0 warnings and 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-13 - P3 Task 5 AI suggestion persistence hardening
 
 Scope: address Task 5 quality review feedback before starting accept/reject

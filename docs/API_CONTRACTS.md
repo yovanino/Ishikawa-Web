@@ -385,6 +385,9 @@ POST /api/v1/rca/incidents/{id}/ai/suggest-actions
 POST /api/v1/rca/incidents/{id}/ai/summarize
 POST /api/v1/rca/incidents/{id}/ai/detect-recurrence
 POST /api/v1/rca/incidents/{id}/ai/generate-8d-draft
+GET  /api/v1/rca/incidents/{id}/ai/suggestions?status=Pending
+POST /api/v1/rca/incidents/{id}/ai/suggestions/{suggestionId}/accept
+POST /api/v1/rca/incidents/{id}/ai/suggestions/{suggestionId}/reject
 ```
 
 La respuesta incluye `metadata.provider`, `metadata.model` e `metadata.isFallback` para que la UI o la app global sepan si la recomendacion vino de IA real o de fallback.
@@ -396,6 +399,38 @@ Codigos HTTP:
 - `503 Service Unavailable`: el AI Gateway no esta disponible, esta mal
   configurado o devuelve una respuesta invalida (`AI_GATEWAY_*`).
 - `400 Bad Request`: otros errores de validacion del flujo RCA.
+
+Las sugerencias persistidas se gobiernan por aprobacion humana:
+
+- `GET suggestions` lista sugerencias por estado (`Pending`, `Accepted`,
+  `Rejected`, `Expired`).
+- `POST accept` requiere rol de gobernanza de calidad y convierte una
+  sugerencia `Cause` en causa oficial o una sugerencia `Action` en accion
+  correctiva oficial. La IA no aplica cambios sin esta llamada humana.
+- `POST reject` requiere rol de gobernanza de calidad, marca la sugerencia como
+  rechazada y no crea entidades oficiales.
+- Si la sugerencia no existe devuelve `AI_SUGGESTION_NOT_FOUND`; si ya fue
+  revisada devuelve `AI_SUGGESTION_NOT_PENDING`; si el payload no puede
+  interpretarse devuelve `AI_SUGGESTION_PAYLOAD_INVALID`.
+
+Aceptar sugerencia:
+
+```json
+{
+  "reviewedByUserId": "quality",
+  "reviewNotes": "Validado con evidencia de piso",
+  "targetBranchId": "22222222-2222-2222-2222-222222222222"
+}
+```
+
+Rechazar sugerencia:
+
+```json
+{
+  "reviewedByUserId": "quality",
+  "reviewNotes": "No coincide con la evidencia disponible"
+}
+```
 
 Deteccion de recurrencia:
 

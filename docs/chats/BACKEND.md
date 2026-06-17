@@ -510,3 +510,7 @@ standalone.
 - Re-review Task 5 P3: la migracion del indice unico backfillea
   `GatewayCorrelationId` vacios antes de crear el indice, y el parser de status
   rechaza numericos fuera del enum como `999`.
+- Task 6 P3: agregado gobierno de revision humana para sugerencias IA. La API
+  lista sugerencias, acepta/rechaza con roles de calidad, aplica causas/acciones
+  oficiales solo tras aceptacion y audita `AiSuggestionAccepted` /
+  `AiSuggestionRejected`.

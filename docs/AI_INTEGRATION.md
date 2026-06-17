@@ -158,6 +158,12 @@ despues de respuestas exitosas del gateway:
 - El listado valida `status` antes de consultar; un valor invalido devuelve
   `AI_SUGGESTION_STATUS_INVALID`.
 
+La revision humana se expone con endpoints de listado, aceptacion y rechazo.
+Aceptar una sugerencia `Cause` crea una causa oficial mediante el servicio RCA;
+aceptar una sugerencia `Action` crea una accion correctiva oficial. Rechazar una
+sugerencia no modifica entidades RCA oficiales. Ambos caminos registran auditoria
+`AiSuggestionAccepted` o `AiSuggestionRejected`.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.
