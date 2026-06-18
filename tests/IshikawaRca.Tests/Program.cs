@@ -60,6 +60,7 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 AssertAiSuggestionDefaults();
 AssertRcaClosureDocumentDefaults();
 AssertRcaClosureDocumentEfModel();
+AssertRcaClosureDocumentContracts();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -188,6 +189,48 @@ static void AssertHasIndex(IReadOnlyList<Microsoft.EntityFrameworkCore.Metadata.
     if (!hasIndex)
     {
         throw new InvalidOperationException($"Expected EF index on {string.Join(", ", propertyNames)} with unique={unique}.");
+    }
+}
+
+static void AssertRcaClosureDocumentContracts()
+{
+    var dto = new RcaClosureDocumentDto
+    {
+        Id = Guid.NewGuid(),
+        TenantId = Guid.NewGuid(),
+        RcaIncidentId = Guid.NewGuid(),
+        Version = 1,
+        FileName = "rca-closure-v1.pdf",
+        SizeBytes = 128,
+        StorageProvider = "Local",
+        StorageKey = "closure/rca/v1.pdf",
+        Sha256 = new string('b', 64),
+        Status = nameof(RcaClosureDocumentStatus.Draft),
+        GeneratedAt = DateTimeOffset.UtcNow,
+        GeneratedByUserId = "quality"
+    };
+
+    var register = new RegisterRcaClosureDocumentRequest
+    {
+        FileName = dto.FileName,
+        SizeBytes = dto.SizeBytes,
+        StorageProvider = dto.StorageProvider,
+        StorageKey = dto.StorageKey,
+        Sha256 = dto.Sha256,
+        GeneratedByUserId = dto.GeneratedByUserId
+    };
+
+    var review = new ReviewRcaClosureDocumentRequest
+    {
+        ReviewedByUserId = "quality",
+        ReviewNotes = "Approved for pilot release."
+    };
+
+    if (dto.ContentType != "application/pdf" ||
+        register.ContentType != "application/pdf" ||
+        review.ReviewedByUserId != "quality")
+    {
+        throw new InvalidOperationException("Closure document contracts must keep PDF defaults and reviewer metadata.");
     }
 }
 

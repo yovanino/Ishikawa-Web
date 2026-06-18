@@ -209,6 +209,9 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregado mapping EF y migracion `AddRcaClosureDocuments` para la tabla
   `rca_closure_documents`, con version unico por tenant/RCA e indices para
   consulta por incidente o estado.
+- Agregados contratos `RcaClosureDocumentDto`,
+  `RegisterRcaClosureDocumentRequest`, `ReviewRcaClosureDocumentRequest` e
+  interfaz `IRcaClosureDocumentService`.
 - El servicio de versionado, storage de documentos y aprobacion auditada quedan
   como siguientes tareas del corte P4.1.
 
@@ -576,3 +579,10 @@ acoplar el modulo a sistemas corporativos futuros.
   `TenantId + RcaIncidentId + GeneratedAt` y
   `TenantId + Status + GeneratedAt`.
 - Generada migracion EF `AddRcaClosureDocuments`.
+
+### 2026-06-18 - Contratos documentales P4.1 Task 3a
+
+- Agregado DTO publico `RcaClosureDocumentDto`.
+- Agregados requests para registro de documento generado y revision documental.
+- Agregada frontera `IRcaClosureDocumentService` para registrar, listar,
+  aprobar y rechazar documentos de cierre.

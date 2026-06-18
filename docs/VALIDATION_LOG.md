@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document contracts
+
+Scope: add public contracts and application boundary for RCA closure document
+versions.
+
+Checks:
+
+- Added `RcaClosureDocumentDto`.
+- Added `RegisterRcaClosureDocumentRequest`.
+- Added `ReviewRcaClosureDocumentRequest`.
+- Added `IRcaClosureDocumentService`.
+- Added lightweight contract default coverage for PDF content type and reviewer
+  metadata.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document persistence
 
 Scope: add EF persistence for versioned RCA closure documents.

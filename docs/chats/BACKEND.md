@@ -539,3 +539,5 @@ standalone.
 - P4.1 Task 2: agregado mapping EF, DbSet y migracion
   `AddRcaClosureDocuments` para `rca_closure_documents`, con version unico por
   tenant/RCA e indices de consulta documental.
+- P4.1 Task 3a: agregados contratos e interfaz de aplicacion para registrar,
+  listar, aprobar y rechazar documentos de cierre RCA.
