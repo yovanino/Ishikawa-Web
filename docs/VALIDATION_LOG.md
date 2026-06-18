@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-18 - RCA AI MVC suggestion review panel hardening
+
+Scope: address review feedback on pending AI suggestion visibility in MVC.
+
+Checks:
+
+- Pending AI suggestions are loaded only when the current user has quality
+  governance role (`Supervisor`, `Quality` or `Administrator`).
+- The detail view renders the AI suggestion panel only when
+  `CanReviewAiSuggestions` is true.
+- Accept/reject mutation paths remain protected by antiforgery and quality
+  governance role.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - RCA AI MVC suggestion review panel
 
 Scope: validate the MVC review surface for pending RCA AI suggestions.

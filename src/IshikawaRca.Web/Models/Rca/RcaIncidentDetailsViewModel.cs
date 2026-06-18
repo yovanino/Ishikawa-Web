@@ -23,6 +23,8 @@ public class RcaIncidentDetailsViewModel
 
     public IReadOnlyList<RcaAiSuggestionDto> AiSuggestions { get; set; } = [];
 
+    public bool CanReviewAiSuggestions { get; set; }
+
     public RcaWizardProgressDto WizardProgress { get; set; } = new();
 
     public AddIshikawaCauseViewModel Cause { get; set; } = new();

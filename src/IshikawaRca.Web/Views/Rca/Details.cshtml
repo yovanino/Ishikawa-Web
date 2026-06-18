@@ -168,7 +168,7 @@
     </article>
 </section>
 
-@if (Model.AiSuggestions.Count > 0)
+@if (Model.CanReviewAiSuggestions && Model.AiSuggestions.Count > 0)
 {
     <section class="analysis-panel ai-review-panel" aria-label="Revision de sugerencias IA">
         <div class="panel-heading">

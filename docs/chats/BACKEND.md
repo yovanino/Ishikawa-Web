@@ -527,3 +527,6 @@ standalone.
   panel de revision humana para aceptar o rechazar. Las acciones MVC requieren
   antiforgery y rol de gobernanza de calidad; aceptar causas exige seleccionar
   rama destino y delega en el workflow auditado existente.
+- Hardening post-review Task 7 P3: el detalle MVC solo consulta y renderiza
+  sugerencias IA pendientes cuando el usuario actual tiene rol de gobernanza de
+  calidad.

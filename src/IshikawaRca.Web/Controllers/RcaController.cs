@@ -881,7 +881,10 @@ public class RcaController : Controller
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
         var wizardProgressResult = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
-        var aiSuggestionsResult = await _aiAssistantService.ListSuggestionsAsync(id, nameof(RcaAiSuggestionStatus.Pending), cancellationToken);
+        var canReviewAiSuggestions = CanReviewAiSuggestions();
+        var aiSuggestions = canReviewAiSuggestions
+            ? (await _aiAssistantService.ListSuggestionsAsync(id, nameof(RcaAiSuggestionStatus.Pending), cancellationToken)).Data ?? []
+            : [];
 
         var facts = factsResult.Data ?? [];
         var correctiveActions = actionsResult.Data ?? [];
@@ -901,7 +904,8 @@ public class RcaController : Controller
             Evidence = evidence,
             ExternalIntakes = externalIntakes,
             TimelineEvents = timelineEvents,
-            AiSuggestions = aiSuggestionsResult.Data ?? [],
+            AiSuggestions = aiSuggestions,
+            CanReviewAiSuggestions = canReviewAiSuggestions,
             UnifiedTimeline = BuildUnifiedTimeline(timelineEvents, canvasResult.Data, correctiveActions, evidence, externalIntakes),
             WizardProgress = wizardProgressResult.Data ?? new RcaWizardProgressDto
             {
@@ -915,6 +919,13 @@ public class RcaController : Controller
                 Step = wizardProgressResult.Data?.NextRecommendedStep ?? GetNextWizardStep(incidentResult.Data.WizardStep)
             }
         };
+    }
+
+    private bool CanReviewAiSuggestions()
+    {
+        return _currentUserContext.IsInRole(RcaRoleNames.Supervisor) ||
+            _currentUserContext.IsInRole(RcaRoleNames.Quality) ||
+            _currentUserContext.IsInRole(RcaRoleNames.Administrator);
     }
 
     private static IReadOnlyList<RcaTimelineItemViewModel> BuildUnifiedTimeline(

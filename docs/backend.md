@@ -177,6 +177,26 @@ Los adapters directos contra Gantt, SCADA o Gateway no forman parte de este
 repositorio. La integracion debe hacerse por APIs, snapshots, facts, eventos
 live, outbox o webhooks versionados.
 
+## Corte Backend P3
+
+El corte de IA asistida con aprobacion humana queda cerrado para el alcance
+standalone:
+
+- Cliente HTTP real para AI Gateway y modo stub deterministico.
+- Seleccion `AiGateway:Mode = Stub/Http` por ambiente/instalacion.
+- Fallback controlado cuando el gateway HTTP falla y esta habilitado.
+- Endpoints para causas, acciones, resumen, recurrencia y borrador 8D.
+- Persistencia de sugerencias IA pendientes con metadata de modelo/proveedor.
+- Revision humana obligatoria para aceptar o rechazar sugerencias.
+- Auditoria de aceptacion/rechazo y proteccion por rol de gobernanza de
+  calidad.
+- Panel MVC de revision de sugerencias pendientes en el detalle RCA.
+
+La politica IA especifica por tenant queda fuera de P3 hasta que exista
+Identity/tenant corporativo real. El alcance actual mantiene aislamiento por
+tenant en datos y auditoria, y configuracion por ambiente para operar
+standalone.
+
 ## Limites
 
 - No acoplar directamente con Gantt, SCADA, OEE, TPM, Andon, Identity ni AI
@@ -509,3 +529,17 @@ live, outbox o webhooks versionados.
 - Las acciones MVC `AcceptAiSuggestion` y `RejectAiSuggestion` requieren
   antiforgery y rol de gobernanza de calidad, reutilizando el usuario del
   contexto autenticado para auditoria.
+
+### 2026-06-18 - Cierre documental P3 Task 8
+
+- Cerrado P3 como alcance standalone de IA gobernada.
+- Documentada la regla de configuracion por ambiente/instalacion y la
+  postergacion de politica IA especifica por tenant hasta Identity corporativo.
+- Alineados contratos API, roadmap, estado, bitacora y log de validacion.
+
+### 2026-06-18 - Hardening post-review del panel IA P3 Task 7
+
+- El detalle MVC ya no consulta ni renderiza sugerencias IA pendientes para
+  usuarios sin rol de gobernanza de calidad.
+- `RcaIncidentDetailsViewModel` expone `CanReviewAiSuggestions` para que la
+  vista tenga una defensa adicional antes de mostrar el panel.
