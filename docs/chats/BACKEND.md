@@ -45,6 +45,9 @@ standalone.
   contratos versionados.
 - El frente P2 debe evolucionar el feed derivado hacia outbox/webhooks/canal
   live sin romper `RcaDomainEventDto` ni acoplar consumidores a tablas internas.
+- Todo proceso local largo o en background debe tener timeout explicito y plan
+  de apagado; no se deben dejar servidores `dotnet run`, watchers ni browsers
+  automatizados vivos al cerrar una tarea.
 
 ## Cambios Realizados
 
