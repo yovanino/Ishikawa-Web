@@ -61,6 +61,8 @@ AssertAiSuggestionDefaults();
 AssertRcaClosureDocumentDefaults();
 AssertRcaClosureDocumentEfModel();
 AssertRcaClosureDocumentContracts();
+await AssertClosureDocumentStorageSavesPdfWithHashAsync();
+AssertClosureDocumentStorageRejectsUnsafeKeys();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -231,6 +233,52 @@ static void AssertRcaClosureDocumentContracts()
         review.ReviewedByUserId != "quality")
     {
         throw new InvalidOperationException("Closure document contracts must keep PDF defaults and reviewer metadata.");
+    }
+}
+
+static async Task AssertClosureDocumentStorageSavesPdfWithHashAsync()
+{
+    var root = CreateTempDirectory();
+    try
+    {
+        var storage = new ClosureDocumentStorage(
+            new TestWebHostEnvironment(root),
+            Options.Create(new ClosureDocumentStorageOptions { RootPath = "closure-documents", MaxFileSizeMb = 1 }));
+        var incidentId = Guid.NewGuid();
+        var content = Encoding.ASCII.GetBytes("%PDF-1.4\nclosure document");
+
+        var stored = await storage.SaveAsync(incidentId, "rca-closure.pdf", content, CancellationToken.None);
+        var resolved = storage.Resolve(stored.StorageKey, stored.FileName, stored.ContentType);
+
+        if (stored.StorageProvider != "LocalFileSystem" ||
+            stored.ContentType != "application/pdf" ||
+            stored.SizeBytes != content.Length ||
+            stored.Sha256 != Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant() ||
+            !File.Exists(resolved.PhysicalPath))
+        {
+            throw new InvalidOperationException("Closure document storage did not persist PDF metadata correctly.");
+        }
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void AssertClosureDocumentStorageRejectsUnsafeKeys()
+{
+    var root = CreateTempDirectory();
+    try
+    {
+        var storage = new ClosureDocumentStorage(
+            new TestWebHostEnvironment(root),
+            Options.Create(new ClosureDocumentStorageOptions { RootPath = "closure-documents" }));
+
+        AssertThrows<InvalidOperationException>(() => storage.Resolve("../outside.pdf", "outside.pdf", "application/pdf"));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
     }
 }
 

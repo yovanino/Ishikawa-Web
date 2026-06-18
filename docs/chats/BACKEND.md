@@ -544,3 +544,5 @@ standalone.
 - P4.1 Task 3b: agregado `EfRcaClosureDocumentService`, con versionado
   incremental por tenant/RCA, validacion de RCA cerrado y auditoria de
   generacion/aprobacion/rechazo.
+- P4.1 Task 3c: agregado storage documental local para PDFs de cierre con
+  limite configurable, SHA-256 y resolucion segura dentro del root configurado.

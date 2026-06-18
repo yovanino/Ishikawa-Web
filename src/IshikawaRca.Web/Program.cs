@@ -32,7 +32,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentRcaUserContext, CurrentRcaUserContext>();
 builder.Services.AddIshikawaRcaInfrastructure(builder.Configuration);
 builder.Services.Configure<EvidenceStorageOptions>(builder.Configuration.GetSection("EvidenceStorage"));
+builder.Services.Configure<ClosureDocumentStorageOptions>(builder.Configuration.GetSection("ClosureDocumentStorage"));
 builder.Services.AddSingleton<IEvidenceFileStorage, EvidenceFileStorage>();
+builder.Services.AddSingleton<IClosureDocumentStorage, ClosureDocumentStorage>();
 builder.Services.AddSingleton<IRcaPdfReportService, RcaPdfReportService>();
 
 var app = builder.Build();

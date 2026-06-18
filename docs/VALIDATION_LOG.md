@@ -1,5 +1,28 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document local storage
+
+Scope: add standalone local storage for generated RCA closure PDFs.
+
+Checks:
+
+- Added RED coverage for saving a closure PDF, resolving it and preserving
+  SHA-256 metadata.
+- Added RED coverage rejecting unsafe document storage keys.
+- Added `IClosureDocumentStorage` / `ClosureDocumentStorage`.
+- Added configurable `ClosureDocumentStorage` root and max size options.
+- Registered storage in Web DI.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `ClosureDocumentStorage` and options did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document service
 
 Scope: add EF-backed service for RCA closure document metadata governance.

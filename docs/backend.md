@@ -214,8 +214,12 @@ acoplar el modulo a sistemas corporativos futuros.
   interfaz `IRcaClosureDocumentService`.
 - Agregado `EfRcaClosureDocumentService` para registrar versiones, listar,
   aprobar y rechazar documentos de cierre con auditoria.
-- El storage fisico de documentos y la conexion con exportacion PDF quedan como
-  siguientes tareas del corte P4.1.
+- Agregado storage local `IClosureDocumentStorage` / `ClosureDocumentStorage`
+  para persistir PDFs de cierre versionados bajo `ClosureDocumentStorage`, con
+  limite configurable, SHA-256, resolucion controlada y proteccion contra path
+  traversal.
+- La conexion con exportacion PDF y superficie MVC/API queda como siguiente
+  tarea del corte P4.1.
 
 ## Limites
 
@@ -597,3 +601,13 @@ acoplar el modulo a sistemas corporativos futuros.
 - `ApproveAsync` y `RejectAsync` bloquean documentos ya revisados y registran
   auditoria.
 - Registrado `IRcaClosureDocumentService` en DI de infraestructura.
+
+### 2026-06-18 - Storage documental local P4.1 Task 3c
+
+- Agregado `ClosureDocumentStorageOptions` con root y limite configurable.
+- Agregado `IClosureDocumentStorage` / `ClosureDocumentStorage` para persistir
+  PDFs de cierre en filesystem local standalone.
+- El storage calcula SHA-256, devuelve metadata documental y resuelve descargas
+  solo si la clave permanece dentro del root configurado.
+- Registrado el storage en `Program.cs` y configurado `ClosureDocumentStorage`
+  en `appsettings.json`.
