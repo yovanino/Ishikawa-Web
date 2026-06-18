@@ -555,3 +555,7 @@ standalone.
 - P4.1 Task 4c: el detalle MVC carga versiones documentales de cierre para
   usuarios de gobernanza de calidad y permite descargar, aprobar o rechazar con
   antiforgery.
+- Cierre P4 standalone: creadas specs y planes P4.2/P4.3/P4.4 para DMS/storage
+  productivo, adjuntos binarios de intake externo y contratos de plataforma
+  global. Las integraciones corporativas quedan condicionadas a proveedores o
+  consumidores externos concretos.

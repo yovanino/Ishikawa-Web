@@ -106,8 +106,14 @@ gobernada y reportes corporativos de auditoria.
 - Extender adjuntos binarios/documentales al intake externo.
 - Extender UI/API de auditoria fina, reapertura gobernada y reportes cuando se
   defina el consumidor corporativo.
-- Endurecer generacion PDF con plantilla corporativa, firma/aprobacion y versionado documental cuando se defina gobierno documental.
-- Evaluar storage documental productivo para evidencias y exportaciones generadas.
+- P4 standalone queda cerrado: el PDF de cierre se versiona como documento
+  gobernado, con storage local reemplazable, SHA-256, descarga controlada,
+  aprobacion/rechazo interna por API/MVC y auditoria de servicio.
+- Mantener como planes futuros, dependientes de plataforma corporativa:
+  plantilla legal final, DMS productivo, Identity global, maestros
+  cliente/proveedor, app shell global y dashboard cross-module.
+- Evaluar storage documental productivo para evidencias y exportaciones
+  generadas cuando exista decision de proveedor DMS.
 - Ampliar hardening de adjuntos con validacion de content-type/firma cuando se
   defina politica documental productiva.
 - Mantener `run-local-validation.ps1 -Build` como validacion P0 por corte
@@ -194,3 +200,6 @@ limite de modulo; deben consumir estos contratos versionados.
   permisos productivos refinados e integracion futura con Identity/tenant
   corporativo.
 - Workflow RCA avanzado: CAPA, auditoria ampliada, aprobaciones, versionado PDF y adjuntos externos.
+- P4.2/P4.3/P4.4 quedan documentados en `docs/superpowers/specs` y
+  `docs/superpowers/plans` como siguientes cortes posibles si la plataforma
+  corporativa define DMS, adjuntos externos o contratos de app global.

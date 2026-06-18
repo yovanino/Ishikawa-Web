@@ -225,6 +225,13 @@ acoplar el modulo a sistemas corporativos futuros.
   versiones documentales de cierre por API `/api/v1`.
 - El detalle MVC carga versiones documentales para usuarios de gobernanza de
   calidad y permite descargar, aprobar o rechazar desde la pantalla del RCA.
+- Documentadas specs y planes P4.2/P4.3/P4.4 para DMS/storage productivo,
+  adjuntos de intake externo y contratos de plataforma global.
+
+Estado P4 standalone: cerrado. Los siguientes pasos dependen de decisiones
+externas de plataforma corporativa y deben implementarse por adapters,
+contratos versionados o campos opcionales, no por referencias directas a otros
+modulos.
 
 ## Limites
 
@@ -645,3 +652,11 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregadas acciones MVC `ApproveClosureDocument` y `RejectClosureDocument`
   con antiforgery y usuario revisor autenticado.
 - `Details.cshtml` muestra versiones PDF con descarga, aprobacion y rechazo.
+
+### 2026-06-18 - Cierre documental P4
+
+- Creadas specs y planes P4.2/P4.3/P4.4 para storage productivo/DMS,
+  adjuntos de intake externo y contratos de plataforma global.
+- Documentado que DMS, Identity global, maestros, app shell y dashboards
+  cross-module quedan fuera de implementacion directa hasta existir proveedor o
+  consumidor externo concreto.

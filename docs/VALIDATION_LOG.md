@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-18 - P4 standalone closure planning
+
+Scope: close the standalone P4 roadmap state and document remaining corporate
+platform cuts without adding external dependencies.
+
+Checks:
+
+- Added P4.2 document storage boundary spec and plan.
+- Added P4.3 external intake attachment spec and plan.
+- Added P4.4 platform contracts spec and plan.
+- Roadmap now distinguishes completed standalone document governance from
+  future corporate provider work.
+- Status and backend docs record that DMS, Identity, masters, app shell and
+  cross-module dashboards require external platform decisions.
+
+Validation:
+
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document MVC panel
 
 Scope: expose closure document versions in the RCA detail page for governance

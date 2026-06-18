@@ -447,15 +447,17 @@ Criterio de salida P3:
 Objetivo: preparar el modulo para produccion corporativa y convivencia con la
 plataforma industrial mayor.
 
-- [ ] Storage documental productivo.
-- [ ] Versionado de PDF de cierre.
-- [ ] Plantilla corporativa de PDF.
-- [ ] Firma/aprobacion de cierre.
-- [ ] Integracion con Identity global.
-- [ ] Integracion con maestros globales de clientes/proveedores.
-- [ ] Registro en app global.
-- [ ] Dashboard cross-module.
-- [ ] Timeline operacional unificado.
+- [x] Storage documental standalone con frontera reemplazable.
+- [x] Versionado de PDF de cierre.
+- [ ] Plantilla corporativa de PDF legal cuando la plataforma defina marca y
+  politica documental.
+- [x] Aprobacion/rechazo documental interna de cierre.
+- [ ] Integracion con Identity global, pendiente de proveedor corporativo.
+- [ ] Integracion con maestros globales de clientes/proveedores, pendiente de
+  contrato externo.
+- [ ] Registro en app global, pendiente de app shell externa.
+- [ ] Dashboard cross-module, pendiente de consumidor global.
+- [x] Timeline operacional unificado por eventos/snapshots/SSE del modulo.
 
 Avance P4 2026-06-18: se define el diseno y plan por cortes de gobierno
 documental y plataforma. Inicia P4.1 con el modelo de dominio
@@ -474,6 +476,17 @@ atribucion desde el usuario autenticado.
 Avance P4 2026-06-18: el detalle MVC del RCA muestra versiones documentales de
 cierre a usuarios de gobernanza de calidad y permite descarga, aprobacion o
 rechazo con antiforgery.
+
+Avance P4 2026-06-18: se documentan specs y planes P4.2/P4.3/P4.4 para storage
+productivo/DMS, adjuntos de intake externo y contratos de plataforma global. El
+alcance standalone de P4 queda cerrado sin integrar SDKs ni tablas externas.
+
+Estado del corte: P4 standalone queda cerrado. El modulo ya versiona PDFs de
+cierre, persiste documentos con SHA-256, expone API/MVC para descarga y
+aprobacion interna, y mantiene contratos listos para DMS, Identity, maestros,
+app global, dashboards y timeline sin acoplamiento directo. Los puntos
+corporativos restantes requieren decisiones/proveedores externos y quedan como
+planes versionados, no como implementacion local inmediata.
 
 Criterio de salida P4:
 
