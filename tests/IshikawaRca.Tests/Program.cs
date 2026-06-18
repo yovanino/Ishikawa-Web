@@ -77,6 +77,7 @@ await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
 AssertRcaIntegrationCapabilitiesEndpoint();
+await AssertRcaIntegrationDashboardSummaryEndpointAsync();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync();
 await AssertHttpAiGatewayClientPostsCauseContextAsync();
@@ -1169,6 +1170,54 @@ static void AssertRcaIntegrationCapabilitiesEndpoint()
     }
 }
 
+static async Task AssertRcaIntegrationDashboardSummaryEndpointAsync()
+{
+    var service = new InMemoryRcaIncidentService();
+    var tenantId = Guid.NewGuid();
+    await service.CreateAsync(new CreateRcaIncidentRequest
+    {
+        TenantId = tenantId,
+        Title = "Dashboard RCA 1",
+        ProblemDescription = "First dashboard RCA",
+        SourceSystem = "TEST",
+        ReportedBy = "tests"
+    });
+    await service.CreateAsync(new CreateRcaIncidentRequest
+    {
+        TenantId = tenantId,
+        Title = "Dashboard RCA 2",
+        ProblemDescription = "Second dashboard RCA",
+        SourceSystem = "SCADA",
+        ReportedBy = "tests"
+    });
+    var outboxStatus = new RcaOutboxStatusDto
+    {
+        PendingCount = 3,
+        FailedCount = 2,
+        DeadLetterCount = 1
+    };
+    var controller = new RcaIntegrationsController(service, new FixedOutboxStatusService(outboxStatus), null!);
+
+    var response = await controller.GetDashboardSummary(CancellationToken.None);
+    var ok = response.Result as OkObjectResult
+        ?? throw new InvalidOperationException("Expected RCA dashboard summary endpoint to return 200 OK.");
+    var result = ok.Value as ApiResult<RcaDashboardSummaryDto>
+        ?? throw new InvalidOperationException("Expected RCA dashboard summary endpoint to return ApiResult<RcaDashboardSummaryDto>.");
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.TotalIncidents != 2 ||
+        result.Data.OpenIncidents != 2 ||
+        result.Data.PendingOutboxEvents != 3 ||
+        result.Data.FailedOutboxEvents != 2 ||
+        result.Data.DeadLetterOutboxEvents != 1 ||
+        !result.Data.SourceSystems.Contains("SCADA", StringComparer.Ordinal) ||
+        !result.Data.SourceSystems.Contains("TEST", StringComparer.Ordinal))
+    {
+        throw new InvalidOperationException("Expected RCA dashboard summary to aggregate snapshots and outbox status.");
+    }
+}
+
 static async Task AssertOutboxPublishEndpointInvokesPublisherAsync()
 {
     var publisher = new RecordingOutboxPublisher();
@@ -2144,6 +2193,56 @@ internal sealed class RecordingOutboxService : IRcaOutboxService
         DeadLetterEventIds.Add(id);
         LastFailureError = error;
         return Task.CompletedTask;
+    }
+}
+
+internal sealed class FixedOutboxStatusService : IRcaOutboxService
+{
+    private readonly RcaOutboxStatusDto _status;
+
+    public FixedOutboxStatusService(RcaOutboxStatusDto status)
+    {
+        _status = status;
+    }
+
+    public Task<RcaOutboxEvent> EnqueueAsync(RcaDomainEventDto integrationEvent, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEvent>> ListPendingAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<RcaOutboxStatusDto> GetStatusAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_status);
+    }
+
+    public Task<IReadOnlyList<RcaOutboxEventDto>> ListDeadLettersAsync(int take = 100, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<ApiResult<RcaOutboxEventDto>> ScheduleRetryAsync(Guid id, RetryRcaOutboxEventRequest request, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkPublishedAsync(Guid id, DateTimeOffset publishedAt, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkFailedAsync(Guid id, string error, DateTimeOffset nextAttemptAt, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task MarkDeadLetterAsync(Guid id, string error, CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
     }
 }
 

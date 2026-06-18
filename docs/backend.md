@@ -108,6 +108,8 @@ El backend ya cuenta con:
   sobre `RcaDomainEventDto` para timeline y estados sin acoplamiento directo.
 - Endpoint read-only `GET /api/v1/integrations/rca/capabilities` para discovery
   de modulo por app shell, catalogos o dashboards externos.
+- Endpoint protegido `GET /api/v1/integrations/rca/dashboard/summary` para
+  resumen read-only del modulo usando snapshots y estado del outbox.
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
   observar conteos y timestamps operativos del outbox sin publicar ni reintentar
   eventos.
@@ -230,6 +232,9 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregado contrato `RcaModuleCapabilitiesDto` y endpoint
   `/api/v1/integrations/rca/capabilities` para registrar capacidades RCA ante
   consumidores externos sin acoplar con app global.
+- Agregado contrato `RcaDashboardSummaryDto` y endpoint
+  `/api/v1/integrations/rca/dashboard/summary` para dashboards externos del
+  modulo, protegido por roles de gobernanza.
 - Documentadas specs y planes P4.2/P4.3/P4.4 para DMS/storage productivo,
   adjuntos de intake externo y contratos de plataforma global.
 
@@ -674,3 +679,12 @@ modulos.
 - El endpoint devuelve paths base, flags de capacidades standalone y endpoints
   versionados para que una app shell o dashboard externo descubra el modulo sin
   dependencia directa.
+
+### 2026-06-18 - Resumen dashboard P4.5
+
+- Agregado `RcaDashboardSummaryDto` con contadores de incidentes, acciones,
+  fuentes externas y outbox.
+- Agregado `GET /api/v1/integrations/rca/dashboard/summary` protegido por rol
+  de gobernanza de calidad.
+- El resumen se calcula con snapshots y estado outbox existentes; no implementa
+  dashboard cross-module ni consulta modulos externos.

@@ -41,6 +41,7 @@ public class RcaIntegrationsController : ControllerBase
                 "/api/v1/integrations/rca/incidents/{id}/snapshot",
                 "/api/v1/integrations/rca/events",
                 "/api/v1/integrations/rca/events/live",
+                "/api/v1/integrations/rca/dashboard/summary",
                 "/api/v1/integrations/rca/outbox/status",
                 "/api/v1/integrations/rca/outbox/dead-letter",
                 "/api/v1/integrations/rca/outbox/publish",
@@ -50,6 +51,43 @@ public class RcaIntegrationsController : ControllerBase
         };
 
         return Ok(ApiResult<RcaModuleCapabilitiesDto>.Ok(capabilities));
+    }
+
+    [HttpGet("dashboard/summary")]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    [ProducesResponseType(typeof(ApiResult<RcaDashboardSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResult<RcaDashboardSummaryDto>>> GetDashboardSummary(CancellationToken cancellationToken)
+    {
+        var snapshotsResult = await _rcaIncidentService.ListIntegrationSnapshotsAsync(cancellationToken: cancellationToken);
+        if (!snapshotsResult.Success)
+        {
+            return BadRequest(ApiResult<RcaDashboardSummaryDto>.Fail(
+                "No se pudo obtener el resumen dashboard RCA.",
+                snapshotsResult.Errors.ToArray()));
+        }
+
+        var snapshots = snapshotsResult.Data ?? [];
+        var outboxStatus = await _rcaOutboxService.GetStatusAsync(cancellationToken);
+        var summary = new RcaDashboardSummaryDto
+        {
+            TotalIncidents = snapshots.Count,
+            OpenIncidents = snapshots.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase)),
+            ClosedIncidents = snapshots.Count(x => string.Equals(x.Status, "Closed", StringComparison.OrdinalIgnoreCase)),
+            EscalatedTo8DIncidents = snapshots.Count(x => x.EscalatedTo8D),
+            OpenCorrectiveActions = snapshots.Sum(x => x.OpenCorrectiveActionsCount),
+            OverdueCorrectiveActions = snapshots.Sum(x => x.OverdueCorrectiveActionsCount),
+            PendingOutboxEvents = outboxStatus.PendingCount,
+            FailedOutboxEvents = outboxStatus.FailedCount,
+            DeadLetterOutboxEvents = outboxStatus.DeadLetterCount,
+            SourceSystems = snapshots
+                .Select(x => x.SourceSystem)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList()
+        };
+
+        return Ok(ApiResult<RcaDashboardSummaryDto>.Ok(summary));
     }
 
     [HttpGet("snapshots")]

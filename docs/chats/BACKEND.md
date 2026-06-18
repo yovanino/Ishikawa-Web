@@ -562,3 +562,6 @@ standalone.
 - P4.4 discovery: agregado `RcaModuleCapabilitiesDto` y endpoint read-only
   `GET /api/v1/integrations/rca/capabilities` para que app shell, catalogos o
   dashboards externos descubran capacidades RCA sin acoplamiento directo.
+- P4.5 dashboard summary: agregado `RcaDashboardSummaryDto` y endpoint protegido
+  `GET /api/v1/integrations/rca/dashboard/summary`, calculado con snapshots y
+  outbox existentes sin implementar dashboard cross-module.

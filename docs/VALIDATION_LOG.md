@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-18 - P4.5 RCA dashboard summary contract
+
+Scope: expose a protected read-only RCA module summary for future dashboards
+without implementing a cross-module dashboard in this repo.
+
+Checks:
+
+- Added RED controller coverage for
+  `GET /api/v1/integrations/rca/dashboard/summary`.
+- Added `RcaDashboardSummaryDto` with incident, action, source-system and
+  outbox counters.
+- Added protected `RcaIntegrationsController.GetDashboardSummary`, aggregating
+  existing integration snapshots and outbox status.
+- Added the summary endpoint to the RCA capabilities discovery list.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `GetDashboardSummary` and `RcaDashboardSummaryDto` did not
+  exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- Final: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after docs update.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings.
+- `Get-Process dotnet`: no running dotnet process remained after validation.
+
+Result: passed.
+
 ## 2026-06-18 - P4.4 RCA module capabilities endpoint
 
 Scope: expose a read-only discovery contract for future app shell/dashboard

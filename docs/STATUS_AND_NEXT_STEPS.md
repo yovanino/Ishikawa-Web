@@ -112,6 +112,9 @@ gobernada y reportes corporativos de auditoria.
 - P4.4 agrega discovery read-only del modulo en
   `GET /api/v1/integrations/rca/capabilities`, apto para app shell, catalogos o
   dashboards externos sin acoplamiento directo.
+- P4.5 agrega resumen dashboard protegido en
+  `GET /api/v1/integrations/rca/dashboard/summary`, calculado desde snapshots y
+  outbox existentes sin dashboard cross-module local.
 - Mantener como planes futuros, dependientes de plataforma corporativa:
   plantilla legal final, DMS productivo, Identity global, maestros
   cliente/proveedor, app shell global y dashboard cross-module.

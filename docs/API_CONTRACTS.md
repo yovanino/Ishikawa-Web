@@ -330,6 +330,7 @@ GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
 GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
 GET /api/v1/integrations/rca/events/live?incidentId=&since=&pollIntervalSeconds=
+GET /api/v1/integrations/rca/dashboard/summary
 GET /api/v1/integrations/rca/outbox/status
 GET /api/v1/integrations/rca/outbox/dead-letter?take=
 POST /api/v1/integrations/rca/outbox/publish
@@ -352,6 +353,19 @@ standalone y lista de endpoints versionados disponibles. Este contrato es
 read-only y permite que una futura app shell, dashboard o catalogo de modulos
 descubra la superficie RCA sin depender de clases internas ni tablas
 corporativas.
+
+Resumen dashboard del modulo:
+
+```http
+GET /api/v1/integrations/rca/dashboard/summary
+```
+
+Requiere rol `Supervisor`, `Quality` o `Administrator`. Devuelve
+`ApiResult<RcaDashboardSummaryDto>` con totales de incidentes RCA abiertos,
+cerrados y escalados a 8D, acciones abiertas/vencidas, fuentes externas
+presentes y conteos operativos del outbox (`pending`, `failed`,
+`deadLetter`). Se calcula desde snapshots y outbox existentes; no implementa
+dashboard cross-module ni lee tablas de otros modulos.
 
 Canal live de eventos:
 
