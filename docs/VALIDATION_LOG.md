@@ -1,5 +1,27 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document domain model
+
+Scope: add the first domain model for versioned RCA closure documents.
+
+Checks:
+
+- Added RED coverage for `RcaClosureDocument` defaults.
+- Added `RcaClosureDocumentStatus` with internal approval states.
+- Added `RcaClosureDocument` tenant entity with version, storage metadata,
+  SHA-256 and review fields.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaClosureDocument` and `RcaClosureDocumentStatus` did not
+  exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P3 AI governance closure documentation
 
 Scope: close the P3 governed AI assistance roadmap state for standalone scope.

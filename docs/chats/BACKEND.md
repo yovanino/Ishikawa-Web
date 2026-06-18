@@ -533,3 +533,6 @@ standalone.
 - Task 8 P3: cerrado documentalmente el alcance standalone de IA gobernada.
   Queda documentado que la politica IA especifica por tenant es post-P3 hasta
   Identity/tenant corporativo real.
+- Inicio P4.1: agregado modelo de dominio `RcaClosureDocument` y enum
+  `RcaClosureDocumentStatus` para versionado futuro de documentos de cierre RCA.
+  Validado con RED/GREEN de suite liviana y build serial.

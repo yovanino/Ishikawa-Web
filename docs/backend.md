@@ -197,6 +197,18 @@ Identity/tenant corporativo real. El alcance actual mantiene aislamiento por
 tenant en datos y auditoria, y configuracion por ambiente para operar
 standalone.
 
+## Corte Backend P4
+
+P4 inicia el gobierno documental y la preparacion para plataforma global sin
+acoplar el modulo a sistemas corporativos futuros.
+
+- Agregado modelo de dominio `RcaClosureDocument` para registrar versiones de
+  documentos de cierre RCA.
+- Agregado enum `RcaClosureDocumentStatus` con estados `Draft`,
+  `PendingApproval`, `Approved` y `Rejected`.
+- La persistencia, versionado EF, storage de documentos y aprobacion auditada
+  quedan como siguientes tareas del corte P4.1.
+
 ## Limites
 
 - No acoplar directamente con Gantt, SCADA, OEE, TPM, Andon, Identity ni AI
@@ -543,3 +555,11 @@ standalone.
   usuarios sin rol de gobernanza de calidad.
 - `RcaIncidentDetailsViewModel` expone `CanReviewAiSuggestions` para que la
   vista tenga una defensa adicional antes de mostrar el panel.
+
+### 2026-06-18 - Modelo de dominio documental P4.1 Task 1
+
+- Agregado `RcaClosureDocument` como entidad tenant para futuras versiones de
+  PDF de cierre.
+- Agregado `RcaClosureDocumentStatus` para gobierno interno de aprobacion
+  documental.
+- Agregada cobertura liviana de defaults de dominio en la suite de consola.

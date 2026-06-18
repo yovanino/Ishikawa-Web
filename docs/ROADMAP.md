@@ -457,6 +457,11 @@ plataforma industrial mayor.
 - [ ] Dashboard cross-module.
 - [ ] Timeline operacional unificado.
 
+Avance P4 2026-06-18: se define el diseno y plan por cortes de gobierno
+documental y plataforma. Inicia P4.1 con el modelo de dominio
+`RcaClosureDocument` y estados de aprobacion documental internos; la persistencia
+y versionado efectivo quedan como siguiente ajuste.
+
 Criterio de salida P4:
 
 - Los cierres RCA son auditables como documentos formales.

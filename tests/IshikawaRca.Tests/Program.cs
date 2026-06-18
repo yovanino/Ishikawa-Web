@@ -56,6 +56,7 @@ var completeResolution = new[]
 AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEscapeAnalysis: true));
 
 AssertAiSuggestionDefaults();
+AssertRcaClosureDocumentDefaults();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -126,6 +127,32 @@ static void AssertAiSuggestionDefaults()
         suggestion.IsFallback)
     {
         throw new InvalidOperationException("Expected AI suggestions to default to pending, non-fallback review records.");
+    }
+}
+
+static void AssertRcaClosureDocumentDefaults()
+{
+    var incidentId = Guid.NewGuid();
+    var document = new RcaClosureDocument
+    {
+        TenantId = Guid.NewGuid(),
+        RcaIncidentId = incidentId,
+        Version = 1,
+        FileName = "rca-closure-v1.pdf",
+        ContentType = "application/pdf",
+        SizeBytes = 128,
+        StorageProvider = "Local",
+        StorageKey = "closure/incident/v1.pdf",
+        Sha256 = new string('a', 64),
+        GeneratedByUserId = "quality"
+    };
+
+    if (document.Id == Guid.Empty ||
+        document.RcaIncidentId != incidentId ||
+        document.Status != RcaClosureDocumentStatus.Draft ||
+        document.Version != 1)
+    {
+        throw new InvalidOperationException("Closure document defaults are invalid.");
     }
 }
 
