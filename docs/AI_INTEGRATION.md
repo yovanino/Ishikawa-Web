@@ -176,6 +176,18 @@ pendientes y permite aceptarlas o rechazarlas desde UI. Las sugerencias de tipo
 escribe decisiones por si misma: invoca el servicio de revision gobernada, con
 antiforgery y rol de gobernanza de calidad.
 
+## Estado de cierre P3
+
+P3 queda cerrado para el alcance standalone: existe cliente HTTP al AI Gateway,
+seleccion `Stub`/`Http` por ambiente, fallback controlado, recurrencia, borrador
+8D, persistencia de sugerencias, aceptacion/rechazo auditado y panel MVC de
+revision humana.
+
+La politica IA especifica por tenant queda documentada como extension futura.
+No se implementa en P3 porque requiere Identity/tenant corporativo real; hasta
+entonces el modulo opera por configuracion de ambiente/instalacion y conserva
+aislamiento por tenant en datos y auditoria.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.

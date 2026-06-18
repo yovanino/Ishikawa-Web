@@ -378,6 +378,8 @@ evento por si mismo.
 ## APIs de Asistencia IA
 
 Estas APIs son opt-in. El RCA debe seguir funcionando aunque la IA este apagada o en modo stub.
+Toda la superficie de asistencia IA requiere usuario autenticado. Las
+operaciones de aceptacion/rechazo requieren rol de gobernanza de calidad.
 
 ```http
 POST /api/v1/rca/incidents/{id}/ai/suggest-causes
@@ -411,6 +413,8 @@ Las sugerencias persistidas se gobiernan por aprobacion humana:
   revision auditada sin crear entidades oficiales.
 - `POST reject` requiere rol de gobernanza de calidad, marca la sugerencia como
   rechazada y no crea entidades oficiales.
+- El usuario auditor se toma del contexto autenticado. Si el cliente envia
+  `reviewedByUserId`, el API lo sobrescribe para evitar suplantacion.
 - Si la sugerencia no existe devuelve `AI_SUGGESTION_NOT_FOUND`; si ya fue
   revisada devuelve `AI_SUGGESTION_NOT_PENDING`; si el payload no puede
   interpretarse devuelve `AI_SUGGESTION_PAYLOAD_INVALID`; si una causa se acepta

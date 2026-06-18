@@ -409,7 +409,7 @@ Criterio de salida P2:
 Objetivo: pasar de stub IA a asistencia real gobernada.
 
 - [x] Cliente HTTP real para AI Gateway.
-- [ ] Configuracion por ambiente/tenant.
+- [x] Configuracion por ambiente/instalacion.
 - [x] Sugerencias de causas con metadata de modelo/proveedor.
 - [x] Sugerencias de acciones CAPA.
 - [x] Resumen del RCA.
@@ -422,14 +422,19 @@ Avance P3 2026-06-13: quedan cerrados los contratos y endpoints de
 `detect-recurrence` y `generate-8d-draft`. El modulo ya arma contexto RCA,
 enruta por `ConfiguredRcaAiGatewayClient`, publica por HTTP JSON al AI Gateway
 cuando `AiGateway:Mode = Http` y mantiene respuestas stub deterministicas con
-fallback para modo standalone. Siguen pendientes la configuracion por
-ambiente/tenant, la UI de aprobacion humana y la auditoria de sugerencias
-aceptadas.
+fallback para modo standalone. La politica IA especifica por tenant queda
+fuera de P3 hasta contar con Identity/tenant corporativo real.
 
 Avance P3 2026-06-18: el detalle MVC del RCA incorpora un panel de sugerencias
 IA pendientes con aceptacion/rechazo gobernado. Las sugerencias aceptadas
 reutilizan el workflow auditado de Task 6; las causas requieren rama destino
 antes de convertirse en causa oficial.
+
+Estado del corte: P3 queda cerrado como IA asistida gobernada para el alcance
+standalone. El modulo puede operar en modo stub, modo HTTP con AI Gateway o
+fallback degradado, y ninguna sugerencia modifica el RCA oficial sin revision
+humana auditada. Queda fuera del corte la politica IA especifica por tenant,
+que requiere Identity/tenant corporativo real.
 
 Criterio de salida P3:
 

@@ -98,9 +98,10 @@ gobernada y reportes corporativos de auditoria.
 - Definir integracion futura con Identity global y tenant corporativo real.
 - Agregar suite formal ampliada de tests unitarios/integracion sobre la base de
   smokes y pruebas livianas actuales.
-- Completar configuracion por ambiente/tenant y operacion productiva del
-  `ConfiguredRcaAiGatewayClient`; el cliente HTTP, los endpoints de
-  recurrencia/borrador 8D y la revision humana MVC ya existen.
+- P3 queda cerrado en alcance standalone: `ConfiguredRcaAiGatewayClient`,
+  cliente HTTP, fallback stub, recurrencia, borrador 8D, persistencia de
+  sugerencias y revision humana MVC ya existen. La politica IA especifica por
+  tenant queda pendiente hasta Identity/tenant corporativo real.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
 - Extender UI/API de auditoria fina, reapertura gobernada y reportes cuando se
