@@ -74,6 +74,10 @@ POST /api/v1/rca/incidents/{id}/evidence
 POST /api/v1/rca/incidents/{id}/evidence-files
 GET  /api/v1/rca/incidents/{id}/evidence/{evidenceId}/attachment
 GET  /api/v1/rca/incidents/{id}/audit
+GET  /api/v1/rca/incidents/{id}/documents/closure
+GET  /api/v1/rca/incidents/{id}/documents/closure/{documentId}/download
+POST /api/v1/rca/incidents/{id}/documents/closure/{documentId}/approve
+POST /api/v1/rca/incidents/{id}/documents/closure/{documentId}/reject
 POST /api/v1/rca/incidents/{id}/close
 POST /api/v1/rca/incidents/{id}/escalate-8d
 ```
@@ -141,6 +145,32 @@ storage documental configurado y registra una nueva version de documento de
 cierre con SHA-256, usuario generador y metadata de storage. Si el registro
 documental falla, el archivo fisico recien generado se descarta y la respuesta
 devuelve un error controlado.
+
+Gobierno documental del cierre:
+
+```http
+GET  /api/v1/rca/incidents/{id}/documents/closure
+GET  /api/v1/rca/incidents/{id}/documents/closure/{documentId}/download
+POST /api/v1/rca/incidents/{id}/documents/closure/{documentId}/approve
+POST /api/v1/rca/incidents/{id}/documents/closure/{documentId}/reject
+```
+
+`GET` lista versiones documentales de cierre del RCA y `download` descarga el
+PDF desde el storage documental controlado. Aprobar o rechazar requiere rol
+`Supervisor`, `Quality` o `Administrator`; el usuario revisor se toma del
+contexto autenticado aunque el cliente envie otro `reviewedByUserId`.
+
+Revision documental:
+
+```json
+{
+  "reviewedByUserId": "quality",
+  "reviewNotes": "Aprobado para cierre documental."
+}
+```
+
+Codigos relevantes: `RCA_NOT_FOUND`, `RCA_CLOSURE_DOCUMENT_NOT_FOUND` y
+`RCA_CLOSURE_DOCUMENT_ALREADY_REVIEWED`.
 
 Validacion/cierre de accion correctiva:
 

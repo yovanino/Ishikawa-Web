@@ -221,8 +221,10 @@ acoplar el modulo a sistemas corporativos futuros.
 - `RcaController.ExportPdf` ahora guarda el PDF generado en storage documental
   y registra una nueva version mediante `IRcaClosureDocumentService`; si falla
   el registro, descarta el archivo recien generado y devuelve error controlado.
-- La superficie MVC/API para listar, aprobar y rechazar versiones queda como
-  siguiente tarea del corte P4.1.
+- Agregado `RcaDocumentsController` para listar, descargar, aprobar y rechazar
+  versiones documentales de cierre por API `/api/v1`.
+- La superficie MVC de consulta/revision documental queda como siguiente tarea
+  del corte P4.1.
 
 ## Limites
 
@@ -624,3 +626,12 @@ acoplar el modulo a sistemas corporativos futuros.
 - Si el registro documental falla, el archivo generado se elimina para evitar
   documentos huerfanos.
 - Agregada cobertura liviana de controller sin levantar servidor local.
+
+### 2026-06-18 - API documental P4.1 Task 4b
+
+- Agregado `RcaDocumentsController` en `/api/v1/rca/incidents/{id}/documents/closure`.
+- `GET` lista versiones documentales y `download` resuelve el PDF por storage
+  controlado.
+- `approve` y `reject` requieren rol de gobernanza de calidad y reemplazan
+  `ReviewedByUserId` con el usuario autenticado.
+- Agregada cobertura liviana de controller para list/approve/reject.

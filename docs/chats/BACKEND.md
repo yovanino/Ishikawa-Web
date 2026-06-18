@@ -549,3 +549,6 @@ standalone.
 - P4.1 Task 4a: `ExportPdf` ahora guarda el PDF generado en storage documental
   y registra una version de cierre mediante `IRcaClosureDocumentService`; ante
   falla de registro elimina el archivo recien generado.
+- P4.1 Task 4b: agregado `RcaDocumentsController` para listar, descargar,
+  aprobar y rechazar documentos de cierre por API `/api/v1`, usando el usuario
+  autenticado como revisor.

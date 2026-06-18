@@ -1,5 +1,28 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document governance API
+
+Scope: expose closure document list, review and controlled download endpoints.
+
+Checks:
+
+- Added RED controller coverage for list, approve and reject endpoints.
+- Added `RcaDocumentsController` under
+  `/api/v1/rca/incidents/{id}/documents/closure`.
+- Approve/reject endpoints require quality governance role.
+- Reviewer user id is taken from authenticated context, not client payload.
+- Download resolves PDFs through `IClosureDocumentStorage`.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaDocumentsController` did not exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure PDF version registration
 
 Scope: connect MVC PDF export with closure document storage and version

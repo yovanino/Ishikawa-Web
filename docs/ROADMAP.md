@@ -467,6 +467,10 @@ documental local standalone y registra versiones `RcaClosureDocument` con
 SHA-256 y usuario generador. La aprobacion/rechazo ya existe en servicio; queda
 pendiente exponer la superficie MVC/API de consulta y revision documental.
 
+Avance P4 2026-06-18: se agrega API `/api/v1` para gobierno documental de
+cierres RCA: listar versiones, descargar PDF controlado, aprobar y rechazar con
+atribucion desde el usuario autenticado.
+
 Criterio de salida P4:
 
 - Los cierres RCA son auditables como documentos formales.

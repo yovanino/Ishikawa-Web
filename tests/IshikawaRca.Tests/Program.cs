@@ -96,6 +96,7 @@ await AssertAiControllerExposesRecurrenceAndEightDAsync();
 await AssertAiControllerMapsGatewayFailuresToServiceUnavailableAsync();
 await AssertAiControllerMapsMissingRcaToNotFoundAsync();
 await AssertAiControllerExposesSuggestionReviewEndpointsAsync();
+await AssertClosureDocumentControllerExposesGovernanceEndpointsAsync();
 await AssertAiAssistantPersistsPendingCauseSuggestionsAsync();
 await AssertAiAssistantRejectsInvalidSuggestionStatusAsync();
 await AssertAiAssistantRejectsUndefinedNumericSuggestionStatusAsync();
@@ -474,6 +475,39 @@ static async Task AssertAiControllerExposesSuggestionReviewEndpointsAsync()
         service.LastRejectedReviewedByUserId != "authenticated-quality")
     {
         throw new InvalidOperationException("Expected AI controller to expose suggestion list, accept and reject endpoints.");
+    }
+}
+
+static async Task AssertClosureDocumentControllerExposesGovernanceEndpointsAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var documentId = Guid.NewGuid();
+    var service = new RecordingClosureDocumentGovernanceService(incidentId, documentId);
+    var storage = new RecordingClosureDocumentStorage();
+    var currentUser = new FixedCurrentRcaUserContext("authenticated-quality", Guid.NewGuid());
+    var controller = new RcaDocumentsController(service, storage, currentUser);
+
+    var list = await controller.List(incidentId, CancellationToken.None);
+    var approve = await controller.Approve(incidentId, documentId, new ReviewRcaClosureDocumentRequest
+    {
+        ReviewedByUserId = "spoofed",
+        ReviewNotes = "Approved by API test."
+    }, CancellationToken.None);
+    var reject = await controller.Reject(incidentId, documentId, new ReviewRcaClosureDocumentRequest
+    {
+        ReviewedByUserId = "spoofed",
+        ReviewNotes = "Rejected by API test."
+    }, CancellationToken.None);
+
+    if (list.Result is not OkObjectResult ||
+        approve.Result is not OkObjectResult ||
+        reject.Result is not OkObjectResult ||
+        !service.ApproveCalled ||
+        !service.RejectCalled ||
+        service.LastApprovedReviewedByUserId != "authenticated-quality" ||
+        service.LastRejectedReviewedByUserId != "authenticated-quality")
+    {
+        throw new InvalidOperationException("Expected closure document API governance endpoints to list and review documents with authenticated user attribution.");
     }
 }
 
@@ -2881,4 +2915,66 @@ internal sealed class RecordingRcaClosureDocumentService : IRcaClosureDocumentSe
 
     public Task<ApiResult<RcaClosureDocumentDto>> ApproveAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<ApiResult<RcaClosureDocumentDto>> RejectAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
+
+internal sealed class RecordingClosureDocumentGovernanceService : IRcaClosureDocumentService
+{
+    private readonly Guid _incidentId;
+    private readonly Guid _documentId;
+
+    public RecordingClosureDocumentGovernanceService(Guid incidentId, Guid documentId)
+    {
+        _incidentId = incidentId;
+        _documentId = documentId;
+    }
+
+    public bool ApproveCalled { get; private set; }
+    public bool RejectCalled { get; private set; }
+    public string? LastApprovedReviewedByUserId { get; private set; }
+    public string? LastRejectedReviewedByUserId { get; private set; }
+
+    public Task<ApiResult<IReadOnlyList<RcaClosureDocumentDto>>> ListAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<IReadOnlyList<RcaClosureDocumentDto>>.Ok(
+        [
+            CreateDocument(nameof(RcaClosureDocumentStatus.Draft))
+        ]));
+    }
+
+    public Task<ApiResult<RcaClosureDocumentDto>> ApproveAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default)
+    {
+        ApproveCalled = true;
+        LastApprovedReviewedByUserId = request.ReviewedByUserId;
+        return Task.FromResult(ApiResult<RcaClosureDocumentDto>.Ok(CreateDocument(nameof(RcaClosureDocumentStatus.Approved))));
+    }
+
+    public Task<ApiResult<RcaClosureDocumentDto>> RejectAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default)
+    {
+        RejectCalled = true;
+        LastRejectedReviewedByUserId = request.ReviewedByUserId;
+        return Task.FromResult(ApiResult<RcaClosureDocumentDto>.Ok(CreateDocument(nameof(RcaClosureDocumentStatus.Rejected))));
+    }
+
+    public Task<ApiResult<RcaClosureDocumentDto>> RegisterGeneratedAsync(Guid incidentId, RegisterRcaClosureDocumentRequest request, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException();
+
+    private RcaClosureDocumentDto CreateDocument(string status)
+    {
+        return new RcaClosureDocumentDto
+        {
+            Id = _documentId,
+            TenantId = Guid.NewGuid(),
+            RcaIncidentId = _incidentId,
+            Version = 1,
+            FileName = "rca-closure.pdf",
+            ContentType = "application/pdf",
+            SizeBytes = 128,
+            StorageProvider = "LocalFileSystem",
+            StorageKey = $"rca-closure-documents/{_incidentId:N}/test.pdf",
+            Sha256 = new string('a', 64),
+            Status = status,
+            GeneratedAt = DateTimeOffset.UtcNow,
+            GeneratedByUserId = "quality"
+        };
+    }
 }
