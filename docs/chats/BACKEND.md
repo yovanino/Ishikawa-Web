@@ -559,3 +559,6 @@ standalone.
   productivo, adjuntos binarios de intake externo y contratos de plataforma
   global. Las integraciones corporativas quedan condicionadas a proveedores o
   consumidores externos concretos.
+- P4.4 discovery: agregado `RcaModuleCapabilitiesDto` y endpoint read-only
+  `GET /api/v1/integrations/rca/capabilities` para que app shell, catalogos o
+  dashboards externos descubran capacidades RCA sin acoplamiento directo.

@@ -76,6 +76,7 @@ await AssertOutboxPublisherSkipsWhenNoWebhooksAreEnabledAsync();
 await AssertOutboxPublisherMarksEventPublishedWhenWebhookSucceedsAsync();
 await AssertOutboxPublisherMarksEventFailedWhenWebhookFailsAsync();
 await AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReachedAsync();
+AssertRcaIntegrationCapabilitiesEndpoint();
 await AssertOutboxPublishEndpointInvokesPublisherAsync();
 await AssertIntegrationEventsLiveEndpointWritesServerSentEventsAsync();
 await AssertHttpAiGatewayClientPostsCauseContextAsync();
@@ -1132,6 +1133,39 @@ static async Task AssertOutboxPublisherMarksEventDeadLetterWhenMaxAttemptsIsReac
         outboxService.FailedEventIds.Count != 0)
     {
         throw new InvalidOperationException("Expected event to move to dead-letter when max publish attempts is reached.");
+    }
+}
+
+static void AssertRcaIntegrationCapabilitiesEndpoint()
+{
+    var controller = new RcaIntegrationsController(null!, null!, null!);
+
+    var response = controller.GetCapabilities();
+    var ok = response.Result as OkObjectResult
+        ?? throw new InvalidOperationException("Expected RCA integration capabilities endpoint to return 200 OK.");
+    var result = ok.Value as ApiResult<RcaModuleCapabilitiesDto>
+        ?? throw new InvalidOperationException("Expected RCA integration capabilities endpoint to return ApiResult<RcaModuleCapabilitiesDto>.");
+
+    if (!result.Success ||
+        result.Data is null ||
+        result.Data.ModuleKey != "ishikawa-rca" ||
+        result.Data.ApiVersion != "v1" ||
+        result.Data.BasePath != "/api/v1" ||
+        result.Data.MvcBasePath != "/Rca" ||
+        !result.Data.SupportsSnapshots ||
+        !result.Data.SupportsIntegrationEvents ||
+        !result.Data.SupportsLiveEvents ||
+        !result.Data.SupportsOutbox ||
+        !result.Data.SupportsWebhooks ||
+        !result.Data.SupportsClosureDocuments ||
+        !result.Data.SupportsAiAssistance ||
+        !result.Data.SupportsExternalIntake ||
+        !result.Data.IntegrationEndpoints.Contains("/api/v1/integrations/rca/snapshots", StringComparer.Ordinal) ||
+        !result.Data.IntegrationEndpoints.Contains("/api/v1/integrations/rca/events", StringComparer.Ordinal) ||
+        !result.Data.IntegrationEndpoints.Contains("/api/v1/integrations/rca/events/live", StringComparer.Ordinal) ||
+        !result.Data.IntegrationEndpoints.Contains("/api/v1/rca/incidents/{id}/documents/closure", StringComparer.Ordinal))
+    {
+        throw new InvalidOperationException("Expected RCA capabilities to advertise standalone integration surfaces.");
     }
 }
 

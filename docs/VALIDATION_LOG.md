@@ -1,5 +1,35 @@
 # Validation Log
 
+## 2026-06-18 - P4.4 RCA module capabilities endpoint
+
+Scope: expose a read-only discovery contract for future app shell/dashboard
+consumers without coupling the RCA module to a global application.
+
+Checks:
+
+- Added RED controller coverage for
+  `GET /api/v1/integrations/rca/capabilities`.
+- Added `RcaModuleCapabilitiesDto` with module key, API version, base paths,
+  capability flags and stable integration endpoint list.
+- Added read-only `RcaIntegrationsController.GetCapabilities`.
+- Kept the endpoint inside the existing integration route, with no database,
+  Identity, masters or app-shell dependency.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `GetCapabilities` and `RcaModuleCapabilitiesDto` did not
+  exist.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- Final: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after docs update.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings.
+- `Get-Process dotnet`: no running dotnet process remained after validation.
+
+Result: passed.
+
 ## 2026-06-18 - P4 standalone closure planning
 
 Scope: close the standalone P4 roadmap state and document remaining corporate

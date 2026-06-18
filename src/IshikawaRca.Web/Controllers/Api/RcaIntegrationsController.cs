@@ -28,6 +28,30 @@ public class RcaIntegrationsController : ControllerBase
         _rcaOutboxPublisher = rcaOutboxPublisher;
     }
 
+    [HttpGet("capabilities")]
+    [ProducesResponseType(typeof(ApiResult<RcaModuleCapabilitiesDto>), StatusCodes.Status200OK)]
+    public ActionResult<ApiResult<RcaModuleCapabilitiesDto>> GetCapabilities()
+    {
+        var capabilities = new RcaModuleCapabilitiesDto
+        {
+            IntegrationEndpoints =
+            [
+                "/api/v1/integrations/rca/capabilities",
+                "/api/v1/integrations/rca/snapshots",
+                "/api/v1/integrations/rca/incidents/{id}/snapshot",
+                "/api/v1/integrations/rca/events",
+                "/api/v1/integrations/rca/events/live",
+                "/api/v1/integrations/rca/outbox/status",
+                "/api/v1/integrations/rca/outbox/dead-letter",
+                "/api/v1/integrations/rca/outbox/publish",
+                "/api/v1/integrations/rca/outbox/{id}/retry",
+                "/api/v1/rca/incidents/{id}/documents/closure"
+            ]
+        };
+
+        return Ok(ApiResult<RcaModuleCapabilitiesDto>.Ok(capabilities));
+    }
+
     [HttpGet("snapshots")]
     [ProducesResponseType(typeof(ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>>> ListSnapshots(

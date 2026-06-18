@@ -455,7 +455,8 @@ plataforma industrial mayor.
 - [ ] Integracion con Identity global, pendiente de proveedor corporativo.
 - [ ] Integracion con maestros globales de clientes/proveedores, pendiente de
   contrato externo.
-- [ ] Registro en app global, pendiente de app shell externa.
+- [x] Discovery de capacidades para registro en app global futura, sin app
+  shell acoplada.
 - [ ] Dashboard cross-module, pendiente de consumidor global.
 - [x] Timeline operacional unificado por eventos/snapshots/SSE del modulo.
 
@@ -481,10 +482,16 @@ Avance P4 2026-06-18: se documentan specs y planes P4.2/P4.3/P4.4 para storage
 productivo/DMS, adjuntos de intake externo y contratos de plataforma global. El
 alcance standalone de P4 queda cerrado sin integrar SDKs ni tablas externas.
 
+Avance P4 2026-06-18: se agrega
+`GET /api/v1/integrations/rca/capabilities` como discovery read-only del modulo
+para app shell, catalogos o dashboards externos. No implementa app global ni
+crea dependencia directa; solo expone capacidades versionadas.
+
 Estado del corte: P4 standalone queda cerrado. El modulo ya versiona PDFs de
 cierre, persiste documentos con SHA-256, expone API/MVC para descarga y
-aprobacion interna, y mantiene contratos listos para DMS, Identity, maestros,
-app global, dashboards y timeline sin acoplamiento directo. Los puntos
+aprobacion interna, expone discovery de capacidades RCA, y mantiene contratos
+listos para DMS, Identity, maestros, app global, dashboards y timeline sin
+acoplamiento directo. Los puntos
 corporativos restantes requieren decisiones/proveedores externos y quedan como
 planes versionados, no como implementacion local inmediata.
 

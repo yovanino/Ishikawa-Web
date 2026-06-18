@@ -109,6 +109,9 @@ gobernada y reportes corporativos de auditoria.
 - P4 standalone queda cerrado: el PDF de cierre se versiona como documento
   gobernado, con storage local reemplazable, SHA-256, descarga controlada,
   aprobacion/rechazo interna por API/MVC y auditoria de servicio.
+- P4.4 agrega discovery read-only del modulo en
+  `GET /api/v1/integrations/rca/capabilities`, apto para app shell, catalogos o
+  dashboards externos sin acoplamiento directo.
 - Mantener como planes futuros, dependientes de plataforma corporativa:
   plantilla legal final, DMS productivo, Identity global, maestros
   cliente/proveedor, app shell global y dashboard cross-module.

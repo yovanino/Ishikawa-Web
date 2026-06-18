@@ -325,6 +325,7 @@ Cuando se rechaza, el modulo no importa causa ni accion, conserva la respuesta e
 Estas APIs son la superficie recomendada para Gantt, gateway industrial, OEE, Andon, TPM o la futura app global. Devuelven una vista estable y reducida del RCA sin exponer el modelo interno completo.
 
 ```http
+GET /api/v1/integrations/rca/capabilities
 GET /api/v1/integrations/rca/snapshots?sourceSystem=&externalTaskId=&status=
 GET /api/v1/integrations/rca/incidents/{id}/snapshot
 GET /api/v1/integrations/rca/events?incidentId=&since=
@@ -338,6 +339,19 @@ POST /api/v1/integrations/rca/outbox/{id}/retry
 El contrato de eventos, envelope, reglas de compatibilidad e instrucciones para
 consumidores externos quedan documentados en
 `docs/INTEGRATION_EVENTS.md`.
+
+Discovery de modulo:
+
+```http
+GET /api/v1/integrations/rca/capabilities
+```
+
+Devuelve `ApiResult<RcaModuleCapabilitiesDto>` con `moduleKey`,
+`displayName`, `apiVersion`, paths base MVC/API, flags de capacidades
+standalone y lista de endpoints versionados disponibles. Este contrato es
+read-only y permite que una futura app shell, dashboard o catalogo de modulos
+descubra la superficie RCA sin depender de clases internas ni tablas
+corporativas.
 
 Canal live de eventos:
 

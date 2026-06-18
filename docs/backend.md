@@ -106,6 +106,8 @@ El backend ya cuenta con:
   deduplicacion por `id`.
 - Canal live `GET /api/v1/integrations/rca/events/live` por Server-Sent Events
   sobre `RcaDomainEventDto` para timeline y estados sin acoplamiento directo.
+- Endpoint read-only `GET /api/v1/integrations/rca/capabilities` para discovery
+  de modulo por app shell, catalogos o dashboards externos.
 - Endpoint protegido `GET /api/v1/integrations/rca/outbox/status` para
   observar conteos y timestamps operativos del outbox sin publicar ni reintentar
   eventos.
@@ -225,6 +227,9 @@ acoplar el modulo a sistemas corporativos futuros.
   versiones documentales de cierre por API `/api/v1`.
 - El detalle MVC carga versiones documentales para usuarios de gobernanza de
   calidad y permite descargar, aprobar o rechazar desde la pantalla del RCA.
+- Agregado contrato `RcaModuleCapabilitiesDto` y endpoint
+  `/api/v1/integrations/rca/capabilities` para registrar capacidades RCA ante
+  consumidores externos sin acoplar con app global.
 - Documentadas specs y planes P4.2/P4.3/P4.4 para DMS/storage productivo,
   adjuntos de intake externo y contratos de plataforma global.
 
@@ -660,3 +665,12 @@ modulos.
 - Documentado que DMS, Identity global, maestros, app shell y dashboards
   cross-module quedan fuera de implementacion directa hasta existir proveedor o
   consumidor externo concreto.
+
+### 2026-06-18 - Discovery de modulo P4.4
+
+- Agregado `RcaModuleCapabilitiesDto` como contrato publico de capacidades RCA.
+- Agregado `GET /api/v1/integrations/rca/capabilities` en
+  `RcaIntegrationsController`.
+- El endpoint devuelve paths base, flags de capacidades standalone y endpoints
+  versionados para que una app shell o dashboard externo descubra el modulo sin
+  dependencia directa.
