@@ -546,3 +546,6 @@ standalone.
   generacion/aprobacion/rechazo.
 - P4.1 Task 3c: agregado storage documental local para PDFs de cierre con
   limite configurable, SHA-256 y resolucion segura dentro del root configurado.
+- P4.1 Task 4a: `ExportPdf` ahora guarda el PDF generado en storage documental
+  y registra una version de cierre mediante `IRcaClosureDocumentService`; ante
+  falla de registro elimina el archivo recien generado.

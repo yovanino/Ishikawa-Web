@@ -9,7 +9,9 @@ using IshikawaRca.Infrastructure.Ai;
 using IshikawaRca.Infrastructure;
 using IshikawaRca.Infrastructure.Data;
 using IshikawaRca.Infrastructure.Services;
+using IshikawaRca.Web.Controllers;
 using IshikawaRca.Web.Controllers.Api;
+using IshikawaRca.Web.Models.Rca;
 using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Hosting;
@@ -63,6 +65,7 @@ AssertRcaClosureDocumentEfModel();
 AssertRcaClosureDocumentContracts();
 await AssertClosureDocumentStorageSavesPdfWithHashAsync();
 AssertClosureDocumentStorageRejectsUnsafeKeys();
+await AssertRcaControllerExportPdfRegistersClosureDocumentAsync();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -279,6 +282,52 @@ static void AssertClosureDocumentStorageRejectsUnsafeKeys()
     finally
     {
         Directory.Delete(root, recursive: true);
+    }
+}
+
+static async Task AssertRcaControllerExportPdfRegistersClosureDocumentAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var incidentService = new ExportPdfRcaIncidentService(incidentId, tenantId);
+    var externalIntakeService = new EmptyExternalIntakeService();
+    var aiAssistantService = new EmptyAiAssistantService();
+    var evidenceStorage = new NoOpEvidenceFileStorage();
+    var pdfReportService = new FixedPdfReportService(Encoding.ASCII.GetBytes("%PDF-1.4\nversioned closure"));
+    var closureStorage = new RecordingClosureDocumentStorage();
+    var closureDocumentService = new RecordingRcaClosureDocumentService();
+    var currentUser = new FixedCurrentRcaUserContext("quality.user", tenantId);
+    var controller = new RcaController(
+        incidentService,
+        externalIntakeService,
+        aiAssistantService,
+        evidenceStorage,
+        pdfReportService,
+        closureStorage,
+        closureDocumentService,
+        currentUser)
+    {
+        ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        }
+    };
+
+    controller.ControllerContext.HttpContext.Request.Scheme = "http";
+
+    var result = await controller.ExportPdf(incidentId, CancellationToken.None);
+    var fileResult = result as FileContentResult
+        ?? throw new InvalidOperationException("Expected PDF export to return file content.");
+
+    if (fileResult.ContentType != "application/pdf" ||
+        closureStorage.LastSaved is null ||
+        closureDocumentService.LastRequest is null ||
+        closureDocumentService.LastIncidentId != incidentId ||
+        closureDocumentService.LastRequest.StorageKey != closureStorage.LastSaved.StorageKey ||
+        closureDocumentService.LastRequest.Sha256 != closureStorage.LastSaved.Sha256 ||
+        closureDocumentService.LastRequest.GeneratedByUserId != "quality.user")
+    {
+        throw new InvalidOperationException("Expected PDF export to save and register a closure document version.");
     }
 }
 
@@ -2649,4 +2698,187 @@ internal sealed class DelayedReadMemoryStream : MemoryStream
         await Task.Delay(_delay, cancellationToken);
         return await base.ReadAsync(buffer, cancellationToken);
     }
+}
+
+internal sealed class ExportPdfRcaIncidentService : IRcaIncidentService
+{
+    private readonly Guid _incidentId;
+    private readonly Guid _tenantId;
+
+    public ExportPdfRcaIncidentService(Guid incidentId, Guid tenantId)
+    {
+        _incidentId = incidentId;
+        _tenantId = tenantId;
+    }
+
+    public Task<ApiResult<RcaIncidentDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<RcaIncidentDto>.Ok(new RcaIncidentDto
+        {
+            Id = _incidentId,
+            TenantId = _tenantId,
+            Title = "Closed RCA",
+            ProblemDescription = "Closure document export",
+            Severity = "High",
+            Status = nameof(RcaIncidentStatus.Closed),
+            ClaimScope = "Internal",
+            ClaimActorType = "InternalArea",
+            OccurredAt = DateTimeOffset.UtcNow.AddDays(-1),
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            ClosedAt = DateTimeOffset.UtcNow,
+            ClosedByUserId = "quality.user",
+            ClosureSummary = "Closed with verified actions.",
+            WizardStep = nameof(RcaWizardStep.Closed)
+        }));
+    }
+
+    public Task<ApiResult<IshikawaCanvasDto>> GetCanvasAsync(Guid incidentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ApiResult<IshikawaCanvasDto>.Ok(new IshikawaCanvasDto
+        {
+            RcaIncidentId = incidentId,
+            ProblemTitle = "Closed RCA"
+        }));
+    }
+
+    public Task<ApiResult<IReadOnlyList<CorrectiveActionDto>>> ListCorrectiveActionsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<CorrectiveActionDto>>.Ok([]));
+
+    public Task<ApiResult<IReadOnlyList<RcaEvidenceDto>>> ListEvidenceAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaEvidenceDto>>.Ok([]));
+
+    public Task<ApiResult<IReadOnlyList<RcaFactDto>>> ListFactsAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaFactDto>>.Ok([]));
+
+    public Task<ApiResult<IReadOnlyList<RcaDomainEventDto>>> ListIntegrationEventsAsync(Guid? incidentId = null, DateTimeOffset? since = null, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaDomainEventDto>>.Ok([]));
+
+    public Task<ApiResult<RcaWizardProgressDto>> GetWizardProgressAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<RcaWizardProgressDto>.Ok(new RcaWizardProgressDto
+        {
+            IncidentId = incidentId,
+            CurrentStep = nameof(RcaWizardStep.Closed),
+            NextRecommendedStep = nameof(RcaWizardStep.Closed)
+        }));
+
+    public Task<ApiResult<RcaIncidentDto>> CreateAsync(CreateRcaIncidentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaIncidentDto>>> ListAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IshikawaCauseDto>> AddCauseAsync(Guid incidentId, AddIshikawaCauseRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<CorrectiveActionDto>> AddCorrectiveActionAsync(Guid incidentId, AddCorrectiveActionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<CorrectiveActionDto>> UpdateCorrectiveActionStatusAsync(Guid incidentId, Guid actionId, UpdateCorrectiveActionStatusRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> AddEvidenceAsync(Guid incidentId, AddRcaEvidenceRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> UpdateEvidenceAsync(Guid incidentId, Guid evidenceId, UpdateRcaEvidenceRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> ReplaceEvidenceAttachmentAsync(Guid incidentId, Guid evidenceId, ReplaceRcaEvidenceAttachmentRequest request, string? replacedByUserId = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaEvidenceDto>> DeleteEvidenceAsync(Guid incidentId, Guid evidenceId, string? deletedByUserId = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaFactDto>> AddFactAsync(Guid incidentId, AddRcaFactRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaAuditRecordDto>>> ListAuditRecordsAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> CloseAsync(Guid incidentId, CloseRcaIncidentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> EscalateTo8DAsync(Guid incidentId, EscalateRcaIncidentTo8DRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIncidentDto>> CompleteWizardStepAsync(Guid incidentId, CompleteRcaWizardStepRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaIntegrationSnapshotDto>> GetIntegrationSnapshotAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<IReadOnlyList<RcaIntegrationSnapshotDto>>> ListIntegrationSnapshotsAsync(string? sourceSystem = null, string? externalTaskId = null, string? status = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
+
+internal sealed class EmptyExternalIntakeService : IRcaExternalIntakeService
+{
+    public Task<ApiResult<IReadOnlyList<RcaExternalIntakeDto>>> ListByIncidentAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaExternalIntakeDto>>.Ok([]));
+
+    public Task<ApiResult<CreatedExternalIntakeDto>> CreateAsync(Guid incidentId, CreateExternalIntakeRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaExternalIntakeDto>> GetByTokenAsync(string token, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaExternalIntakeDto>> SubmitAsync(string token, SubmitExternalIntakeRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaExternalIntakeDto>> ReviewAsync(Guid intakeId, ReviewExternalIntakeRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaExternalIntakeDto>> RejectAsync(Guid intakeId, RejectExternalIntakeRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaExternalIntakeDto>> RevokeAsync(Guid intakeId, string? revokedByUserId = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
+
+internal sealed class EmptyAiAssistantService : IRcaAiAssistantService
+{
+    public Task<ApiResult<IReadOnlyList<RcaAiSuggestionDto>>> ListSuggestionsAsync(Guid incidentId, string? status, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaAiSuggestionDto>>.Ok([]));
+
+    public Task<ApiResult<RcaAiCauseSuggestionResultDto>> SuggestCausesAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiActionSuggestionResultDto>> SuggestActionsAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiSummaryResultDto>> SummarizeAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiRecurrenceResultDto>> DetectRecurrenceAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiEightDDraftResultDto>> GenerateEightDDraftAsync(Guid incidentId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiSuggestionDto>> AcceptSuggestionAsync(Guid incidentId, Guid suggestionId, AcceptRcaAiSuggestionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaAiSuggestionDto>> RejectSuggestionAsync(Guid incidentId, Guid suggestionId, RejectRcaAiSuggestionRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+}
+
+internal sealed class NoOpEvidenceFileStorage : IEvidenceFileStorage
+{
+    public long MaxFileSizeBytes => 100;
+    public Task<StoredEvidenceFile> SaveAsync(Guid incidentId, IFormFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public EvidenceFileResolution Resolve(string storageKey, string? fileName, string? contentType) => throw new NotSupportedException();
+    public void Delete(string? storageKey) { }
+}
+
+internal sealed class FixedPdfReportService : IRcaPdfReportService
+{
+    private readonly byte[] _content;
+
+    public FixedPdfReportService(byte[] content)
+    {
+        _content = content;
+    }
+
+    public byte[] Build(RcaIncidentDetailsViewModel model, IReadOnlyDictionary<Guid, string> evidenceDownloadUrls) => _content;
+}
+
+internal sealed class RecordingClosureDocumentStorage : IClosureDocumentStorage
+{
+    public StoredClosureDocumentFile? LastSaved { get; private set; }
+    public long MaxFileSizeBytes => 1024 * 1024;
+
+    public Task<StoredClosureDocumentFile> SaveAsync(Guid incidentId, string fileName, byte[] content, CancellationToken cancellationToken)
+    {
+        LastSaved = new StoredClosureDocumentFile(
+            fileName,
+            "application/pdf",
+            content.LongLength,
+            "LocalFileSystem",
+            $"rca-closure-documents/{incidentId:N}/test.pdf",
+            Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant());
+
+        return Task.FromResult(LastSaved);
+    }
+
+    public ClosureDocumentFileResolution Resolve(string storageKey, string? fileName, string? contentType) => throw new NotSupportedException();
+    public void Delete(string? storageKey) { }
+}
+
+internal sealed class RecordingRcaClosureDocumentService : IRcaClosureDocumentService
+{
+    public Guid LastIncidentId { get; private set; }
+    public RegisterRcaClosureDocumentRequest? LastRequest { get; private set; }
+
+    public Task<ApiResult<RcaClosureDocumentDto>> RegisterGeneratedAsync(Guid incidentId, RegisterRcaClosureDocumentRequest request, CancellationToken cancellationToken = default)
+    {
+        LastIncidentId = incidentId;
+        LastRequest = request;
+
+        return Task.FromResult(ApiResult<RcaClosureDocumentDto>.Ok(new RcaClosureDocumentDto
+        {
+            Id = Guid.NewGuid(),
+            TenantId = Guid.NewGuid(),
+            RcaIncidentId = incidentId,
+            Version = 1,
+            FileName = request.FileName,
+            ContentType = request.ContentType,
+            SizeBytes = request.SizeBytes,
+            StorageProvider = request.StorageProvider,
+            StorageKey = request.StorageKey,
+            Sha256 = request.Sha256,
+            Status = nameof(RcaClosureDocumentStatus.Draft),
+            GeneratedAt = DateTimeOffset.UtcNow,
+            GeneratedByUserId = request.GeneratedByUserId
+        }));
+    }
+
+    public Task<ApiResult<IReadOnlyList<RcaClosureDocumentDto>>> ListAsync(Guid incidentId, CancellationToken cancellationToken = default)
+        => Task.FromResult(ApiResult<IReadOnlyList<RcaClosureDocumentDto>>.Ok([]));
+
+    public Task<ApiResult<RcaClosureDocumentDto>> ApproveAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<ApiResult<RcaClosureDocumentDto>> RejectAsync(Guid incidentId, Guid documentId, ReviewRcaClosureDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 }

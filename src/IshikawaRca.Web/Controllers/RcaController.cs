@@ -18,6 +18,8 @@ public class RcaController : Controller
     private readonly IRcaAiAssistantService _aiAssistantService;
     private readonly IEvidenceFileStorage _evidenceFileStorage;
     private readonly IRcaPdfReportService _pdfReportService;
+    private readonly IClosureDocumentStorage _closureDocumentStorage;
+    private readonly IRcaClosureDocumentService _closureDocumentService;
     private readonly ICurrentRcaUserContext _currentUserContext;
 
     public RcaController(
@@ -26,6 +28,8 @@ public class RcaController : Controller
         IRcaAiAssistantService aiAssistantService,
         IEvidenceFileStorage evidenceFileStorage,
         IRcaPdfReportService pdfReportService,
+        IClosureDocumentStorage closureDocumentStorage,
+        IRcaClosureDocumentService closureDocumentService,
         ICurrentRcaUserContext currentUserContext)
     {
         _rcaIncidentService = rcaIncidentService;
@@ -33,6 +37,8 @@ public class RcaController : Controller
         _aiAssistantService = aiAssistantService;
         _evidenceFileStorage = evidenceFileStorage;
         _pdfReportService = pdfReportService;
+        _closureDocumentStorage = closureDocumentStorage;
+        _closureDocumentService = closureDocumentService;
         _currentUserContext = currentUserContext;
     }
 
@@ -551,6 +557,35 @@ public class RcaController : Controller
 
         var pdf = _pdfReportService.Build(model, evidenceUrls);
         var fileName = $"rca-{model.Incident.Id:N}.pdf";
+
+        StoredClosureDocumentFile storedDocument;
+        try
+        {
+            storedDocument = await _closureDocumentStorage.SaveAsync(model.Incident.Id, fileName, pdf, cancellationToken);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException)
+        {
+            return BadRequest(ex.Message);
+        }
+
+        var registration = await _closureDocumentService.RegisterGeneratedAsync(
+            model.Incident.Id,
+            new RegisterRcaClosureDocumentRequest
+            {
+                FileName = storedDocument.FileName,
+                ContentType = storedDocument.ContentType,
+                SizeBytes = storedDocument.SizeBytes,
+                StorageProvider = storedDocument.StorageProvider,
+                StorageKey = storedDocument.StorageKey,
+                Sha256 = storedDocument.Sha256,
+                GeneratedByUserId = _currentUserContext.UserId
+            },
+            cancellationToken);
+        if (!registration.Success)
+        {
+            _closureDocumentStorage.Delete(storedDocument.StorageKey);
+            return BadRequest(registration);
+        }
 
         return File(pdf, "application/pdf", fileName);
     }

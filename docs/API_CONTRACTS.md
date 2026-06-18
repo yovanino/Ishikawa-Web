@@ -136,6 +136,11 @@ GET /Rca/ExportPdf/{id}
 ```
 
 Devuelve `application/pdf` con resumen ejecutivo, problema, cierre, causa raiz, causas, acciones correctivas, manifiesto de evidencias, metadatos de validacion, SHA-256 de adjuntos y links controlados de descarga. El PDF no embebe videos ni documentos Office; los referencia como evidencias trazables del repositorio del RCA.
+Cuando el RCA esta cerrado, la exportacion persiste el PDF generado en el
+storage documental configurado y registra una nueva version de documento de
+cierre con SHA-256, usuario generador y metadata de storage. Si el registro
+documental falla, el archivo fisico recien generado se descarta y la respuesta
+devuelve un error controlado.
 
 Validacion/cierre de accion correctiva:
 

@@ -462,6 +462,11 @@ documental y plataforma. Inicia P4.1 con el modelo de dominio
 `RcaClosureDocument` y estados de aprobacion documental internos; la persistencia
 y versionado efectivo quedan como siguiente ajuste.
 
+Avance P4 2026-06-18: la exportacion PDF de cierre queda conectada al storage
+documental local standalone y registra versiones `RcaClosureDocument` con
+SHA-256 y usuario generador. La aprobacion/rechazo ya existe en servicio; queda
+pendiente exponer la superficie MVC/API de consulta y revision documental.
+
 Criterio de salida P4:
 
 - Los cierres RCA son auditables como documentos formales.

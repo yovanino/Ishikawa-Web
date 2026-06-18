@@ -218,8 +218,11 @@ acoplar el modulo a sistemas corporativos futuros.
   para persistir PDFs de cierre versionados bajo `ClosureDocumentStorage`, con
   limite configurable, SHA-256, resolucion controlada y proteccion contra path
   traversal.
-- La conexion con exportacion PDF y superficie MVC/API queda como siguiente
-  tarea del corte P4.1.
+- `RcaController.ExportPdf` ahora guarda el PDF generado en storage documental
+  y registra una nueva version mediante `IRcaClosureDocumentService`; si falla
+  el registro, descarta el archivo recien generado y devuelve error controlado.
+- La superficie MVC/API para listar, aprobar y rechazar versiones queda como
+  siguiente tarea del corte P4.1.
 
 ## Limites
 
@@ -611,3 +614,13 @@ acoplar el modulo a sistemas corporativos futuros.
   solo si la clave permanece dentro del root configurado.
 - Registrado el storage en `Program.cs` y configurado `ClosureDocumentStorage`
   en `appsettings.json`.
+
+### 2026-06-18 - Exportacion PDF versionada P4.1 Task 4a
+
+- `RcaController.ExportPdf` guarda el PDF generado con `IClosureDocumentStorage`.
+- La exportacion registra metadata versionada por
+  `IRcaClosureDocumentService.RegisterGeneratedAsync` usando el usuario del
+  contexto autenticado.
+- Si el registro documental falla, el archivo generado se elimina para evitar
+  documentos huerfanos.
+- Agregada cobertura liviana de controller sin levantar servidor local.

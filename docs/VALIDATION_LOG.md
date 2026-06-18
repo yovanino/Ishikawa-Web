@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure PDF version registration
+
+Scope: connect MVC PDF export with closure document storage and version
+metadata registration.
+
+Checks:
+
+- Added RED controller coverage proving `ExportPdf` saves the generated PDF and
+  calls `IRcaClosureDocumentService.RegisterGeneratedAsync`.
+- `RcaController.ExportPdf` now persists generated PDFs through
+  `IClosureDocumentStorage`.
+- Registration uses storage metadata, SHA-256 and authenticated user id.
+- If registration fails, the generated physical document is deleted.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaController` did not accept document storage dependencies.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document local storage
 
 Scope: add standalone local storage for generated RCA closure PDFs.
