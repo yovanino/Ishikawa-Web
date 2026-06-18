@@ -415,8 +415,8 @@ Objetivo: pasar de stub IA a asistencia real gobernada.
 - [x] Resumen del RCA.
 - [x] Deteccion de recurrencia por historico.
 - [x] Borrador 8D.
-- [ ] UI para aceptar/rechazar sugerencias.
-- [ ] Auditoria de sugerencias aceptadas.
+- [x] UI para aceptar/rechazar sugerencias.
+- [x] Auditoria de sugerencias aceptadas.
 
 Avance P3 2026-06-13: quedan cerrados los contratos y endpoints de
 `detect-recurrence` y `generate-8d-draft`. El modulo ya arma contexto RCA,
@@ -425,6 +425,11 @@ cuando `AiGateway:Mode = Http` y mantiene respuestas stub deterministicas con
 fallback para modo standalone. Siguen pendientes la configuracion por
 ambiente/tenant, la UI de aprobacion humana y la auditoria de sugerencias
 aceptadas.
+
+Avance P3 2026-06-18: el detalle MVC del RCA incorpora un panel de sugerencias
+IA pendientes con aceptacion/rechazo gobernado. Las sugerencias aceptadas
+reutilizan el workflow auditado de Task 6; las causas requieren rama destino
+antes de convertirse en causa oficial.
 
 Criterio de salida P3:
 

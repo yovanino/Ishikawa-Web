@@ -1707,6 +1707,40 @@ textarea.form-control {
   padding: 14px;
 }
 
+.ai-suggestion-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-suggestion-card {
+  align-items: flex-start;
+}
+
+.ai-suggestion-card p {
+  color: #536476;
+  margin: 8px 0;
+  max-width: 72ch;
+}
+
+.ai-review-actions {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(140px, 1fr) minmax(112px, auto);
+  min-width: min(360px, 100%);
+}
+
+.ai-review-actions form {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ai-review-actions .form-select {
+  min-width: 140px;
+}
+
 .action-status-form {
   align-items: center;
   display: grid;
@@ -2464,6 +2498,12 @@ textarea.form-control {
   .form-actions,
   .action-row {
     display: grid;
+  }
+
+  .ai-review-actions,
+  .ai-review-actions form {
+    display: grid;
+    justify-content: stretch;
   }
 
   .external-review-form {

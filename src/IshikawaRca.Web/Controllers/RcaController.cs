@@ -1,5 +1,7 @@
 using IshikawaRca.Application.Rca;
+using IshikawaRca.Application.Ai;
 using IshikawaRca.Contracts.Rca;
+using IshikawaRca.Domain.Enums;
 using IshikawaRca.Web.Models.Rca;
 using IshikawaRca.Web.Security;
 using IshikawaRca.Web.Services;
@@ -13,6 +15,7 @@ public class RcaController : Controller
 {
     private readonly IRcaIncidentService _rcaIncidentService;
     private readonly IRcaExternalIntakeService _externalIntakeService;
+    private readonly IRcaAiAssistantService _aiAssistantService;
     private readonly IEvidenceFileStorage _evidenceFileStorage;
     private readonly IRcaPdfReportService _pdfReportService;
     private readonly ICurrentRcaUserContext _currentUserContext;
@@ -20,12 +23,14 @@ public class RcaController : Controller
     public RcaController(
         IRcaIncidentService rcaIncidentService,
         IRcaExternalIntakeService externalIntakeService,
+        IRcaAiAssistantService aiAssistantService,
         IEvidenceFileStorage evidenceFileStorage,
         IRcaPdfReportService pdfReportService,
         ICurrentRcaUserContext currentUserContext)
     {
         _rcaIncidentService = rcaIncidentService;
         _externalIntakeService = externalIntakeService;
+        _aiAssistantService = aiAssistantService;
         _evidenceFileStorage = evidenceFileStorage;
         _pdfReportService = pdfReportService;
         _currentUserContext = currentUserContext;
@@ -759,6 +764,43 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    public async Task<IActionResult> AcceptAiSuggestion(Guid id, Guid suggestionId, Guid? targetBranchId, string? reviewNotes, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.AcceptSuggestionAsync(id, suggestionId, new AcceptRcaAiSuggestionRequest
+        {
+            TargetBranchId = targetBranchId,
+            ReviewedByUserId = _currentUserContext.UserId,
+            ReviewNotes = reviewNotes ?? string.Empty
+        }, cancellationToken);
+
+        TempData["StatusMessage"] = result.Success
+            ? "Sugerencia IA aceptada."
+            : $"No se pudo aceptar la sugerencia IA: {string.Join(" ", result.Errors.Select(x => x.Message))}";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    public async Task<IActionResult> RejectAiSuggestion(Guid id, Guid suggestionId, string? reviewNotes, CancellationToken cancellationToken)
+    {
+        var result = await _aiAssistantService.RejectSuggestionAsync(id, suggestionId, new RejectRcaAiSuggestionRequest
+        {
+            ReviewedByUserId = _currentUserContext.UserId,
+            ReviewNotes = reviewNotes ?? string.Empty
+        }, cancellationToken);
+
+        TempData["StatusMessage"] = result.Success
+            ? "Sugerencia IA rechazada."
+            : $"No se pudo rechazar la sugerencia IA: {string.Join(" ", result.Errors.Select(x => x.Message))}";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
     {
         return
@@ -839,6 +881,7 @@ public class RcaController : Controller
         var externalIntakesResult = await _externalIntakeService.ListByIncidentAsync(id, cancellationToken);
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
         var wizardProgressResult = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
+        var aiSuggestionsResult = await _aiAssistantService.ListSuggestionsAsync(id, nameof(RcaAiSuggestionStatus.Pending), cancellationToken);
 
         var facts = factsResult.Data ?? [];
         var correctiveActions = actionsResult.Data ?? [];
@@ -858,6 +901,7 @@ public class RcaController : Controller
             Evidence = evidence,
             ExternalIntakes = externalIntakes,
             TimelineEvents = timelineEvents,
+            AiSuggestions = aiSuggestionsResult.Data ?? [],
             UnifiedTimeline = BuildUnifiedTimeline(timelineEvents, canvasResult.Data, correctiveActions, evidence, externalIntakes),
             WizardProgress = wizardProgressResult.Data ?? new RcaWizardProgressDto
             {

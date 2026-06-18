@@ -131,6 +131,9 @@ El backend ya cuenta con:
   `NextAttemptAt` inicial de 1 minuto.
 - Eventos que alcanzan `RcaIntegration:MaxPublishAttempts` pasan a
   `DeadLetter`.
+- Panel MVC de revision de sugerencias IA en el detalle RCA, consumiendo
+  sugerencias `Pending` y ejecutando aceptacion/rechazo por acciones MVC
+  protegidas con rol de gobernanza de calidad.
 
 ## Corte Backend P0
 
@@ -494,3 +497,15 @@ live, outbox o webhooks versionados.
   decision auditada sin crear entidad RCA oficial.
 - La aceptacion de causa sin rama devuelve el codigo de contrato
   `AI_SUGGESTION_BRANCH_REQUIRED`.
+
+### 2026-06-18 - Panel MVC de revision IA P3 Task 7
+
+- `RcaController` carga sugerencias IA `Pending` en el detalle RCA mediante
+  `IRcaAiAssistantService.ListSuggestionsAsync`.
+- El detalle RCA muestra un panel de sugerencias pendientes con metadata de
+  proveedor/modelo/fallback y acciones de aceptar o rechazar.
+- Aceptar una sugerencia `Cause` permite seleccionar la rama destino antes de
+  crear la causa oficial gobernada.
+- Las acciones MVC `AcceptAiSuggestion` y `RejectAiSuggestion` requieren
+  antiforgery y rol de gobernanza de calidad, reutilizando el usuario del
+  contexto autenticado para auditoria.

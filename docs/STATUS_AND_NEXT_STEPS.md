@@ -99,8 +99,8 @@ gobernada y reportes corporativos de auditoria.
 - Agregar suite formal ampliada de tests unitarios/integracion sobre la base de
   smokes y pruebas livianas actuales.
 - Completar configuracion por ambiente/tenant y operacion productiva del
-  `ConfiguredRcaAiGatewayClient`; el cliente HTTP y los endpoints de
-  recurrencia/borrador 8D ya existen.
+  `ConfiguredRcaAiGatewayClient`; el cliente HTTP, los endpoints de
+  recurrencia/borrador 8D y la revision humana MVC ya existen.
 - Implementar outbox/event bus real para eventos, si la plataforma global lo requiere.
 - Extender adjuntos binarios/documentales al intake externo.
 - Extender UI/API de auditoria fina, reapertura gobernada y reportes cuando se

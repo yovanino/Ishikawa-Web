@@ -170,6 +170,12 @@ del contexto autenticado, no del payload enviado por el cliente. La aceptacion s
 ejecuta dentro de una transaccion de revision para evitar duplicados ante doble
 click o revisiones concurrentes.
 
+Desde la Task 7 de P3, el detalle MVC del RCA muestra las sugerencias IA
+pendientes y permite aceptarlas o rechazarlas desde UI. Las sugerencias de tipo
+`Cause` solicitan rama destino antes de aplicar el cambio oficial. La UI no
+escribe decisiones por si misma: invoca el servicio de revision gobernada, con
+antiforgery y rol de gobernanza de calidad.
+
 ## Fallback
 
 El modulo debe poder funcionar sin IA.

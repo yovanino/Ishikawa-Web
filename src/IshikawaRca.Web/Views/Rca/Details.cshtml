@@ -168,6 +168,56 @@
     </article>
 </section>
 
+@if (Model.AiSuggestions.Count > 0)
+{
+    <section class="analysis-panel ai-review-panel" aria-label="Revision de sugerencias IA">
+        <div class="panel-heading">
+            <div>
+                <h2>Sugerencias IA pendientes</h2>
+                <span>Gobernanza pendiente</span>
+            </div>
+            <span class="canvas-counter">@Model.AiSuggestions.Count pendiente(s)</span>
+        </div>
+        <div class="ai-suggestion-list">
+            @foreach (var suggestion in Model.AiSuggestions)
+            {
+                var isCauseSuggestion = string.Equals(suggestion.SuggestionType, "Cause", StringComparison.OrdinalIgnoreCase);
+                <article class="action-row ai-suggestion-card">
+                    <div>
+                        <div class="action-row-heading">
+                            <strong>@suggestion.Title</strong>
+                            <span>@suggestion.SuggestionType</span>
+                        </div>
+                        <p>@(string.IsNullOrWhiteSpace(suggestion.Summary) ? "Sin resumen generado." : suggestion.Summary)</p>
+                        <small>@suggestion.Provider / @suggestion.Model @(suggestion.IsFallback ? "Fallback" : "Gateway")</small>
+                    </div>
+                    <div class="ai-review-actions">
+                        <form asp-controller="Rca" asp-action="AcceptAiSuggestion" asp-route-id="@incident.Id" asp-route-suggestionId="@suggestion.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            @if (isCauseSuggestion)
+                            {
+                                <select class="form-select" name="targetBranchId" aria-label="Rama destino">
+                                    @foreach (var branch in Model.BranchOptions)
+                                    {
+                                        <option value="@branch.Value">@branch.Text</option>
+                                    }
+                                </select>
+                            }
+                            <input type="hidden" name="reviewNotes" value="Aceptado desde panel RCA" />
+                            <button type="submit" class="btn btn-primary">Aceptar</button>
+                        </form>
+                        <form asp-controller="Rca" asp-action="RejectAiSuggestion" asp-route-id="@incident.Id" asp-route-suggestionId="@suggestion.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="reviewNotes" value="Rechazado desde panel RCA" />
+                            <button type="submit" class="btn btn-outline-secondary">Rechazar</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
 <section class="analysis-panel wizard-panel">
     <div class="panel-heading">
         <div>

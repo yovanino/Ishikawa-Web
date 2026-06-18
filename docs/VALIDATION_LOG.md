@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-18 - RCA AI MVC suggestion review panel
+
+Scope: validate the MVC review surface for pending RCA AI suggestions.
+
+Checks:
+
+- `RcaController` loads pending AI suggestions for the RCA detail model.
+- The RCA detail view renders pending suggestions with provider/model/fallback
+  metadata.
+- Cause suggestions require a target branch selector before acceptance.
+- Accept/reject forms use antiforgery and MVC actions protected by quality
+  governance roles.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed. Browser smoke was attempted with a bounded local startup window,
+but PowerShell `Start-Process` failed before creating the child process because
+the local environment reported a duplicate `PATH` key. No web process remained
+running; build/Razor validation is the accepted fast check for this adjustment.
+
 ## 2026-06-17 - P3 Task 6 govern RCA AI suggestion review
 
 Scope: add human approval APIs for pending AI suggestions.

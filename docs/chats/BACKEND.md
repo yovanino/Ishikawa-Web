@@ -523,3 +523,7 @@ standalone.
   entidades oficiales, los tipos Summary/Recurrence/8D pueden aceptarse como
   decision auditada sin mutacion oficial, y causa sin rama devuelve
   `AI_SUGGESTION_BRANCH_REQUIRED`.
+- Task 7 P3: el detalle MVC del RCA carga sugerencias IA pendientes y agrega
+  panel de revision humana para aceptar o rechazar. Las acciones MVC requieren
+  antiforgery y rol de gobernanza de calidad; aceptar causas exige seleccionar
+  rama destino y delega en el workflow auditado existente.
