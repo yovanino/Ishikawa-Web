@@ -66,6 +66,7 @@ AssertRcaClosureDocumentContracts();
 await AssertClosureDocumentStorageSavesPdfWithHashAsync();
 AssertClosureDocumentStorageRejectsUnsafeKeys();
 await AssertRcaControllerExportPdfRegistersClosureDocumentAsync();
+await AssertRcaControllerDetailsLoadsClosureDocumentsAsync();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -329,6 +330,39 @@ static async Task AssertRcaControllerExportPdfRegistersClosureDocumentAsync()
         closureDocumentService.LastRequest.GeneratedByUserId != "quality.user")
     {
         throw new InvalidOperationException("Expected PDF export to save and register a closure document version.");
+    }
+}
+
+static async Task AssertRcaControllerDetailsLoadsClosureDocumentsAsync()
+{
+    var incidentId = Guid.NewGuid();
+    var tenantId = Guid.NewGuid();
+    var closureDocumentService = new RecordingClosureDocumentGovernanceService(incidentId, Guid.NewGuid());
+    var controller = new RcaController(
+        new ExportPdfRcaIncidentService(incidentId, tenantId),
+        new EmptyExternalIntakeService(),
+        new EmptyAiAssistantService(),
+        new NoOpEvidenceFileStorage(),
+        new FixedPdfReportService(Encoding.ASCII.GetBytes("%PDF-1.4\nversioned closure")),
+        new RecordingClosureDocumentStorage(),
+        closureDocumentService,
+        new FixedCurrentRcaUserContext("quality.user", tenantId))
+    {
+        ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        }
+    };
+
+    var result = await controller.Details(incidentId, CancellationToken.None);
+    var viewResult = result as ViewResult
+        ?? throw new InvalidOperationException("Expected RCA details to return a view.");
+    var model = viewResult.Model as RcaIncidentDetailsViewModel
+        ?? throw new InvalidOperationException("Expected RCA details view model.");
+
+    if (model.ClosureDocuments.Count != 1 || !model.CanReviewClosureDocuments)
+    {
+        throw new InvalidOperationException("Expected RCA details to load closure documents for governance users.");
     }
 }
 

@@ -836,6 +836,42 @@ public class RcaController : Controller
         return RedirectToAction(nameof(Details), new { id });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    public async Task<IActionResult> ApproveClosureDocument(Guid id, Guid documentId, string? reviewNotes, CancellationToken cancellationToken)
+    {
+        var result = await _closureDocumentService.ApproveAsync(id, documentId, new ReviewRcaClosureDocumentRequest
+        {
+            ReviewedByUserId = _currentUserContext.UserId,
+            ReviewNotes = reviewNotes ?? string.Empty
+        }, cancellationToken);
+
+        TempData["StatusMessage"] = result.Success
+            ? "Documento de cierre aprobado."
+            : $"No se pudo aprobar el documento: {string.Join(" ", result.Errors.Select(x => x.Message))}";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = RcaRoleNames.QualityGovernance)]
+    public async Task<IActionResult> RejectClosureDocument(Guid id, Guid documentId, string? reviewNotes, CancellationToken cancellationToken)
+    {
+        var result = await _closureDocumentService.RejectAsync(id, documentId, new ReviewRcaClosureDocumentRequest
+        {
+            ReviewedByUserId = _currentUserContext.UserId,
+            ReviewNotes = reviewNotes ?? string.Empty
+        }, cancellationToken);
+
+        TempData["StatusMessage"] = result.Success
+            ? "Documento de cierre rechazado."
+            : $"No se pudo rechazar el documento: {string.Join(" ", result.Errors.Select(x => x.Message))}";
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     private static IReadOnlyList<SelectListItem> GetSeverityOptions()
     {
         return
@@ -917,8 +953,12 @@ public class RcaController : Controller
         var timelineResult = await _rcaIncidentService.ListIntegrationEventsAsync(id, cancellationToken: cancellationToken);
         var wizardProgressResult = await _rcaIncidentService.GetWizardProgressAsync(id, cancellationToken);
         var canReviewAiSuggestions = CanReviewAiSuggestions();
+        var canReviewClosureDocuments = CanReviewClosureDocuments();
         var aiSuggestions = canReviewAiSuggestions
             ? (await _aiAssistantService.ListSuggestionsAsync(id, nameof(RcaAiSuggestionStatus.Pending), cancellationToken)).Data ?? []
+            : [];
+        var closureDocuments = canReviewClosureDocuments
+            ? (await _closureDocumentService.ListAsync(id, cancellationToken)).Data ?? []
             : [];
 
         var facts = factsResult.Data ?? [];
@@ -941,6 +981,8 @@ public class RcaController : Controller
             TimelineEvents = timelineEvents,
             AiSuggestions = aiSuggestions,
             CanReviewAiSuggestions = canReviewAiSuggestions,
+            ClosureDocuments = closureDocuments,
+            CanReviewClosureDocuments = canReviewClosureDocuments,
             UnifiedTimeline = BuildUnifiedTimeline(timelineEvents, canvasResult.Data, correctiveActions, evidence, externalIntakes),
             WizardProgress = wizardProgressResult.Data ?? new RcaWizardProgressDto
             {
@@ -957,6 +999,13 @@ public class RcaController : Controller
     }
 
     private bool CanReviewAiSuggestions()
+    {
+        return _currentUserContext.IsInRole(RcaRoleNames.Supervisor) ||
+            _currentUserContext.IsInRole(RcaRoleNames.Quality) ||
+            _currentUserContext.IsInRole(RcaRoleNames.Administrator);
+    }
+
+    private bool CanReviewClosureDocuments()
     {
         return _currentUserContext.IsInRole(RcaRoleNames.Supervisor) ||
             _currentUserContext.IsInRole(RcaRoleNames.Quality) ||

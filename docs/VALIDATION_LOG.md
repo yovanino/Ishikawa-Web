@@ -1,5 +1,31 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document MVC panel
+
+Scope: expose closure document versions in the RCA detail page for governance
+users.
+
+Checks:
+
+- Added RED controller coverage proving details loads closure documents for a
+  governance user.
+- `RcaIncidentDetailsViewModel` now exposes closure document versions and
+  review permission state.
+- `RcaController.Details` loads documents only for quality governance users.
+- Added MVC approve/reject actions with antiforgery and authenticated reviewer.
+- `Details.cshtml` renders closure document versions, download, approve and
+  reject controls.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because detail view model had no closure document state.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document governance API
 
 Scope: expose closure document list, review and controlled download endpoints.

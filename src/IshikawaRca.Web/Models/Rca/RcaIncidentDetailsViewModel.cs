@@ -25,6 +25,10 @@ public class RcaIncidentDetailsViewModel
 
     public bool CanReviewAiSuggestions { get; set; }
 
+    public IReadOnlyList<RcaClosureDocumentDto> ClosureDocuments { get; set; } = [];
+
+    public bool CanReviewClosureDocuments { get; set; }
+
     public RcaWizardProgressDto WizardProgress { get; set; } = new();
 
     public AddIshikawaCauseViewModel Cause { get; set; } = new();

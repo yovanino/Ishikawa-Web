@@ -218,6 +218,55 @@
     </section>
 }
 
+@if (Model.CanReviewClosureDocuments && Model.ClosureDocuments.Count > 0)
+{
+    <section class="analysis-panel document-governance-panel" aria-label="Gobierno documental de cierre">
+        <div class="panel-heading">
+            <div>
+                <h2>Documentos de cierre</h2>
+                <span>Versiones PDF trazables</span>
+            </div>
+            <span class="canvas-counter">@Model.ClosureDocuments.Count version(es)</span>
+        </div>
+        <div class="action-list">
+            @foreach (var document in Model.ClosureDocuments)
+            {
+                var canReviewDocument = document.Status is not "Approved" and not "Rejected";
+                <article class="action-row">
+                    <div>
+                        <div class="action-row-heading">
+                            <strong>Version @document.Version</strong>
+                            <span>@document.Status</span>
+                        </div>
+                        <p>@document.FileName</p>
+                        <small>@document.GeneratedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") · @document.GeneratedByUserId · SHA @document.Sha256[..Math.Min(12, document.Sha256.Length)]</small>
+                        @if (!string.IsNullOrWhiteSpace(document.ReviewNotes))
+                        {
+                            <small>@document.ReviewNotes</small>
+                        }
+                    </div>
+                    <div class="ai-review-actions">
+                        <a class="btn btn-sm btn-outline-secondary" href="/api/v1/rca/incidents/@incident.Id/documents/closure/@document.Id/download">Descargar</a>
+                        @if (canReviewDocument)
+                        {
+                            <form asp-controller="Rca" asp-action="ApproveClosureDocument" asp-route-id="@incident.Id" asp-route-documentId="@document.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reviewNotes" value="Aprobado desde detalle RCA" />
+                                <button type="submit" class="btn btn-sm btn-primary">Aprobar</button>
+                            </form>
+                            <form asp-controller="Rca" asp-action="RejectClosureDocument" asp-route-id="@incident.Id" asp-route-documentId="@document.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reviewNotes" value="Rechazado desde detalle RCA" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Rechazar</button>
+                            </form>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
 <section class="analysis-panel wizard-panel">
     <div class="panel-heading">
         <div>

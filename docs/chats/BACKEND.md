@@ -552,3 +552,6 @@ standalone.
 - P4.1 Task 4b: agregado `RcaDocumentsController` para listar, descargar,
   aprobar y rechazar documentos de cierre por API `/api/v1`, usando el usuario
   autenticado como revisor.
+- P4.1 Task 4c: el detalle MVC carga versiones documentales de cierre para
+  usuarios de gobernanza de calidad y permite descargar, aprobar o rechazar con
+  antiforgery.

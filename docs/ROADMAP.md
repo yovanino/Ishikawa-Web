@@ -471,6 +471,10 @@ Avance P4 2026-06-18: se agrega API `/api/v1` para gobierno documental de
 cierres RCA: listar versiones, descargar PDF controlado, aprobar y rechazar con
 atribucion desde el usuario autenticado.
 
+Avance P4 2026-06-18: el detalle MVC del RCA muestra versiones documentales de
+cierre a usuarios de gobernanza de calidad y permite descarga, aprobacion o
+rechazo con antiforgery.
+
 Criterio de salida P4:
 
 - Los cierres RCA son auditables como documentos formales.

@@ -223,8 +223,8 @@ acoplar el modulo a sistemas corporativos futuros.
   el registro, descarta el archivo recien generado y devuelve error controlado.
 - Agregado `RcaDocumentsController` para listar, descargar, aprobar y rechazar
   versiones documentales de cierre por API `/api/v1`.
-- La superficie MVC de consulta/revision documental queda como siguiente tarea
-  del corte P4.1.
+- El detalle MVC carga versiones documentales para usuarios de gobernanza de
+  calidad y permite descargar, aprobar o rechazar desde la pantalla del RCA.
 
 ## Limites
 
@@ -635,3 +635,13 @@ acoplar el modulo a sistemas corporativos futuros.
 - `approve` y `reject` requieren rol de gobernanza de calidad y reemplazan
   `ReviewedByUserId` con el usuario autenticado.
 - Agregada cobertura liviana de controller para list/approve/reject.
+
+### 2026-06-18 - Panel MVC documental P4.1 Task 4c
+
+- `RcaIncidentDetailsViewModel` expone `ClosureDocuments` y
+  `CanReviewClosureDocuments`.
+- `RcaController.Details` carga documentos de cierre para usuarios con rol de
+  gobernanza de calidad.
+- Agregadas acciones MVC `ApproveClosureDocument` y `RejectClosureDocument`
+  con antiforgery y usuario revisor autenticado.
+- `Details.cshtml` muestra versiones PDF con descarga, aprobacion y rechazo.
