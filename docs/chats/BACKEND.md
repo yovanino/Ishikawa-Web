@@ -541,3 +541,6 @@ standalone.
   tenant/RCA e indices de consulta documental.
 - P4.1 Task 3a: agregados contratos e interfaz de aplicacion para registrar,
   listar, aprobar y rechazar documentos de cierre RCA.
+- P4.1 Task 3b: agregado `EfRcaClosureDocumentService`, con versionado
+  incremental por tenant/RCA, validacion de RCA cerrado y auditoria de
+  generacion/aprobacion/rechazo.

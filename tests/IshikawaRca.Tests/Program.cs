@@ -1523,10 +1523,16 @@ static void AssertInfrastructureResolvesConfiguredAiGatewayClient()
 
     using var provider = services.BuildServiceProvider();
     var client = provider.GetRequiredService<IRcaAiGatewayClient>();
+    var closureDocumentService = provider.GetRequiredService<IRcaClosureDocumentService>();
 
     if (client is not ConfiguredRcaAiGatewayClient)
     {
         throw new InvalidOperationException("Expected infrastructure DI to resolve IRcaAiGatewayClient as ConfiguredRcaAiGatewayClient.");
+    }
+
+    if (closureDocumentService is not EfRcaClosureDocumentService)
+    {
+        throw new InvalidOperationException("Expected infrastructure DI to resolve IRcaClosureDocumentService as EfRcaClosureDocumentService.");
     }
 }
 

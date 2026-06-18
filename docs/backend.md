@@ -212,8 +212,10 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregados contratos `RcaClosureDocumentDto`,
   `RegisterRcaClosureDocumentRequest`, `ReviewRcaClosureDocumentRequest` e
   interfaz `IRcaClosureDocumentService`.
-- El servicio de versionado, storage de documentos y aprobacion auditada quedan
-  como siguientes tareas del corte P4.1.
+- Agregado `EfRcaClosureDocumentService` para registrar versiones, listar,
+  aprobar y rechazar documentos de cierre con auditoria.
+- El storage fisico de documentos y la conexion con exportacion PDF quedan como
+  siguientes tareas del corte P4.1.
 
 ## Limites
 
@@ -586,3 +588,12 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregados requests para registro de documento generado y revision documental.
 - Agregada frontera `IRcaClosureDocumentService` para registrar, listar,
   aprobar y rechazar documentos de cierre.
+
+### 2026-06-18 - Servicio documental P4.1 Task 3b
+
+- Agregado `EfRcaClosureDocumentService`.
+- `RegisterGeneratedAsync` exige RCA cerrado, metadata de storage, SHA-256 y
+  usuario generador; asigna version incremental por tenant/RCA.
+- `ApproveAsync` y `RejectAsync` bloquean documentos ya revisados y registran
+  auditoria.
+- Registrado `IRcaClosureDocumentService` en DI de infraestructura.

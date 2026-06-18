@@ -1,5 +1,26 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document service
+
+Scope: add EF-backed service for RCA closure document metadata governance.
+
+Checks:
+
+- Added `EfRcaClosureDocumentService`.
+- `RegisterGeneratedAsync` validates closed RCA, document metadata, SHA-256 and
+  generator user before assigning the next version.
+- `ListAsync` returns document versions by incident.
+- `ApproveAsync` and `RejectAsync` record review metadata and audit records.
+- Infrastructure DI resolves `IRcaClosureDocumentService`.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document contracts
 
 Scope: add public contracts and application boundary for RCA closure document

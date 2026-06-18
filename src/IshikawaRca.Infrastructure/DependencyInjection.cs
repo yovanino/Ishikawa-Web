@@ -33,6 +33,7 @@ public static class DependencyInjection
 
         services.AddScoped<IRcaIncidentService, EfRcaIncidentService>();
         services.AddScoped<IRcaExternalIntakeService, EfRcaExternalIntakeService>();
+        services.AddScoped<IRcaClosureDocumentService, EfRcaClosureDocumentService>();
         services.AddScoped<IRcaOutboxService, EfRcaOutboxService>();
         services.AddScoped<IRcaOutboxPublisher, RcaOutboxPublisher>();
         services.AddScoped<IRcaAiSuggestionStore, EfRcaAiSuggestionStore>();
