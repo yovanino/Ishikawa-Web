@@ -32,6 +32,8 @@ public class RcaDbContext : DbContext
 
     public DbSet<RcaAiSuggestion> RcaAiSuggestions => Set<RcaAiSuggestion>();
 
+    public DbSet<RcaClosureDocument> RcaClosureDocuments => Set<RcaClosureDocument>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -46,6 +48,7 @@ public class RcaDbContext : DbContext
         ConfigureRcaAuditRecord(modelBuilder);
         ConfigureRcaOutboxEvent(modelBuilder);
         ConfigureRcaAiSuggestion(modelBuilder);
+        ConfigureRcaClosureDocument(modelBuilder);
     }
 
     private static void ConfigureRcaIncident(ModelBuilder modelBuilder)
@@ -335,6 +338,28 @@ public class RcaDbContext : DbContext
         entity.HasIndex(x => new { x.TenantId, x.CreatedAt });
         entity.HasIndex(x => new { x.TenantId, x.SuggestionType, x.Status });
         entity.HasIndex(x => new { x.TenantId, x.GatewayCorrelationId }).IsUnique();
+    }
+
+    private static void ConfigureRcaClosureDocument(ModelBuilder modelBuilder)
+    {
+        var entity = modelBuilder.Entity<RcaClosureDocument>();
+
+        entity.ToTable("rca_closure_documents");
+        ConfigureTenantEntity(entity);
+
+        entity.Property(x => x.FileName).HasMaxLength(260).IsRequired();
+        entity.Property(x => x.ContentType).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.StorageProvider).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.StorageKey).HasMaxLength(500).IsRequired();
+        entity.Property(x => x.Sha256).HasMaxLength(64).IsRequired();
+        entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        entity.Property(x => x.GeneratedByUserId).HasMaxLength(160).IsRequired();
+        entity.Property(x => x.ReviewedByUserId).HasMaxLength(160);
+        entity.Property(x => x.ReviewNotes).HasMaxLength(2000);
+
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.Version }).IsUnique();
+        entity.HasIndex(x => new { x.TenantId, x.RcaIncidentId, x.GeneratedAt });
+        entity.HasIndex(x => new { x.TenantId, x.Status, x.GeneratedAt });
     }
 
     private static void ConfigureTenantEntity<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

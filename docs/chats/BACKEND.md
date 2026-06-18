@@ -536,3 +536,6 @@ standalone.
 - Inicio P4.1: agregado modelo de dominio `RcaClosureDocument` y enum
   `RcaClosureDocumentStatus` para versionado futuro de documentos de cierre RCA.
   Validado con RED/GREEN de suite liviana y build serial.
+- P4.1 Task 2: agregado mapping EF, DbSet y migracion
+  `AddRcaClosureDocuments` para `rca_closure_documents`, con version unico por
+  tenant/RCA e indices de consulta documental.

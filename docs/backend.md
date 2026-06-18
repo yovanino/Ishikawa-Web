@@ -206,8 +206,11 @@ acoplar el modulo a sistemas corporativos futuros.
   documentos de cierre RCA.
 - Agregado enum `RcaClosureDocumentStatus` con estados `Draft`,
   `PendingApproval`, `Approved` y `Rejected`.
-- La persistencia, versionado EF, storage de documentos y aprobacion auditada
-  quedan como siguientes tareas del corte P4.1.
+- Agregado mapping EF y migracion `AddRcaClosureDocuments` para la tabla
+  `rca_closure_documents`, con version unico por tenant/RCA e indices para
+  consulta por incidente o estado.
+- El servicio de versionado, storage de documentos y aprobacion auditada quedan
+  como siguientes tareas del corte P4.1.
 
 ## Limites
 
@@ -563,3 +566,13 @@ acoplar el modulo a sistemas corporativos futuros.
 - Agregado `RcaClosureDocumentStatus` para gobierno interno de aprobacion
   documental.
 - Agregada cobertura liviana de defaults de dominio en la suite de consola.
+
+### 2026-06-18 - Persistencia documental P4.1 Task 2
+
+- `RcaDbContext` expone `RcaClosureDocuments`.
+- Mapeada tabla `rca_closure_documents` con metadata de storage, SHA-256,
+  version, usuario generador y campos de revision.
+- Agregados indices `TenantId + RcaIncidentId + Version` unico,
+  `TenantId + RcaIncidentId + GeneratedAt` y
+  `TenantId + Status + GeneratedAt`.
+- Generada migracion EF `AddRcaClosureDocuments`.

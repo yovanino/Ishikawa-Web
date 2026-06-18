@@ -1,5 +1,29 @@
 # Validation Log
 
+## 2026-06-18 - P4.1 RCA closure document persistence
+
+Scope: add EF persistence for versioned RCA closure documents.
+
+Checks:
+
+- Added RED coverage for EF table name and required indexes.
+- Added `RcaDbContext.RcaClosureDocuments`.
+- Mapped table `rca_closure_documents` with storage metadata, SHA-256, status
+  and review fields.
+- Generated EF migration `AddRcaClosureDocuments`.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `RcaClosureDocument` was not mapped in the EF model.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after mapping.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings
+  on local working copies.
+
+Result: passed.
+
 ## 2026-06-18 - P4.1 RCA closure document domain model
 
 Scope: add the first domain model for versioned RCA closure documents.

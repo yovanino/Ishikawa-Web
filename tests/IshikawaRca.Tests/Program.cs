@@ -7,6 +7,7 @@ using IshikawaRca.Domain.Enums;
 using IshikawaRca.Domain.Services;
 using IshikawaRca.Infrastructure.Ai;
 using IshikawaRca.Infrastructure;
+using IshikawaRca.Infrastructure.Data;
 using IshikawaRca.Infrastructure.Services;
 using IshikawaRca.Web.Controllers.Api;
 using IshikawaRca.Web.Security;
@@ -14,6 +15,7 @@ using IshikawaRca.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -57,6 +59,7 @@ AssertEmpty(RcaResolutionPolicy.GetResolutionBlockers(completeResolution, hasEsc
 
 AssertAiSuggestionDefaults();
 AssertRcaClosureDocumentDefaults();
+AssertRcaClosureDocumentEfModel();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -153,6 +156,38 @@ static void AssertRcaClosureDocumentDefaults()
         document.Version != 1)
     {
         throw new InvalidOperationException("Closure document defaults are invalid.");
+    }
+}
+
+static void AssertRcaClosureDocumentEfModel()
+{
+    var options = new DbContextOptionsBuilder<RcaDbContext>()
+        .UseMySql("Server=localhost;Database=ishikawa_test;User=root;Password=test;", new MySqlServerVersion(new Version(8, 0, 36)))
+        .Options;
+    using var dbContext = new RcaDbContext(options);
+    var entityType = dbContext.Model.FindEntityType(typeof(RcaClosureDocument))
+        ?? throw new InvalidOperationException("RcaClosureDocument must be mapped in EF model.");
+
+    if (entityType.GetTableName() != "rca_closure_documents")
+    {
+        throw new InvalidOperationException("RcaClosureDocument table name is invalid.");
+    }
+
+    var indexes = entityType.GetIndexes().ToList();
+    AssertHasIndex(indexes, ["TenantId", "RcaIncidentId", "Version"], unique: true);
+    AssertHasIndex(indexes, ["TenantId", "RcaIncidentId", "GeneratedAt"], unique: false);
+    AssertHasIndex(indexes, ["TenantId", "Status", "GeneratedAt"], unique: false);
+}
+
+static void AssertHasIndex(IReadOnlyList<Microsoft.EntityFrameworkCore.Metadata.IIndex> indexes, string[] propertyNames, bool unique)
+{
+    var hasIndex = indexes.Any(index =>
+        index.IsUnique == unique &&
+        index.Properties.Select(property => property.Name).SequenceEqual(propertyNames));
+
+    if (!hasIndex)
+    {
+        throw new InvalidOperationException($"Expected EF index on {string.Join(", ", propertyNames)} with unique={unique}.");
     }
 }
 
