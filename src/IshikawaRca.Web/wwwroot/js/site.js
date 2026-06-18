@@ -35,6 +35,55 @@ document.addEventListener("DOMContentLoaded", () => {
     syncOnlineState();
   }
 
+  const stageWorkspace = document.querySelector("[data-rca-stage-workspace]");
+  const stageTabs = stageWorkspace?.querySelectorAll("[data-rca-stage-target]") || [];
+  const stageTriggers = document.querySelectorAll("[data-rca-stage-target]");
+  const stagePanels = document.querySelectorAll("[data-rca-stage-panel]");
+
+  if (stageWorkspace && stageTriggers.length > 0 && stagePanels.length > 0) {
+    const stageKeys = [...stageTabs].map((tab) => tab.dataset.rcaStageTarget);
+    const normalizeStage = (value) => stageKeys.find((key) => key === value) || stageWorkspace.dataset.initialRcaStage || stageKeys[0];
+    const getHashStage = () => {
+      if (!window.location.hash.startsWith("#stage-")) {
+        return "";
+      }
+
+      return decodeURIComponent(window.location.hash.replace("#stage-", ""));
+    };
+    const validationPanel = document
+      .querySelector("[data-rca-stage-panel] .input-validation-error, [data-rca-stage-panel] .validation-summary-errors")
+      ?.closest("[data-rca-stage-panel]");
+
+    const activateStage = (stage, updateHash = false) => {
+      const activeStage = normalizeStage(stage);
+
+      stageTabs.forEach((tab) => {
+        const isActive = tab.dataset.rcaStageTarget === activeStage;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+
+      stagePanels.forEach((panel) => {
+        const isActive = panel.dataset.rcaStagePanel === activeStage;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
+
+      if (updateHash) {
+        window.history.replaceState(null, "", `#stage-${activeStage}`);
+      }
+    };
+
+    activateStage(validationPanel?.dataset.rcaStagePanel || getHashStage() || stageWorkspace.dataset.initialRcaStage);
+
+    stageTriggers.forEach((trigger) => {
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        activateStage(trigger.dataset.rcaStageTarget, true);
+      });
+    });
+  }
+
   document.querySelectorAll("form").forEach((form) => {
     form.addEventListener("submit", () => {
       form.classList.add("is-submitting");

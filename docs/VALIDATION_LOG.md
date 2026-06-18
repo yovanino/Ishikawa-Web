@@ -1,5 +1,37 @@
 # Validation Log
 
+## 2026-06-18 - RCA detail wizard tabs UX
+
+Scope: reduce RCA detail page length by turning the monolithic wizard/detail
+surface into stage-based tabs without changing backend contracts.
+
+Checks:
+
+- Added a RED static UI test that requires `Details.cshtml` to expose
+  `data-rca-stage-workspace`, stage tabs, all six stage panels and the stage
+  rail marker.
+- Added stage tabs for `Problem`, `Causes`, `Evidence`, `Actions`,
+  `Validation` and `Closed`.
+- Assigned existing detail sections to the matching stage panel and kept MVC
+  forms/endpoints unchanged.
+- Added client-side tab activation with hash support and automatic activation
+  of the panel containing MVC validation errors.
+- Moved the CAPA shortcut to the `Actions` stage so it no longer points at a
+  hidden section.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `data-rca-stage-workspace` was not present.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+- `git diff --check`: passed; Git reported only LF/CRLF normalization warnings.
+- `Get-Process dotnet`: no running dotnet process remained after validation.
+
+Result: passed. Browser visual smoke was not run in this cut to avoid starting
+another local server; validation stayed static/build-based and timeboxed.
+
 ## 2026-06-18 - P4.5 RCA dashboard summary contract
 
 Scope: expose a protected read-only RCA module summary for future dashboards

@@ -102,7 +102,7 @@
         </div>
         <div class="command-action-row">
             <a class="btn btn-primary" asp-controller="Rca" asp-action="ExportPdf" asp-route-id="@incident.Id">Exportar PDF</a>
-            <a class="btn btn-outline-secondary" href="#capa-board">CAPA</a>
+            <a class="btn btn-outline-secondary" href="#stage-Actions" data-rca-stage-target="Actions">CAPA</a>
             <a class="btn btn-outline-secondary" asp-controller="Rca" asp-action="Index">Volver</a>
         </div>
     </div>
@@ -168,9 +168,57 @@
     </article>
 </section>
 
+<section class="rca-stage-workspace"
+         data-rca-stage-workspace
+         data-initial-rca-stage="@wizardSteps[currentWizardIndex].Key"
+         aria-label="Workspace por etapa RCA">
+    <div class="rca-stage-tabs" data-rca-stage-tabs role="tablist" aria-label="Etapas de trabajo RCA">
+        @for (var i = 0; i < wizardSteps.Length; i++)
+        {
+            var step = wizardSteps[i];
+            var state = i < currentWizardIndex ? "done" : i == currentWizardIndex ? "active" : "locked";
+            var checklist = wizardProgress.Steps.FirstOrDefault(x => string.Equals(x.Step, step.Key, StringComparison.OrdinalIgnoreCase));
+            var blockerCount = checklist?.BlockingReasons.Count ?? 0;
+            var tabIsActive = i == currentWizardIndex;
+
+            <button type="button"
+                    class="rca-stage-tab rca-stage-tab-@state @(tabIsActive ? "is-active" : string.Empty)"
+                    data-rca-stage-target="@step.Key"
+                    role="tab"
+                    aria-selected="@(tabIsActive ? "true" : "false")">
+                <span>@(i + 1)</span>
+                <strong>@step.Label</strong>
+                <small>@(blockerCount > 0 ? $"{blockerCount} bloqueo(s)" : step.Detail)</small>
+            </button>
+        }
+    </div>
+
+    <div class="rca-stage-brief">
+        <article>
+            <span>Etapa actual</span>
+            <strong>@currentWizardLabel</strong>
+            <p>@GetWizardStepLabel(wizardProgress.NextRecommendedStep) como siguiente paso recomendado.</p>
+        </article>
+        <article>
+            <span>Proxima accion</span>
+            <strong>@(overdueActions > 0 ? "Resolver vencidas" : rootCause is null ? "Confirmar causa raiz" : openActions > 0 ? "Cerrar acciones" : "Preparar cierre")</strong>
+            <p>@(overdueActions > 0 ? "Hay acciones CAPA vencidas que bloquean el avance." : rootCause is null ? "El analisis necesita causa raiz antes del cierre." : openActions > 0 ? "Quedan acciones abiertas antes de validar eficacia." : "El RCA no muestra bloqueos operativos visibles.")</p>
+        </article>
+        <aside class="rca-stage-rail" data-rca-stage-rail>
+            <div>
+                <span>@wizardProgress.CompletionPercent%</span>
+                <strong>Avance RCA</strong>
+            </div>
+            <div class="wizard-progress-track">
+                <span style="width: @wizardProgress.CompletionPercent%"></span>
+            </div>
+        </aside>
+    </div>
+</section>
+
 @if (Model.CanReviewAiSuggestions && Model.AiSuggestions.Count > 0)
 {
-    <section class="analysis-panel ai-review-panel" aria-label="Revision de sugerencias IA">
+    <section class="analysis-panel ai-review-panel@(wizardSteps[currentWizardIndex].Key == "Validation" ? " is-active" : string.Empty)" data-rca-stage-panel="Validation" aria-label="Revision de sugerencias IA">
         <div class="panel-heading">
             <div>
                 <h2>Sugerencias IA pendientes</h2>
@@ -220,7 +268,7 @@
 
 @if (Model.CanReviewClosureDocuments && Model.ClosureDocuments.Count > 0)
 {
-    <section class="analysis-panel document-governance-panel" aria-label="Gobierno documental de cierre">
+    <section class="analysis-panel document-governance-panel@(wizardSteps[currentWizardIndex].Key == "Closed" ? " is-active" : string.Empty)" data-rca-stage-panel="Closed" aria-label="Gobierno documental de cierre">
         <div class="panel-heading">
             <div>
                 <h2>Documentos de cierre</h2>
@@ -267,7 +315,7 @@
     </section>
 }
 
-<section class="analysis-panel wizard-panel">
+<section class="analysis-panel wizard-panel@(wizardSteps[currentWizardIndex].Key == "Problem" ? " is-active" : string.Empty)" data-rca-stage-panel="Problem">
     <div class="panel-heading">
         <div>
             <h2>Wizard RCA</h2>
@@ -363,7 +411,7 @@
     </form>
 </section>
 
-<section class="detail-grid">
+<section class="detail-grid@(wizardSteps[currentWizardIndex].Key == "Problem" ? " is-active" : string.Empty)" data-rca-stage-panel="Problem">
     <article class="detail-panel">
         <h2>Estado operativo</h2>
         <dl>
@@ -417,7 +465,7 @@
 
 @if (!incident.EscalatedTo8D && incident.Status != "Closed")
 {
-    <section class="analysis-panel close-panel">
+    <section class="analysis-panel close-panel@(wizardSteps[currentWizardIndex].Key == "Closed" ? " is-active" : string.Empty)" data-rca-stage-panel="Closed">
         <div class="panel-heading">
             <div>
                 <h2>Escalar a 8D</h2>
@@ -447,7 +495,7 @@
 
 @if (incident.Status != "Closed")
 {
-    <section class="analysis-panel close-panel">
+    <section class="analysis-panel close-panel@(wizardSteps[currentWizardIndex].Key == "Closed" ? " is-active" : string.Empty)" data-rca-stage-panel="Closed">
         <div class="panel-heading">
             <div>
                 <h2>Cierre RCA</h2>
@@ -475,7 +523,7 @@
     </section>
 }
 
-<section class="analysis-grid facts-grid">
+<section class="analysis-grid facts-grid@(wizardSteps[currentWizardIndex].Key == "Problem" ? " is-active" : string.Empty)" data-rca-stage-panel="Problem">
     <article class="analysis-panel timeline-panel">
         <div class="panel-heading">
             <div>
@@ -758,7 +806,7 @@
     </aside>
 </section>
 
-<section class="analysis-panel timeline-panel">
+<section class="analysis-panel timeline-panel@(wizardSteps[currentWizardIndex].Key == "Validation" ? " is-active" : string.Empty)" data-rca-stage-panel="Validation">
     <div class="panel-heading">
         <div>
             <h2>Timeline unificado</h2>
@@ -852,7 +900,7 @@
     }
 </section>
 
-<section class="analysis-grid actions-grid" id="capa-board">
+<section class="analysis-grid actions-grid@(wizardSteps[currentWizardIndex].Key == "Evidence" ? " is-active" : string.Empty)" data-rca-stage-panel="Evidence">
     <article class="analysis-panel">
         <div class="panel-heading">
             <div>
@@ -1295,7 +1343,7 @@
     </aside>
 </section>
 
-<section class="analysis-grid">
+<section class="analysis-grid@(wizardSteps[currentWizardIndex].Key == "Causes" ? " is-active" : string.Empty)" data-rca-stage-panel="Causes">
     <article class="analysis-panel ishikawa-panel">
         <div class="panel-heading">
             <div>
@@ -1453,7 +1501,7 @@
     </aside>
 </section>
 
-<section class="analysis-grid actions-grid">
+<section class="analysis-grid actions-grid@(wizardSteps[currentWizardIndex].Key == "Actions" ? " is-active" : string.Empty)" data-rca-stage-panel="Actions" id="capa-board">
     <article class="analysis-panel">
         <div class="panel-heading">
             <div>

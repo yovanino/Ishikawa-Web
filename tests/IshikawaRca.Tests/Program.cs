@@ -67,6 +67,7 @@ await AssertClosureDocumentStorageSavesPdfWithHashAsync();
 AssertClosureDocumentStorageRejectsUnsafeKeys();
 await AssertRcaControllerExportPdfRegistersClosureDocumentAsync();
 await AssertRcaControllerDetailsLoadsClosureDocumentsAsync();
+AssertRcaDetailsViewExposesTabbedWizardWorkspace();
 await AssertExternalFactIdempotencyAsync();
 await AssertIncompleteExternalFactCorrelationFailsAsync();
 await AssertIntegrationEventCompatibilityAsync();
@@ -122,6 +123,47 @@ static CorrectiveAction NewAction(CorrectiveActionType type, RcaResolutionScope 
         ActionType = type,
         ResolutionScope = scope
     };
+}
+
+static void AssertRcaDetailsViewExposesTabbedWizardWorkspace()
+{
+    var root = FindRepositoryRoot();
+    var detailsPath = Path.Combine(root, "src", "IshikawaRca.Web", "Views", "Rca", "Details.cshtml");
+    var markup = File.ReadAllText(detailsPath);
+
+    AssertMarkupContains(markup, "data-rca-stage-workspace");
+    AssertMarkupContains(markup, "data-rca-stage-tabs");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Problem\"");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Causes\"");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Evidence\"");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Actions\"");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Validation\"");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Closed\"");
+    AssertMarkupContains(markup, "data-rca-stage-rail");
+}
+
+static void AssertMarkupContains(string markup, string expected)
+{
+    if (!markup.Contains(expected, StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException($"Expected Details.cshtml to contain '{expected}'.");
+    }
+}
+
+static string FindRepositoryRoot()
+{
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null)
+    {
+        if (Directory.Exists(Path.Combine(directory.FullName, "src", "IshikawaRca.Web")))
+        {
+            return directory.FullName;
+        }
+
+        directory = directory.Parent;
+    }
+
+    throw new InvalidOperationException("Could not locate repository root from test base directory.");
 }
 
 static void AssertAiSuggestionDefaults()

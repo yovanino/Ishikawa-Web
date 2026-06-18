@@ -212,6 +212,11 @@ detalle RCA:
   timeline filters, CAPA, panel lateral y botones contextuales.
 - 2026-06-11: se agrega drag/reorder visual de tarjetas de causa dentro de la
   misma rama, sin persistencia ni nuevo contrato backend.
+- 2026-06-18: se valida con el usuario una propuesta de UX para reducir el
+  detalle largo del RCA mediante tabs por etapa. Se implementa un workspace con
+  tabs `Problema`, `Causas`, `Evidencias`, `Acciones`, `Validacion` y `Cierre`,
+  rail de avance/proxima accion y activacion client-side por hash, reutilizando
+  las secciones y formularios MVC existentes sin nuevos endpoints.
 
 ## Pendientes
 
@@ -225,6 +230,9 @@ detalle RCA:
   cierre de QA visual.
 - Evaluar extraccion progresiva de secciones del detalle a parciales o
   componentes MVC para reducir riesgo de cambios sobre una vista monolitica.
+- Validar en browser real el nuevo workspace tabbed cuando se haga el proximo
+  smoke local con DB, especialmente desktop/tablet y formularios con errores
+  MVC dentro de tabs ocultas.
 
 ## Riesgos
 
@@ -273,12 +281,18 @@ detalle RCA:
   paso en serie.
 - 2026-06-11: cierre documental P1 visual basado en las validaciones anteriores
   de cada micro-ajuste.
+- 2026-06-18: para el workspace tabbed del detalle RCA, test RED con
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  fallo por ausencia de `data-rca-stage-workspace`; despues de implementar,
+  el mismo comando paso en serie. `dotnet build IshikawaRca.sln /m:1` paso con
+  0 warnings y 0 errores. `git diff --check` paso con solo advertencias LF/CRLF
+  de Git. `Get-Process dotnet` no encontro procesos vivos.
 
 ## Ultimo Cierre
 
-- Fecha: 2026-06-11.
-- Resumen: P1 visual cerrado como cockpit industrial standalone. Quedan fuera
-  del corte las piezas que requieren contrato/regla: SLA formal, persistencia
-  de orden y edicion avanzada desde panel lateral.
+- Fecha: 2026-06-18.
+- Resumen: detalle RCA reorganizado con workspace tabbed por etapa, manteniendo
+  contratos y formularios existentes. Queda pendiente smoke visual en browser
+  con app + DB levantadas.
 - Ultimos commits: `7afbd07`, `88f31ba`, `934e2b1`, `bec7eb9`, `b3cb7b1`,
   `d02d604`, `b440f26`, `ff0a38f`, `8b74c28`.
