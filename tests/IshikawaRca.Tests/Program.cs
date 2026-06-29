@@ -140,6 +140,20 @@ static void AssertRcaDetailsViewExposesTabbedWizardWorkspace()
     AssertMarkupContains(markup, "data-rca-stage-panel=\"Validation\"");
     AssertMarkupContains(markup, "data-rca-stage-panel=\"Closed\"");
     AssertMarkupContains(markup, "data-rca-stage-rail");
+    AssertMarkupContains(markup, "rca-detail-compact");
+    AssertMarkupContains(markup, "rca-compact-summary");
+    AssertMarkupContains(markup, "data-rca-compact-workspace");
+    AssertMarkupContains(markup, "data-wizard-check-tabs");
+    AssertMarkupContains(markup, "data-wizard-check-panel");
+    AssertMarkupContains(markup, "wizard-check-tabs");
+    AssertMarkupContains(markup, "external-intake-panel");
+    AssertMarkupContains(markup, "data-rca-stage-panel=\"Evidence\" data-rca-panel-kind=\"external-intake\"");
+    AssertMarkupContains(markup, "fact-entry-compact");
+    AssertMarkupContains(markup, "fact-quick-grid");
+    AssertMarkupContains(markup, "fact-advanced-sections");
+    AssertMarkupContains(markup, "<summary>Contexto industrial</summary>");
+    AssertMarkupContains(markup, "<summary>Vinculos</summary>");
+    AssertMarkupContains(markup, "<summary>Correlacion externa</summary>");
 }
 
 static void AssertMarkupContains(string markup, string expected)

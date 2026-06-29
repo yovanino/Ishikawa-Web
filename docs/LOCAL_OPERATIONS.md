@@ -91,6 +91,12 @@ http://localhost:5025/Rca
 
 ## Validacion Rapida
 
+Regla operativa vigente: Codex ejecuta build, tests, smokes y servidores
+locales cuando correspondan para validar cambios tecnicos, siempre con timeout
+y plan de apagado. La validacion en Browser, navegadores externos o browser QA
+queda a cargo del usuario desde Visual Studio 2026, salvo pedido explicito del
+usuario para que Codex lo haga como excepcion.
+
 Con la app corriendo y la DB migrada:
 
 ```powershell
@@ -173,6 +179,22 @@ cuando se quiera probar un DLL ya compilado.
 - Comandos de build desde Codex: 120 segundos como maximo.
 
 Evitar `dotnet run` interactivo para pruebas automatizadas. Usar los scripts de `scripts/` para no dejar procesos colgados.
+
+## Navegador de Debug y UI QA
+
+Para debug manual, inspeccion visual y pruebas UI locales, usar por defecto
+Firefox Developer Edition cuando se necesite abrir un navegador externo al
+entorno de Codex:
+
+```powershell
+C:\Program Files\Firefox Developer Edition\firefox.exe
+```
+
+Si mas adelante se agregan pruebas automatizadas con Playwright, Selenium u
+otra herramienta de browser testing, la configuracion local debe apuntar a
+Firefox Developer Edition como primera opcion para ejecuciones de debug. Los
+smokes API actuales no dependen de navegador y siguen ejecutandose por scripts
+PowerShell.
 
 ## Cierre de Paso
 

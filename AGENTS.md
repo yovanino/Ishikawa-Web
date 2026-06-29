@@ -39,6 +39,18 @@ Antes de cerrar una tarea, Codex debe:
 - No acoplar este modulo directamente a otros modulos futuros; usar APIs,
   snapshots, eventos o contratos versionados.
 
+## Regla de Validacion Tecnica y Browser
+
+- Codex debe ejecutar build, tests, smokes y servidores locales cuando
+  correspondan para validar cambios tecnicos, respetando timeouts y apagado de
+  procesos.
+- La validacion en Browser, navegadores externos o browser QA la ejecuta el
+  usuario desde Visual Studio 2026.
+- Codex no debe usar Browser ni abrir navegadores para validar UI por
+  iniciativa propia, salvo pedido explicito del usuario para esa tarea.
+- Codex debe registrar en el cierre que la validacion Browser queda pendiente
+  del usuario cuando aplique.
+
 ## Regla de Timeouts y Procesos Locales
 
 - Todo comando largo debe ejecutarse con timeout explicito.

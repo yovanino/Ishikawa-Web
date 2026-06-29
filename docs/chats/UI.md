@@ -217,6 +217,23 @@ detalle RCA:
   tabs `Problema`, `Causas`, `Evidencias`, `Acciones`, `Validacion` y `Cierre`,
   rail de avance/proxima accion y activacion client-side por hash, reutilizando
   las secciones y formularios MVC existentes sin nuevos endpoints.
+- 2026-06-18: a pedido del usuario se compacta la UI del detalle RCA sobre el
+  workspace tabbed existente: command bar mas baja, resumen de metricas denso,
+  tabs tipo segmented control y panels/formularios con menor padding. No se
+  cambian contratos, endpoints ni reglas de negocio.
+- 2026-06-18: se reemplaza la grilla expandida del checklist del wizard por
+  tabs internos por caso/etapa. El usuario puede cambiar entre `Problema`,
+  `Causas`, `Evidencias`, `Acciones`, `Validacion` y `Cierre` dentro del
+  checklist sin que las seis tarjetas se expandan hacia abajo al mismo tiempo.
+- 2026-06-18: se corrige `Intake externo` para que deje de estar siempre
+  visible debajo del workspace. La seccion queda asociada al tab `Evidencias`
+  mediante `data-rca-stage-panel="Evidence"` y marcador
+  `data-rca-panel-kind="external-intake"`, sin cambiar endpoints ni contratos.
+- 2026-06-18: se compacta el formulario `Nuevo hecho` del tab `Problema`.
+  La carga principal queda reducida a los campos de uso frecuente y los datos
+  opcionales se agrupan en secciones plegables: `Contexto industrial`,
+  `Vinculos` y `Correlacion externa`. Se mantienen los mismos campos, POST MVC
+  y reglas de negocio.
 
 ## Pendientes
 
@@ -233,6 +250,11 @@ detalle RCA:
 - Validar en browser real el nuevo workspace tabbed cuando se haga el proximo
   smoke local con DB, especialmente desktop/tablet y formularios con errores
   MVC dentro de tabs ocultas.
+- Validar visualmente el modo compacto en Visual Studio 2026/browser real,
+  especialmente legibilidad de tabs, metricas en 8 columnas y formularios
+  largos dentro de cada etapa.
+- Validar que los tabs internos del checklist del wizard cambien de panel
+  correctamente y mantengan visible un solo caso por vez.
 
 ## Riesgos
 
@@ -287,12 +309,37 @@ detalle RCA:
   el mismo comando paso en serie. `dotnet build IshikawaRca.sln /m:1` paso con
   0 warnings y 0 errores. `git diff --check` paso con solo advertencias LF/CRLF
   de Git. `Get-Process dotnet` no encontro procesos vivos.
+- 2026-06-18: para el modo compacto del detalle RCA, test RED con
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  fallo por ausencia de `rca-detail-compact`; despues de implementar, el mismo
+  comando paso. `dotnet build IshikawaRca.sln /m:1` paso con 0 warnings y 0
+  errores. La validacion Browser queda pendiente del usuario segun regla del
+  repo.
+- 2026-06-18: para tabs internos del checklist wizard, se agrego prueba
+  estatica de `data-wizard-check-tabs`, `data-wizard-check-panel` y
+  `wizard-check-tabs`. `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  paso. `dotnet build IshikawaRca.sln /m:1` paso con 0 warnings y 0 errores.
+- 2026-06-18: para `Intake externo` dentro del tab `Evidencias`, se agrego
+  cobertura estatica de `external-intake-panel` y
+  `data-rca-stage-panel="Evidence" data-rca-panel-kind="external-intake"`.
+  `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  quedo bloqueado porque `IshikawaRca.Web.exe` estaba en uso por un proceso
+  local de prueba. `git diff --check` paso con solo advertencias LF/CRLF de
+  Git.
+- 2026-06-18: para compactacion de `Nuevo hecho`, se agrego cobertura estatica
+  de `fact-entry-compact`, `fact-quick-grid`, `fact-advanced-sections` y
+  summaries de las tres secciones plegables. La ejecucion de tests/build sigue
+  bloqueada por `IshikawaRca.Web.exe` y Visual Studio usando
+  `IshikawaRca.Web.dll`; `git diff --check` paso con solo advertencias LF/CRLF
+  de Git.
 
 ## Ultimo Cierre
 
 - Fecha: 2026-06-18.
-- Resumen: detalle RCA reorganizado con workspace tabbed por etapa, manteniendo
-  contratos y formularios existentes. Queda pendiente smoke visual en browser
-  con app + DB levantadas.
+- Resumen: detalle RCA reorganizado y compactado con workspace tabbed por
+  etapa; el checklist usa tabs internos, `Intake externo` queda dentro del
+  tab `Evidencias` y `Nuevo hecho` usa carga rapida con secciones opcionales
+  plegables, manteniendo contratos y formularios existentes. Queda pendiente
+  smoke visual en browser con app + DB levantadas.
 - Ultimos commits: `7afbd07`, `88f31ba`, `934e2b1`, `bec7eb9`, `b3cb7b1`,
   `d02d604`, `b440f26`, `ff0a38f`, `8b74c28`.

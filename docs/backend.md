@@ -688,3 +688,16 @@ modulos.
   de gobernanza de calidad.
 - El resumen se calcula con snapshots y estado outbox existentes; no implementa
   dashboard cross-module ni consulta modulos externos.
+
+### 2026-06-18 - Recuperacion local de tablero RCA
+
+- Corregida la cadena `ConnectionStrings:IshikawaRca` de
+  `appsettings.Development.json` para incluir `AllowPublicKeyRetrieval=True`,
+  `Connection Timeout=5` y `Default Command Timeout=15`.
+- La falla original al abrir el tablero era autenticacion MySQL
+  `caching_sha2_password`; luego se detecto esquema local atrasado.
+- Aplicadas migraciones pendientes en la DB local:
+  `AddRcaOutboxEvents`, `AddRcaAiSuggestions`,
+  `AddRcaAiSuggestionCorrelationIndex` y `AddRcaClosureDocuments`.
+- Validado con `run-local-validation.ps1 -Build` contra
+  `http://localhost:5025`, sin procesos `dotnet` vivos al cierre.

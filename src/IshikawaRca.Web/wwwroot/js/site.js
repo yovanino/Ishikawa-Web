@@ -84,6 +84,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const wizardCheckTabs = document.querySelector("[data-wizard-check-tabs]");
+  const wizardCheckPanels = document.querySelectorAll("[data-wizard-check-panel]");
+
+  if (wizardCheckTabs && wizardCheckPanels.length > 0) {
+    const wizardCheckButtons = wizardCheckTabs.querySelectorAll("[data-wizard-check-target]");
+
+    const activateWizardCheck = (step) => {
+      wizardCheckButtons.forEach((button) => {
+        const isActive = button.dataset.wizardCheckTarget === step;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+
+      wizardCheckPanels.forEach((panel) => {
+        const isActive = panel.dataset.wizardCheckPanel === step;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
+    };
+
+    wizardCheckButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activateWizardCheck(button.dataset.wizardCheckTarget);
+      });
+    });
+  }
+
   document.querySelectorAll("form").forEach((form) => {
     form.addEventListener("submit", () => {
       form.classList.add("is-submitting");

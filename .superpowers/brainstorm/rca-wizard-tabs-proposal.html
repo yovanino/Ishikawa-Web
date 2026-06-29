@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RCA Wizard UX Proposal</title>
+  <style>
+    :root {
+      --bg: #f4f7f8;
+      --panel: #ffffff;
+      --ink: #172126;
+      --muted: #66737d;
+      --line: #d7e1e5;
+      --blue: #1664b8;
+      --teal: #0f8b7f;
+      --amber: #b76d12;
+      --red: #bd3d35;
+      --soft-blue: #e8f1fb;
+      --soft-teal: #e5f4f1;
+      --soft-amber: #fff0d9;
+      --shadow: 0 18px 48px rgba(24, 45, 58, .12);
+      font-family: Inter, Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1320px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+      margin-top: 12px;
+      max-width: 760px;
+    }
+
+    .decision {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .decision strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .decision p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 22px 0 28px;
+    }
+
+    .option {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 220px;
+    }
+
+    .option.recommended {
+      border-color: #70a7d7;
+      box-shadow: 0 14px 36px rgba(22, 100, 184, .14);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: var(--soft-blue);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .option h2 {
+      font-size: 19px;
+      margin-bottom: 8px;
+      letter-spacing: 0;
+    }
+
+    .option p, .option li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 12px 0 0;
+    }
+
+    .shell {
+      background: #edf2f4;
+      border: 1px solid #ccd9df;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 22px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 250px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #19262d;
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .brand h2 { font-size: 18px; }
+    .brand p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button {
+      height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 12px;
+      font-weight: 700;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+    }
+
+    .button.primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .body {
+      padding: 18px;
+    }
+
+    .incident-strip {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .incident-title {
+      font-size: 24px;
+      font-weight: 850;
+      margin-bottom: 5px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .score-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .score {
+      min-width: 86px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+    }
+
+    .score span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .score strong {
+      display: block;
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 74px;
+      padding: 10px;
+      position: relative;
+    }
+
+    .tab.active {
+      border-color: #68a3d4;
+      background: var(--soft-blue);
+    }
+
+    .tab.done {
+      background: var(--soft-teal);
+      border-color: #9ccfc7;
+    }
+
+    .tab.warn {
+      background: var(--soft-amber);
+      border-color: #edc27c;
+    }
+
+    .tab strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .tab span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 14px;
+    }
+
+    .work {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      min-height: 520px;
+    }
+
+    .work-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .work h2 {
+      font-size: 22px;
+      margin-bottom: 5px;
+    }
+
+    .work p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .subtabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .subtab {
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      background: #fff;
+    }
+
+    .subtab.active {
+      background: #172126;
+      border-color: #172126;
+      color: #fff;
+    }
+
+    .artifact {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field, .timeline, .cause-row, .evidence {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      padding: 14px;
+    }
+
+    .field label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field div {
+      min-height: 74px;
+      color: #26343b;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .timeline {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .event {
+      min-height: 84px;
+      border-left: 3px solid var(--teal);
+      padding-left: 10px;
+    }
+
+    .event strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .event span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .rail {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .rail-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .rail-card h3 {
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .rail-card p, .check {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .next {
+      border-color: #8db8dc;
+      background: #f8fbff;
+    }
+
+    .check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 0;
+      border-top: 1px solid #edf2f4;
+    }
+
+    .dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      margin-top: 1px;
+      flex: none;
+      background: var(--soft-teal);
+      border: 1px solid #9bcfc5;
+    }
+
+    .dot.warn {
+      background: var(--soft-amber);
+      border-color: #e3b466;
+    }
+
+    .progress {
+      height: 8px;
+      border-radius: 999px;
+      background: #e7edf0;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress div {
+      height: 100%;
+      width: 64%;
+      background: linear-gradient(90deg, var(--teal), var(--blue));
+    }
+
+    .implementation {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 16px;
+      margin-top: 26px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .panel h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .panel li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 980px) {
+      .header, .grid, .implementation, .artifact, .incident-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(100vw - 20px, 1320px); padding-top: 16px; }
+      .topbar { height: auto; align-items: flex-start; flex-direction: column; padding: 14px; }
+      .actions { justify-content: flex-start; }
+      .tabs, .timeline { grid-template-columns: 1fr; }
+      .body { padding: 12px; }
+      .work { padding: 14px; }
+      .incident-title { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="header">
+      <div>
+        <div class="eyebrow">Propuesta UX para validar</div>
+        <h1>Wizard RCA mas corto, por tabs y con foco operativo</h1>
+        <p class="lead">La pagina actual intenta mostrar todo a la vez. La propuesta es convertir el detalle en un cockpit por etapa: menos scroll, una accion principal por momento, y evidencia/fishbone/CAPA visibles solo cuando toca trabajarlos.</p>
+      </div>
+      <aside class="decision">
+        <strong>Recomendacion: opcion A</strong>
+        <p>Tabs superiores por etapa RCA, panel central para el artefacto activo y rail derecho con proxima accion, bloqueos y checklist. Es el cambio con mejor impacto UX sin tocar contratos backend.</p>
+      </aside>
+    </section>
+
+    <section class="options" aria-label="Opciones">
+      <article class="option recommended">
+        <span class="tag">Recomendada</span>
+        <h2>A. Tabs por etapa</h2>
+        <p>Divide el wizard en 6 tabs persistentes. Cada tab muestra solo el trabajo necesario para avanzar esa etapa.</p>
+        <ul>
+          <li>Menos scroll y menor carga cognitiva.</li>
+          <li>Conserva el flujo actual y sus validaciones.</li>
+          <li>Permite implementar en cortes chicos.</li>
+        </ul>
+      </article>
+      <article class="option">
+        <span class="tag">Conservadora</span>
+        <h2>B. Stepper compacto</h2>
+        <p>Mantiene la pagina larga, pero vuelve sticky el stepper y colapsa secciones secundarias.</p>
+        <ul>
+          <li>Menor riesgo visual.</li>
+          <li>Mejora parcial del scroll.</li>
+          <li>No cambia demasiado la experiencia.</li>
+        </ul>
+      </article>
+      <article class="option">
+        <span class="tag">Ambiciosa</span>
+        <h2>C. Obeya RCA</h2>
+        <p>Transforma el detalle en un workspace con navegacion lateral, tablero central y paneles desplegables.</p>
+        <ul>
+          <li>Muy potente para uso experto.</li>
+          <li>Requiere mas QA responsive.</li>
+          <li>Conviene despues de estabilizar tabs.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="shell" aria-label="Mockup recomendado">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo">IR</div>
+          <div>
+            <h2>Ishikawa RCA</h2>
+            <p>Incidente RCA-2026-0041</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="button">Guardar</button>
+          <button class="button">Exportar</button>
+          <button class="button primary">Completar etapa</button>
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="incident-strip">
+          <div>
+            <div class="incident-title">Defecto superficial en bobina laminada</div>
+            <div class="meta">
+              <span>Linea: Decapado 2</span>
+              <span>Severidad: Alta</span>
+              <span>Owner: Calidad Planta</span>
+              <span>Estado: En analisis</span>
+            </div>
+          </div>
+          <div class="score-row">
+            <div class="score"><span>Avance</span><strong>64%</strong></div>
+            <div class="score"><span>Riesgo</span><strong>Alto</strong></div>
+            <div class="score"><span>Bloqueos</span><strong>2</strong></div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab done"><strong>1. Problema</strong><span>Definicion validada</span></div>
+          <div class="tab active"><strong>2. Causas</strong><span>Fishbone en curso</span></div>
+          <div class="tab warn"><strong>3. Evidencias</strong><span>2 faltantes</span></div>
+          <div class="tab"><strong>4. Acciones</strong><span>CAPA pendiente</span></div>
+          <div class="tab"><strong>5. Validacion</strong><span>Sin iniciar</span></div>
+          <div class="tab"><strong>6. Cierre</strong><span>Documento final</span></div>
+        </div>
+
+        <div class="grid">
+          <section class="work">
+            <div class="work-head">
+              <div>
+                <h2>Causas</h2>
+                <p>En esta etapa el usuario solo trabaja el fishbone, hipotesis y causa raiz candidata. La evidencia queda vinculada, pero no invade la pantalla.</p>
+              </div>
+              <button class="button primary">Agregar causa</button>
+            </div>
+
+            <div class="subtabs">
+              <span class="subtab active">Fishbone</span>
+              <span class="subtab">5 Porques</span>
+              <span class="subtab">Hipotesis</span>
+              <span class="subtab">Historial</span>
+            </div>
+
+            <div class="artifact">
+              <div class="field">
+                <label>Metodo</label>
+                <div>Parametros de proceso sin registro completo durante el cambio de turno. Requiere cruzar setpoints con trazabilidad del lote.</div>
+              </div>
+              <div class="field">
+                <label>Maquina</label>
+                <div>Rodillo con desgaste reportado. Evidencia asociada: inspeccion visual y mantenimiento preventivo diferido.</div>
+              </div>
+              <div class="field">
+                <label>Material</label>
+                <div>Diferencia de proveedor y condicion de almacenaje. Falta certificado de lote para cerrar hipotesis.</div>
+              </div>
+              <div class="field">
+                <label>Mano de obra</label>
+                <div>Operacion bajo procedimiento vigente. Sin desviacion confirmada, pero con handoff incompleto.</div>
+              </div>
+              <div class="timeline">
+                <div class="event"><strong>08:10</strong><span>Primer defecto detectado en inspeccion final.</span></div>
+                <div class="event"><strong>08:45</strong><span>Calidad bloquea lote y abre RCA.</span></div>
+                <div class="event"><strong>10:20</strong><span>Mantenimiento informa desgaste probable.</span></div>
+                <div class="event"><strong>11:05</strong><span>Falta evidencia de certificado proveedor.</span></div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="rail">
+            <div class="rail-card next">
+              <h3>Proxima accion</h3>
+              <p>Confirmar o descartar la causa candidata con evidencia minima: foto, medicion y responsable.</p>
+              <div class="progress"><div></div></div>
+            </div>
+
+            <div class="rail-card">
+              <h3>Checklist de etapa</h3>
+              <div class="check"><span class="dot"></span><span>Problema definido con impacto y alcance.</span></div>
+              <div class="check"><span class="dot"></span><span>Categorias Ishikawa cargadas.</span></div>
+              <div class="check"><span class="dot warn"></span><span>Falta evidencia para Material.</span></div>
+              <div class="check"><span class="dot warn"></span><span>Falta responsable de accion correctiva.</span></div>
+            </div>
+
+            <div class="rail-card">
+              <h3>IA y auditoria</h3>
+              <p>Las sugerencias quedan como soporte lateral, no como seccion gigante. El usuario decide cuando promoverlas a causa o accion.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="implementation">
+      <article class="panel">
+        <h2>Primer corte sugerido</h2>
+        <ul>
+          <li>Reordenar `Details.cshtml` en tabs client-side por etapa.</li>
+          <li>Extraer parciales chicos para comando, tabs, panel central y rail.</li>
+          <li>Mantener todos los endpoints, view models y formularios actuales.</li>
+          <li>Dejar timeline, auditoria e IA como paneles laterales o drawers.</li>
+        </ul>
+      </article>
+      <article class="panel">
+        <h2>Reglas de diseno</h2>
+        <ul>
+          <li>Una accion primaria visible por etapa.</li>
+          <li>El estado global se ve arriba; el trabajo profundo vive dentro de cada tab.</li>
+          <li>Secciones secundarias no compiten con el formulario activo.</li>
+          <li>Mobile: tabs en dos columnas o scroll horizontal, rail debajo del panel.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

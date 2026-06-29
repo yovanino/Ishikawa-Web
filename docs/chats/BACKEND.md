@@ -565,3 +565,8 @@ standalone.
 - P4.5 dashboard summary: agregado `RcaDashboardSummaryDto` y endpoint protegido
   `GET /api/v1/integrations/rca/dashboard/summary`, calculado con snapshots y
   outbox existentes sin implementar dashboard cross-module.
+- Recuperacion local tablero RCA: corregida la cadena Development con
+  `AllowPublicKeyRetrieval=True` y timeouts, aplicadas migraciones pendientes
+  (`AddRcaOutboxEvents`, `AddRcaAiSuggestions`,
+  `AddRcaAiSuggestionCorrelationIndex`, `AddRcaClosureDocuments`) y validado
+  `run-local-validation.ps1 -Build` completo contra `http://localhost:5025`.

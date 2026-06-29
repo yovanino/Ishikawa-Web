@@ -77,7 +77,7 @@
     var recurrenceRiskClass = recurrenceRisk.ToLowerInvariant();
 }
 
-<section class="rca-command-center">
+<section class="rca-command-center rca-detail-compact">
     <div class="command-copy">
         <div class="command-eyebrow">
             <span>@incident.SourceSystem</span>
@@ -125,7 +125,7 @@
     </div>
 }
 
-<section class="metric-grid compact-metrics" aria-label="Resumen del RCA">
+<section class="metric-grid compact-metrics rca-compact-summary" aria-label="Resumen del RCA">
     <article class="metric-tile">
         <span class="metric-value">@incident.Severity</span>
         <strong>Severidad</strong>
@@ -170,6 +170,7 @@
 
 <section class="rca-stage-workspace"
          data-rca-stage-workspace
+         data-rca-compact-workspace
          data-initial-rca-stage="@wizardSteps[currentWizardIndex].Key"
          aria-label="Workspace por etapa RCA">
     <div class="rca-stage-tabs" data-rca-stage-tabs role="tablist" aria-label="Etapas de trabajo RCA">
@@ -339,7 +340,7 @@
 
     @if (wizardProgress.Steps.Count > 0)
     {
-        <div class="wizard-guidance-grid" aria-label="Checklist del wizard RCA">
+        <div class="wizard-guidance-grid wizard-guidance-tabbed" aria-label="Checklist del wizard RCA">
             <article class="wizard-summary-card">
                 <span class="wizard-summary-value">@wizardProgress.CompletionPercent%</span>
                 <strong>@wizardSteps[currentWizardIndex].Label</strong>
@@ -349,41 +350,62 @@
                 </div>
             </article>
 
-            <div class="wizard-checklist">
-                @foreach (var item in wizardProgress.Steps)
-                {
-                    <section class="wizard-check-card wizard-check-@item.Status.ToLowerInvariant()">
-                        <div class="wizard-check-heading">
+            <div class="wizard-check-tabs-shell">
+                <div class="wizard-check-tabs" data-wizard-check-tabs role="tablist" aria-label="Casos del wizard RCA">
+                    @foreach (var item in wizardProgress.Steps)
+                    {
+                        var isCurrentCheck = string.Equals(item.Step, incident.WizardStep, StringComparison.OrdinalIgnoreCase);
+                        <button type="button"
+                                class="wizard-check-tab wizard-check-tab-@item.Status.ToLowerInvariant() @(isCurrentCheck ? "is-active" : string.Empty)"
+                                data-wizard-check-target="@item.Step"
+                                role="tab"
+                                aria-selected="@(isCurrentCheck ? "true" : "false")">
                             <span>@item.Label</span>
                             <strong>@GetWizardStatusLabel(item.Status)</strong>
-                        </div>
-                        @if (item.Metrics.Count > 0)
-                        {
-                            <dl class="wizard-metrics">
-                                @foreach (var metric in item.Metrics)
-                                {
-                                    <div>
-                                        <dt>@metric.Key</dt>
-                                        <dd>@metric.Value</dd>
-                                    </div>
-                                }
-                            </dl>
-                        }
-                        @if (item.BlockingReasons.Count > 0)
-                        {
-                            <ul class="wizard-blockers">
-                                @foreach (var blocker in item.BlockingReasons)
-                                {
-                                    <li>@blocker</li>
-                                }
-                            </ul>
-                        }
-                        else
-                        {
-                            <small class="wizard-clearance">Listo para avanzar.</small>
-                        }
-                    </section>
-                }
+                        </button>
+                    }
+                </div>
+
+                <div class="wizard-check-panels">
+                    @foreach (var item in wizardProgress.Steps)
+                    {
+                        var isCurrentCheck = string.Equals(item.Step, incident.WizardStep, StringComparison.OrdinalIgnoreCase);
+                        <section class="wizard-check-card wizard-check-@item.Status.ToLowerInvariant() @(isCurrentCheck ? "is-active" : string.Empty)"
+                                 data-wizard-check-panel="@item.Step"
+                                 role="tabpanel"
+                                 hidden="@(!isCurrentCheck)">
+                            <div class="wizard-check-heading">
+                                <span>@item.Label</span>
+                                <strong>@GetWizardStatusLabel(item.Status)</strong>
+                            </div>
+                            @if (item.Metrics.Count > 0)
+                            {
+                                <dl class="wizard-metrics">
+                                    @foreach (var metric in item.Metrics)
+                                    {
+                                        <div>
+                                            <dt>@metric.Key</dt>
+                                            <dd>@metric.Value</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            }
+                            @if (item.BlockingReasons.Count > 0)
+                            {
+                                <ul class="wizard-blockers">
+                                    @foreach (var blocker in item.BlockingReasons)
+                                    {
+                                        <li>@blocker</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <small class="wizard-clearance">Listo para avanzar.</small>
+                            }
+                        </section>
+                    }
+                </div>
             </div>
         </div>
     }
@@ -655,23 +677,23 @@
         }
     </article>
 
-    <aside class="analysis-panel capture-panel">
-        <h2>Nuevo hecho</h2>
-        <form asp-controller="Rca" asp-action="AddFact" asp-route-id="@incident.Id" method="post">
+    <aside class="analysis-panel capture-panel fact-entry-compact">
+        <div class="panel-heading fact-entry-heading">
+            <div>
+                <h2>Nuevo hecho</h2>
+                <span>Carga rapida con datos opcionales plegados</span>
+            </div>
+        </div>
+        <form asp-controller="Rca" asp-action="AddFact" asp-route-id="@incident.Id" method="post" class="fact-entry-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div class="mb-3">
+            <div class="fact-title-row">
                 <label asp-for="FactForm.Title" class="form-label">Hecho observado</label>
                 <input asp-for="FactForm.Title" class="form-control" />
                 <span asp-validation-for="FactForm.Title" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="FactForm.Description" class="form-label">Detalle</label>
-                <textarea asp-for="FactForm.Description" class="form-control" rows="3"></textarea>
-            </div>
-
-            <div class="form-grid fact-form-grid">
+            <div class="form-grid fact-form-grid fact-quick-grid">
                 <div>
                     <label asp-for="FactForm.OccurredAt" class="form-label">Fecha / hora</label>
                     <input asp-for="FactForm.OccurredAt" class="form-control" type="datetime-local" />
@@ -694,111 +716,125 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="FactForm.SourceDetail" class="form-label">Detalle fuente</label>
-                <input asp-for="FactForm.SourceDetail" class="form-control" />
+            <div class="fact-detail-row">
+                <label asp-for="FactForm.Description" class="form-label">Detalle</label>
+                <textarea asp-for="FactForm.Description" class="form-control" rows="2"></textarea>
             </div>
 
-            <div class="form-grid fact-form-grid">
-                <div>
-                    <label asp-for="FactForm.ExternalSourceSystem" class="form-label">Sistema externo</label>
-                    <input asp-for="FactForm.ExternalSourceSystem" class="form-control" placeholder="SCADA / OEE / Gantt" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.ExternalEventId" class="form-label">ID evento externo</label>
-                    <input asp-for="FactForm.ExternalEventId" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.ExternalRecordUri" class="form-label">URI registro externo</label>
-                    <input asp-for="FactForm.ExternalRecordUri" class="form-control" />
-                </div>
-            </div>
+            <div class="fact-advanced-sections">
+                <details>
+                    <summary>Contexto industrial</summary>
+                    <div class="form-grid fact-form-grid fact-dense-grid">
+                        <div>
+                            <label asp-for="FactForm.ShiftCode" class="form-label">Turno</label>
+                            <input asp-for="FactForm.ShiftCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.MachineCode" class="form-label">Maquina</label>
+                            <input asp-for="FactForm.MachineCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.LineCode" class="form-label">Linea</label>
+                            <input asp-for="FactForm.LineCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.WorkOrderCode" class="form-label">OT</label>
+                            <input asp-for="FactForm.WorkOrderCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.MaterialCode" class="form-label">Material</label>
+                            <input asp-for="FactForm.MaterialCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.BatchOrLot" class="form-label">Lote</label>
+                            <input asp-for="FactForm.BatchOrLot" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.AlarmCode" class="form-label">Alarma</label>
+                            <input asp-for="FactForm.AlarmCode" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.MeasurementName" class="form-label">Medicion</label>
+                            <input asp-for="FactForm.MeasurementName" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.MeasurementValue" class="form-label">Valor</label>
+                            <input asp-for="FactForm.MeasurementValue" class="form-control" type="number" step="0.000001" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.MeasurementUnit" class="form-label">Unidad</label>
+                            <input asp-for="FactForm.MeasurementUnit" class="form-control" />
+                        </div>
+                    </div>
+                </details>
 
-            <div class="form-grid fact-form-grid">
-                <div>
-                    <label asp-for="FactForm.ShiftCode" class="form-label">Turno</label>
-                    <input asp-for="FactForm.ShiftCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.MachineCode" class="form-label">Maquina</label>
-                    <input asp-for="FactForm.MachineCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.LineCode" class="form-label">Linea</label>
-                    <input asp-for="FactForm.LineCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.WorkOrderCode" class="form-label">OT</label>
-                    <input asp-for="FactForm.WorkOrderCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.MaterialCode" class="form-label">Material</label>
-                    <input asp-for="FactForm.MaterialCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.BatchOrLot" class="form-label">Lote</label>
-                    <input asp-for="FactForm.BatchOrLot" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.AlarmCode" class="form-label">Alarma</label>
-                    <input asp-for="FactForm.AlarmCode" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.MeasurementName" class="form-label">Medicion</label>
-                    <input asp-for="FactForm.MeasurementName" class="form-control" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.MeasurementValue" class="form-label">Valor</label>
-                    <input asp-for="FactForm.MeasurementValue" class="form-control" type="number" step="0.000001" />
-                </div>
-                <div>
-                    <label asp-for="FactForm.MeasurementUnit" class="form-label">Unidad</label>
-                    <input asp-for="FactForm.MeasurementUnit" class="form-control" />
-                </div>
-            </div>
+                <details>
+                    <summary>Vinculos</summary>
+                    <div class="form-grid fact-form-grid fact-dense-grid">
+                        <div>
+                            <label asp-for="FactForm.CauseId" class="form-label">Causa relacionada</label>
+                            <select asp-for="FactForm.CauseId" class="form-select">
+                                <option value="">Sin causa especifica</option>
+                                @foreach (var cause in Model.CauseOptions)
+                                {
+                                    <option value="@cause.Value">@cause.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.EvidenceId" class="form-label">Evidencia relacionada</label>
+                            <select asp-for="FactForm.EvidenceId" class="form-select">
+                                <option value="">Sin evidencia especifica</option>
+                                @foreach (var evidence in Model.Evidence.OrderByDescending(x => x.CapturedAt))
+                                {
+                                    <option value="@evidence.Id">@evidence.Title</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.CorrectiveActionId" class="form-label">Accion relacionada</label>
+                            <select asp-for="FactForm.CorrectiveActionId" class="form-select">
+                                <option value="">Sin accion especifica</option>
+                                @foreach (var action in Model.CorrectiveActions.OrderBy(x => x.Status).ThenBy(x => x.Title))
+                                {
+                                    <option value="@action.Id">@action.Title</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.ExternalIntakeId" class="form-label">Intake externo relacionado</label>
+                            <select asp-for="FactForm.ExternalIntakeId" class="form-select">
+                                <option value="">Sin intake externo</option>
+                                @foreach (var intake in Model.ExternalIntakes.OrderByDescending(x => x.CreatedAt))
+                                {
+                                    <option value="@intake.Id">@intake.ActorType / @(intake.ActorName ?? intake.ContactEmail ?? "Sin nombre")</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </details>
 
-            <div class="mb-3">
-                <label asp-for="FactForm.CauseId" class="form-label">Causa relacionada</label>
-                <select asp-for="FactForm.CauseId" class="form-select">
-                    <option value="">Sin causa especifica</option>
-                    @foreach (var cause in Model.CauseOptions)
-                    {
-                        <option value="@cause.Value">@cause.Text</option>
-                    }
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="FactForm.EvidenceId" class="form-label">Evidencia relacionada</label>
-                <select asp-for="FactForm.EvidenceId" class="form-select">
-                    <option value="">Sin evidencia especifica</option>
-                    @foreach (var evidence in Model.Evidence.OrderByDescending(x => x.CapturedAt))
-                    {
-                        <option value="@evidence.Id">@evidence.Title</option>
-                    }
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="FactForm.CorrectiveActionId" class="form-label">Accion relacionada</label>
-                <select asp-for="FactForm.CorrectiveActionId" class="form-select">
-                    <option value="">Sin accion especifica</option>
-                    @foreach (var action in Model.CorrectiveActions.OrderBy(x => x.Status).ThenBy(x => x.Title))
-                    {
-                        <option value="@action.Id">@action.Title</option>
-                    }
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="FactForm.ExternalIntakeId" class="form-label">Intake externo relacionado</label>
-                <select asp-for="FactForm.ExternalIntakeId" class="form-select">
-                    <option value="">Sin intake externo</option>
-                    @foreach (var intake in Model.ExternalIntakes.OrderByDescending(x => x.CreatedAt))
-                    {
-                        <option value="@intake.Id">@intake.ActorType / @(intake.ActorName ?? intake.ContactEmail ?? "Sin nombre")</option>
-                    }
-                </select>
+                <details>
+                    <summary>Correlacion externa</summary>
+                    <div class="form-grid fact-form-grid fact-dense-grid">
+                        <div>
+                            <label asp-for="FactForm.SourceDetail" class="form-label">Detalle fuente</label>
+                            <input asp-for="FactForm.SourceDetail" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.ExternalSourceSystem" class="form-label">Sistema externo</label>
+                            <input asp-for="FactForm.ExternalSourceSystem" class="form-control" placeholder="SCADA / OEE / Gantt" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.ExternalEventId" class="form-label">ID evento externo</label>
+                            <input asp-for="FactForm.ExternalEventId" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="FactForm.ExternalRecordUri" class="form-label">URI registro externo</label>
+                            <input asp-for="FactForm.ExternalRecordUri" class="form-control" />
+                        </div>
+                    </div>
+                </details>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Agregar hecho</button>
@@ -1224,7 +1260,8 @@
     </aside>
 </section>
 
-<section class="analysis-grid actions-grid">
+<section class="analysis-grid actions-grid external-intake-panel@(wizardSteps[currentWizardIndex].Key == "Evidence" ? " is-active" : string.Empty)"
+         data-rca-stage-panel="Evidence" data-rca-panel-kind="external-intake">
     <article class="analysis-panel">
         <div class="panel-heading">
             <div>

@@ -1,5 +1,111 @@
 # Validation Log
 
+## 2026-06-18 - Compact fact entry form
+
+Scope: reduce the vertical length of the `Nuevo hecho` form in the RCA detail
+`Problema` tab.
+
+Checks:
+
+- Added static coverage for `fact-entry-compact`, `fact-quick-grid` and
+  `fact-advanced-sections`.
+- Added static coverage for the folded groups `Contexto industrial`,
+  `Vinculos` and `Correlacion externa`.
+- Kept all existing fact form fields, MVC POST action and business rules.
+- Reduced the default visible form to the frequent fields and moved optional
+  industrial context, links and external correlation into native `details`
+  sections.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  blocked because `IshikawaRca.Web.exe` was already running locally and locked
+  the web executable.
+- `dotnet build IshikawaRca.sln /p:UseAppHost=false /m:1`: blocked because
+  Visual Studio and `IshikawaRca.Web.exe` were using `IshikawaRca.Web.dll`.
+- `git diff --check`: passed, with Git LF/CRLF warnings only.
+
+Result: implementation applied; full build/test validation remains pending
+until the local web process is stopped. Browser visual smoke remains with the
+user in Visual Studio 2026 per repository rule.
+
+## 2026-06-18 - External intake scoped to Evidence tab
+
+Scope: prevent `Intake externo` from remaining always visible below the RCA
+detail tabbed workspace.
+
+Checks:
+
+- Added static coverage for `external-intake-panel`.
+- Added static coverage for
+  `data-rca-stage-panel="Evidence" data-rca-panel-kind="external-intake"`.
+- Assigned the external intake section to the `Evidencias` stage panel.
+- Kept MVC forms, endpoints, external link contracts and business rules
+  unchanged.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  blocked because `IshikawaRca.Web.exe` was already running locally and locked
+  the web executable.
+- `git diff --check`: passed, with Git LF/CRLF warnings only.
+
+Result: implementation applied; full build/test validation remains pending
+until the local web process is stopped. Browser visual smoke remains with the
+user in Visual Studio 2026 per repository rule.
+
+## 2026-06-18 - RCA wizard checklist internal tabs
+
+Scope: stop the wizard checklist from expanding all stage cards downward in the
+RCA detail page.
+
+Checks:
+
+- Added static coverage for `data-wizard-check-tabs`,
+  `data-wizard-check-panel` and `wizard-check-tabs`.
+- Replaced the expanded checklist card grid with internal tabs for each wizard
+  case/stage: `Problema`, `Causas`, `Evidencias`, `Acciones`, `Validacion` and
+  `Cierre`.
+- Kept one wizard checklist panel visible at a time.
+- Added client-side tab switching in `site.js`.
+- Kept backend contracts, MVC actions and forms unchanged.
+
+Validation:
+
+- `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`:
+  passed.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed. Browser visual smoke remains with the user in Visual Studio
+2026 per repository rule.
+
+## 2026-06-18 - RCA detail compact wizard tabs
+
+Scope: make the RCA detail UI materially more compact while keeping the wizard
+stage tabs as the primary navigation surface.
+
+Checks:
+
+- Added a RED static UI test requiring compact-mode markers in
+  `Details.cshtml`.
+- Added `rca-detail-compact`, `rca-compact-summary` and
+  `data-rca-compact-workspace` markers.
+- Compacted the incident command bar, KPI summary, stage tabs, stage rail,
+  stage panels and form spacing through CSS.
+- Kept MVC forms, endpoints, contracts and business rules unchanged.
+
+Validation:
+
+- RED: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  failed because `rca-detail-compact` was not present.
+- GREEN: `dotnet run --project tests\IshikawaRca.Tests\IshikawaRca.Tests.csproj`
+  passed after implementation.
+- `dotnet build IshikawaRca.sln /m:1`: passed, 0 warnings, 0 errors.
+
+Result: passed. Browser visual smoke was not run by Codex because repo rules
+leave Browser/browser QA to the user in Visual Studio 2026 unless explicitly
+requested.
+
 ## 2026-06-18 - RCA detail wizard tabs UX
 
 Scope: reduce RCA detail page length by turning the monolithic wizard/detail
@@ -31,6 +137,40 @@ Validation:
 
 Result: passed. Browser visual smoke was not run in this cut to avoid starting
 another local server; validation stayed static/build-based and timeboxed.
+
+## 2026-06-18 - Local RCA board DB recovery
+
+Scope: unblock local RCA board testing after MySQL authentication and schema
+drift failures in Development.
+
+Checks:
+
+- Root cause 1: `appsettings.Development.json` missed
+  `AllowPublicKeyRetrieval=True`, so MySQL rejected `caching_sha2_password`.
+- Root cause 2: after fixing authentication, local DB was behind migrations and
+  missed `rca_outbox_events`.
+- Added `AllowPublicKeyRetrieval=True`, `Connection Timeout=5` and
+  `Default Command Timeout=15` to the Development connection string.
+- Applied pending migrations using the Development connection through
+  `ISHIKAWA_RCA_CONNECTION`.
+
+Validation:
+
+- First `run-local-validation.ps1 -Build` reproduced the runtime failure:
+  app started, then smoke returned HTTP 500 because
+  `rca_outbox_events` did not exist.
+- `dotnet ef database update --project src\IshikawaRca.Infrastructure\IshikawaRca.Infrastructure.csproj --startup-project src\IshikawaRca.Web\IshikawaRca.Web.csproj --no-build`
+  initially failed with placeholder `ishikawa_user`.
+- Re-run with `ISHIKAWA_RCA_CONNECTION` from
+  `appsettings.Development.json` applied migrations
+  `AddRcaOutboxEvents`, `AddRcaAiSuggestions`,
+  `AddRcaAiSuggestionCorrelationIndex` and `AddRcaClosureDocuments`.
+- Final `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local-validation.ps1 -Build -BaseUrl http://localhost:5025 -StartupTimeoutSeconds 25 -RequestTimeoutSeconds 15 -ShutdownTimeoutSeconds 10`
+  passed: build 0 warnings/errors, app started, smoke API + DB completed, and
+  the script stopped the web app.
+- `Get-Process dotnet`: no running dotnet process remained after validation.
+
+Result: passed.
 
 ## 2026-06-18 - P4.5 RCA dashboard summary contract
 
